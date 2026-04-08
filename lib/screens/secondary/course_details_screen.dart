@@ -822,7 +822,9 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
         controller: _tabController,
         indicator: BoxDecoration(
           gradient: const LinearGradient(
-            colors: [AppColors.primary, AppColors.pureWhite],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: AppColors.primaryShadeGradient,
           ),
           borderRadius: BorderRadius.circular(14),
         ),
@@ -1297,7 +1299,9 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
               decoration: BoxDecoration(
                 gradient: isSelected
                     ? const LinearGradient(
-                        colors: [AppColors.primary, AppColors.pureWhite],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: AppColors.primaryShadeGradient,
                       )
                     : isCompleted
                         ? const LinearGradient(
@@ -1815,7 +1819,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
             ? const LinearGradient(
                 begin: Alignment.topRight,
                 end: Alignment.bottomLeft,
-                colors: [AppColors.primary, AppColors.pureWhite],
+                colors: AppColors.primaryShadeGradient,
               )
             : null,
         color: isTrial ? null : Colors.white,
@@ -2197,7 +2201,9 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
                     gradient: _isEnrolling
                         ? null
                         : const LinearGradient(
-                            colors: [AppColors.primary, AppColors.pureWhite],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: AppColors.primaryShadeGradient,
                           ),
                     color: _isEnrolling ? Colors.grey[300] : null,
                     borderRadius: BorderRadius.circular(16),
@@ -3146,7 +3152,17 @@ class _TrialExamScreenState extends State<TrialExamScreen> {
       return Scaffold(
         backgroundColor: AppColors.beige,
         appBar: AppBar(
-          backgroundColor: AppColors.purple,
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          flexibleSpace: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: AppColors.primaryShadeGradient,
+              ),
+            ),
+          ),
           title: Text(
             'الامتحان التجريبي',
             style: GoogleFonts.cairo(
@@ -3163,7 +3179,7 @@ class _TrialExamScreenState extends State<TrialExamScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const CircularProgressIndicator(
-                color: AppColors.purple,
+                color: AppColors.primaryLight,
               ),
               const SizedBox(height: 16),
               Text(
@@ -3191,7 +3207,17 @@ class _TrialExamScreenState extends State<TrialExamScreen> {
     return Scaffold(
       backgroundColor: AppColors.beige,
       appBar: AppBar(
-        backgroundColor: AppColors.purple,
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: AppColors.primaryShadeGradient,
+            ),
+          ),
+        ),
         title: Text(
           'الامتحان التجريبي',
           style: GoogleFonts.cairo(
@@ -3236,7 +3262,7 @@ class _TrialExamScreenState extends State<TrialExamScreen> {
                     style: GoogleFonts.cairo(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.purple,
+                      color: AppColors.brandPurple,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -3354,7 +3380,10 @@ class _TrialExamScreenState extends State<TrialExamScreen> {
                 decoration: BoxDecoration(
                   gradient: (_hasSelectedAnswer && !_isSubmitting)
                       ? const LinearGradient(
-                          colors: [AppColors.primary, AppColors.pureWhite])
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: AppColors.primaryShadeGradient,
+                        )
                       : null,
                   color: (!_hasSelectedAnswer || _isSubmitting)
                       ? Colors.grey[300]
@@ -3484,7 +3513,10 @@ class _TrialExamScreenState extends State<TrialExamScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
-                          colors: [AppColors.primary, AppColors.pureWhite]),
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: AppColors.primaryShadeGradient,
+                      ),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Center(

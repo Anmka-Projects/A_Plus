@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
-import '../../core/design/app_text_styles.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import '../../core/design/app_colors.dart';
 import '../../core/design/app_radius.dart';
@@ -11,7 +11,7 @@ import '../../core/navigation/route_names.dart';
 import '../../widgets/bottom_nav.dart';
 import '../../services/courses_service.dart';
 
-/// All Courses Screen - With Filters & Modern Card Design
+/// All Courses Screen — full catalog with search
 class AllCoursesScreen extends StatefulWidget {
   const AllCoursesScreen({super.key});
 
@@ -21,35 +21,19 @@ class AllCoursesScreen extends StatefulWidget {
 
 class _AllCoursesScreenState extends State<AllCoursesScreen> {
   bool _isLoading = true;
-  String? _selectedCategoryId;
   final String _selectedPrice = 'all'; // all, free, paid
   final String _sortBy = 'newest'; // newest, rating, popular
   final _searchController = TextEditingController();
   String _searchQuery = '';
   Timer? _searchDebounce;
 
-  List<Map<String, dynamic>> _categories = [];
   List<Map<String, dynamic>> _courses = [];
   int _totalCourses = 0;
-
-  List<Map<String, dynamic>> _getPriceFilters(BuildContext context) => [
-        {'value': 'all', 'label': context.l10n.all},
-        {'value': 'free', 'label': context.l10n.free},
-        {'value': 'paid', 'label': context.l10n.paid},
-      ];
-
-  List<Map<String, dynamic>> _getSortOptions(BuildContext context) => [
-        {'value': 'newest', 'label': context.l10n.newest},
-        {'value': 'rating', 'label': context.l10n.highestRated},
-        {'value': 'popular', 'label': context.l10n.bestSelling},
-        {'value': 'price_low', 'label': context.l10n.priceLowToHigh},
-        {'value': 'price_high', 'label': context.l10n.priceHighToLow},
-      ];
 
   @override
   void initState() {
     super.initState();
-    _loadData();
+    _loadCourses();
     _searchController.addListener(_onSearchChanged);
   }
 
@@ -73,32 +57,10 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
     });
   }
 
-  Future<void> _loadData() async {
-    setState(() => _isLoading = true);
-    try {
-      // Load categories and courses in parallel
-      final results = await Future.wait([
-        CoursesService.instance.getCategories(),
-        _loadCourses(),
-      ]);
-
-      setState(() {
-        _categories = results[0] as List<Map<String, dynamic>>;
-        _isLoading = false;
-      });
-    } catch (e) {
-      if (kDebugMode) {
-        print('❌ Error loading data: $e');
-      }
-      setState(() => _isLoading = false);
-    }
-  }
-
   Future<void> _loadCourses() async {
     try {
       setState(() => _isLoading = true);
 
-      String? categoryId = _selectedCategoryId;
       String price = _selectedPrice;
 
       // Map sort options to API format
@@ -120,7 +82,7 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
         page: 1,
         perPage: 50,
         search: _searchQuery.isNotEmpty ? _searchQuery : null,
-        categoryId: categoryId,
+        categoryId: null,
         price: price,
         sort: apiSort,
         level: 'all', // Can be extended later
@@ -129,7 +91,6 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
 
       if (kDebugMode) {
         print('✅ Courses loaded with filters:');
-        print('  categoryId: $categoryId');
         print('  price: $price');
         print('  sort: $apiSort');
         print('  search: $_searchQuery');
@@ -186,7 +147,7 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
           SnackBar(
             content: Text(
               context.l10n.errorLoadingCourses,
-              style: AppTextStyles.bodySmall(),
+              style: GoogleFonts.cairo(fontSize: 14),
             ),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
@@ -200,14 +161,6 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
     }
   }
 
-  List<Map<String, dynamic>> _getCategoryList(BuildContext context) {
-    final List<Map<String, dynamic>> list = [
-      {'id': null, 'name': context.l10n.all, 'name_ar': context.l10n.all},
-    ];
-    list.addAll(_categories);
-    return list;
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -218,9 +171,6 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
             children: [
               // Header
               _buildHeader(context),
-
-              // Filters
-              _buildFilters(),
 
               // Courses Grid
               Expanded(
@@ -247,7 +197,7 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
             ],
           ),
           // Bottom Navigation
-          const BottomNav(activeTab: ''),
+          const BottomNav(activeTab: 'allCourses'),
         ],
       ),
     );
@@ -259,7 +209,7 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [AppColors.primary, AppColors.pureWhite],
+          colors: AppColors.brandGradient,
         ),
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(AppRadius.largeCard),
@@ -267,9 +217,15 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.purple.withOpacity(0.3),
+            color: AppColors.brandBlue.withOpacity(0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
+          ),
+          BoxShadow(
+            color: AppColors.brandPurple.withOpacity(0.12),
+            blurRadius: 36,
+            offset: const Offset(0, 18),
+            spreadRadius: -6,
           ),
         ],
       ),
@@ -305,17 +261,17 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
                   children: [
                     Text(
                       context.l10n.allCourses,
-                      style: AppTextStyles.h3(color: Colors.white).copyWith(
+                      style: GoogleFonts.cairo(
                         fontSize: 22,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
                       ),
                     ),
                     Text(
                       context.l10n.coursesAvailable(_totalCourses),
-                      style: AppTextStyles.bodySmall(
-                        color: Colors.white.withOpacity(0.7),
-                      ).copyWith(
+                      style: GoogleFonts.cairo(
                         fontSize: 13,
+                        color: Colors.white.withOpacity(0.7),
                       ),
                     ),
                   ],
@@ -332,24 +288,42 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
               borderRadius: BorderRadius.circular(30),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
+                  color: AppColors.brandBlue.withOpacity(0.14),
+                  blurRadius: 28,
+                  offset: const Offset(0, 12),
+                  spreadRadius: -6,
+                ),
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.09),
+                  blurRadius: 18,
+                  offset: const Offset(0, 6),
                 ),
               ],
             ),
             child: TextField(
               controller: _searchController,
-              style: AppTextStyles.bodySmall().copyWith(fontSize: 14),
+              style: GoogleFonts.cairo(fontSize: 14),
               decoration: InputDecoration(
                 hintText: context.l10n.searchCourse,
-                hintStyle: AppTextStyles.bodySmall(
+                hintStyle: GoogleFonts.cairo(
+                  fontSize: 14,
                   color: AppColors.mutedForeground,
-                ).copyWith(fontSize: 14),
-                prefixIcon: const Padding(
-                  padding: EdgeInsets.only(right: 16, left: 12),
-                  child: Icon(Icons.search_rounded,
-                      color: AppColors.purple, size: 24),
+                ),
+                prefixIcon: Padding(
+                  padding: const EdgeInsets.only(right: 16, left: 12),
+                  child: ShaderMask(
+                    blendMode: BlendMode.srcIn,
+                    shaderCallback: (bounds) => const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: AppColors.brandGradient,
+                    ).createShader(bounds),
+                    child: const Icon(
+                      Icons.search_rounded,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
                 ),
                 border: InputBorder.none,
                 contentPadding:
@@ -358,191 +332,6 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
               onChanged: (value) {
                 // Search is handled by _onSearchChanged listener
               },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFilters() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      child: Column(
-        children: [
-          // Category Filter
-          SizedBox(
-            height: 40,
-            child: _isLoading && _categories.isEmpty
-                ? _buildCategoriesSkeleton()
-                : ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    itemCount: _getCategoryList(context).length,
-                    itemBuilder: (context, index) {
-                      final category = _getCategoryList(context)[index];
-                      final categoryId = category['id']?.toString();
-                      final isSelected = _selectedCategoryId == categoryId;
-                      final categoryName = category['name']?.toString() ??
-                          category['name_ar']?.toString() ??
-                          context.l10n.all;
-                      return Padding(
-                        padding: const EdgeInsets.only(left: 8),
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _selectedCategoryId = categoryId;
-                            });
-                            _loadCourses();
-                          },
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            padding: const EdgeInsets.symmetric(horizontal: 18),
-                            decoration: BoxDecoration(
-                              gradient: isSelected
-                                  ? const LinearGradient(colors: [
-                                      AppColors.primary,
-                                      AppColors.secondary
-                                    ])
-                                  : null,
-                              color: isSelected ? null : Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: isSelected
-                                      ? AppColors.primary.withOpacity(0.3)
-                                      : Colors.black.withOpacity(0.04),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Center(
-                              child: Text(
-                                categoryName,
-                                style: AppTextStyles.bodySmall(
-                                  color: isSelected
-                                      ? Colors.white
-                                      : AppColors.foreground,
-                                ).copyWith(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-          ),
-          // const SizedBox(height: 12),
-
-          // // Price & Sort Filters
-          // Padding(
-          //   padding: const EdgeInsets.symmetric(horizontal: 20),
-          //   child: Row(
-          //     children: [
-          //       // Price Filter
-          //       Expanded(
-          //         child: Builder(
-          //           builder: (context) {
-          //             final priceFilters = _getPriceFilters(context);
-          //             return _buildDropdownFilter(
-          //               value: priceFilters.firstWhere(
-          //                 (item) => item['value'] == _selectedPrice,
-          //                 orElse: () => priceFilters[0],
-          //               )['label'] as String,
-          //               items: priceFilters
-          //                   .map((e) => e['label'] as String)
-          //                   .toList(),
-          //               icon: Icons.attach_money_rounded,
-          //               onChanged: (value) {
-          //                 final selected = priceFilters.firstWhere(
-          //                   (item) => item['label'] == value,
-          //                 );
-          //                 setState(() {
-          //                   _selectedPrice = selected['value'] as String;
-          //                 });
-          //                 _loadCourses();
-          //               },
-          //             );
-          //           },
-          //         ),
-          //       ),
-          //       const SizedBox(width: 12),
-          //       // Sort Filter
-          //       Expanded(
-          //         child: Builder(
-          //           builder: (context) {
-          //             final sortOptions = _getSortOptions(context);
-          //             return _buildDropdownFilter(
-          //               value: sortOptions.firstWhere(
-          //                 (item) => item['value'] == _sortBy,
-          //                 orElse: () => sortOptions[0],
-          //               )['label'] as String,
-          //               items: sortOptions
-          //                   .map((e) => e['label'] as String)
-          //                   .toList(),
-          //               icon: Icons.sort_rounded,
-          //               onChanged: (value) {
-          //                 final selected = sortOptions.firstWhere(
-          //                   (item) => item['label'] == value,
-          //                 );
-          //                 setState(() {
-          //                   _sortBy = selected['value'] as String;
-          //                 });
-          //                 _loadCourses();
-          //               },
-          //             );
-          //           },
-          //         ),
-          //       ),
-          //     ],
-          //   ),
-          // ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDropdownFilter({
-    required String value,
-    required List<String> items,
-    required IconData icon,
-    required Function(String?) onChanged,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 18, color: AppColors.purple),
-          const SizedBox(width: 8),
-          Expanded(
-            child: DropdownButton<String>(
-              value: value,
-              isExpanded: true,
-              underline: const SizedBox(),
-              style: AppTextStyles.bodySmall(
-                color: AppColors.foreground,
-              ).copyWith(fontSize: 13),
-              icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 20),
-              items: items
-                  .map((item) =>
-                      DropdownMenuItem(value: item, child: Text(item)))
-                  .toList(),
-              onChanged: onChanged,
             ),
           ),
         ],
@@ -626,8 +415,8 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                             colors: [
-                              AppColors.purple.withOpacity(0.1),
-                              AppColors.orange.withOpacity(0.1),
+                              AppColors.brandBlue.withOpacity(0.12),
+                              AppColors.brandPurple.withOpacity(0.12),
                             ],
                           ),
                     color: thumbnail.isEmpty ? AppColors.lavenderLight : null,
@@ -650,7 +439,7 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
                                 child: const Center(
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    color: AppColors.purple,
+                                    color: AppColors.brandBlue,
                                   ),
                                 ),
                               );
@@ -701,11 +490,10 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
                       isFree
                           ? context.l10n.free
                           : '${priceValue.toInt()} ${context.l10n.egyptianPoundShort}',
-                      style: AppTextStyles.labelSmall(
-                        color: Colors.white,
-                      ).copyWith(
+                      style: GoogleFonts.cairo(
                         fontSize: 10,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
                       ),
                     ),
                   ),
@@ -726,16 +514,31 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: AppColors.purple.withOpacity(0.1),
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              AppColors.brandBlue.withOpacity(0.15),
+                              AppColors.brandPurple.withOpacity(0.15),
+                            ],
+                          ),
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: Text(
-                          categoryName,
-                          style: AppTextStyles.labelSmall(
-                            color: AppColors.purple,
-                          ).copyWith(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w600,
+                        child: ShaderMask(
+                          blendMode: BlendMode.srcIn,
+                          shaderCallback: (bounds) =>
+                              const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: AppColors.brandGradient,
+                          ).createShader(bounds),
+                          child: Text(
+                            categoryName,
+                            style: GoogleFonts.cairo(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                       ),
@@ -743,11 +546,10 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
                     // Title
                     Text(
                       course['title']?.toString() ?? context.l10n.noTitle,
-                      style: AppTextStyles.bodySmall(
-                        color: AppColors.foreground,
-                      ).copyWith(
+                      style: GoogleFonts.cairo(
                         fontSize: 12,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.foreground,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -757,9 +559,10 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
                     if (instructorName.isNotEmpty)
                       Text(
                         instructorName,
-                        style: AppTextStyles.bodySmall(
+                        style: GoogleFonts.cairo(
+                          fontSize: 10,
                           color: AppColors.mutedForeground,
-                        ).copyWith(fontSize: 10),
+                        ),
                       ),
                     const Spacer(),
                     // Stats
@@ -770,9 +573,10 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
                         const SizedBox(width: 2),
                         Text(
                           ratingValue.toStringAsFixed(1),
-                          style: AppTextStyles.bodySmall().copyWith(
+                          style: GoogleFonts.cairo(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
+                            color: AppColors.foreground,
                           ),
                         ),
                         const Spacer(),
@@ -781,9 +585,10 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
                         const SizedBox(width: 2),
                         Text(
                           studentsCountValue.toString(),
-                          style: AppTextStyles.bodySmall(
+                          style: GoogleFonts.cairo(
+                            fontSize: 10,
                             color: AppColors.mutedForeground,
-                          ).copyWith(fontSize: 10),
+                          ),
                         ),
                       ],
                     ),
@@ -806,8 +611,8 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppColors.purple.withOpacity(0.15),
-            AppColors.orange.withOpacity(0.15),
+            AppColors.brandBlue.withOpacity(0.14),
+            AppColors.brandPurple.withOpacity(0.14),
           ],
         ),
       ),
@@ -818,13 +623,28 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.purple.withOpacity(0.1),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppColors.brandBlue.withOpacity(0.12),
+                    AppColors.brandPurple.withOpacity(0.12),
+                  ],
+                ),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
-                Icons.menu_book_rounded,
-                color: AppColors.purple,
-                size: 32,
+              child: ShaderMask(
+                blendMode: BlendMode.srcIn,
+                shaderCallback: (bounds) => const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: AppColors.brandGradient,
+                ).createShader(bounds),
+                child: const Icon(
+                  Icons.menu_book_rounded,
+                  color: Colors.white,
+                  size: 32,
+                ),
               ),
             ),
             const SizedBox(height: 8),
@@ -832,7 +652,9 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
               width: 40,
               height: 3,
               decoration: BoxDecoration(
-                color: AppColors.purple.withOpacity(0.3),
+                gradient: const LinearGradient(
+                  colors: AppColors.brandGradient,
+                ),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -851,54 +673,55 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
             width: 100,
             height: 100,
             decoration: BoxDecoration(
-              color: AppColors.purple.withOpacity(0.1),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppColors.brandBlue.withOpacity(0.14),
+                  AppColors.brandPurple.withOpacity(0.14),
+                ],
+              ),
               shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.brandBlue.withOpacity(0.18),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
             ),
-            child: const Icon(Icons.search_off_rounded,
-                size: 50, color: AppColors.purple),
+            child: ShaderMask(
+              blendMode: BlendMode.srcIn,
+              shaderCallback: (bounds) => const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: AppColors.brandGradient,
+              ).createShader(bounds),
+              child: const Icon(
+                Icons.search_off_rounded,
+                size: 50,
+                color: Colors.white,
+              ),
+            ),
           ),
           const SizedBox(height: 20),
           Text(
             context.l10n.noResults,
-            style: AppTextStyles.h3(
-              color: AppColors.foreground,
-            ).copyWith(
+            style: GoogleFonts.cairo(
               fontSize: 18,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w700,
+              color: AppColors.foreground,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             context.l10n.tryDifferentSearch,
-            style: AppTextStyles.bodySmall(
+            style: GoogleFonts.cairo(
+              fontSize: 14,
               color: AppColors.mutedForeground,
-            ).copyWith(fontSize: 14),
+            ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildCategoriesSkeleton() {
-    return Skeletonizer(
-      enabled: true,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        itemCount: 5,
-        itemBuilder: (context, index) {
-          return Padding(
-            padding: const EdgeInsets.only(left: 8),
-            child: Container(
-              width: 100,
-              height: 40,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          );
-        },
       ),
     );
   }

@@ -66,6 +66,12 @@ class AppColors {
     gradientEnd,
   ];
 
+  /// Purple-only gradient (depth), for surfaces that should not mix in logo blue.
+  static const List<Color> primaryShadeGradient = [
+    primaryDark,
+    primaryLight,
+  ];
+
   // Semantic colors
   static const Color destructive = Color(0xFFE53E3E);
   static const Color destructiveForeground = pureWhite;

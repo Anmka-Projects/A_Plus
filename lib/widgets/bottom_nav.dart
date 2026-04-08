@@ -30,14 +30,14 @@ class BottomNav extends StatelessWidget {
         ),
         child: Center(
           child: Container(
-            constraints: const BoxConstraints(maxWidth: 320),
+            constraints: const BoxConstraints(maxWidth: 400),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(28),
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                 child: Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                      const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
@@ -76,6 +76,13 @@ class BottomNav extends StatelessWidget {
                         id: 'home',
                         activeTab: activeTab,
                         onTap: () => context.go(RouteNames.home),
+                      ),
+                      _NavItem(
+                        icon: Icons.explore_rounded,
+                        label: context.l10n.allCourses,
+                        id: 'allCourses',
+                        activeTab: activeTab,
+                        onTap: () => context.go(RouteNames.allCourses),
                       ),
                       _NavItem(
                         icon: Icons.menu_book_rounded,
@@ -129,7 +136,7 @@ class _NavItem extends StatelessWidget {
         duration: const Duration(milliseconds: 250),
         curve: Curves.easeOutCubic,
         padding: EdgeInsets.symmetric(
-          horizontal: isActive ? 14 : 10,
+          horizontal: isActive ? 10 : 6,
           vertical: 8,
         ),
         decoration: BoxDecoration(
@@ -165,7 +172,7 @@ class _NavItem extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
               style: GoogleFonts.cairo(
-                fontSize: isActive ? 11 : 10,
+                fontSize: isActive ? 10 : 9,
                 fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
                 color: isActive
                     ? AppColors.brandPurple

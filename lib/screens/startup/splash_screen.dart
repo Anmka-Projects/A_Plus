@@ -698,7 +698,7 @@ class _SplashScreenState extends State<SplashScreen>
       child: Column(
         children: [
           Text(
-            'Dr. Mohamed Elsherif',
+            'Dr. Yusuf Samir',
             textAlign: TextAlign.center,
             style: AppTextStyles.bodyMedium(
               color: Colors.white.withOpacity(0.92),

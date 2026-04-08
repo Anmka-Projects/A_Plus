@@ -632,8 +632,24 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color.alphaBlend(
+                AppColors.brandBlue.withOpacity(0.06),
+                Colors.white,
+              ),
+              Color.alphaBlend(
+                AppColors.brandPurple.withOpacity(0.05),
+                Colors.white,
+              ),
+            ],
+          ),
           borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: AppColors.brandBlue.withOpacity(0.08),
+          ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.04),
