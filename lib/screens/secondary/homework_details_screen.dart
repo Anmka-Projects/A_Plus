@@ -241,7 +241,7 @@ class _HomeworkDetailsScreenState extends State<HomeworkDetailsScreen> {
               ElevatedButton(
                 onPressed: _loadHomework,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: AppColors.primaryLight,
                   foregroundColor: Colors.white,
                 ),
                 child: Text(
@@ -889,7 +889,7 @@ class _HomeworkDetailsScreenState extends State<HomeworkDetailsScreen> {
                     ? null
                     : () => _submit(asDraft: false),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: AppColors.primaryLight,
                   foregroundColor: Colors.white,
                 ),
                 child: _isSubmitting

@@ -645,7 +645,7 @@ class _InstructorCreateCourseScreenState
                                 child: ElevatedButton(
                                   onPressed: _isSubmitting ? null : _submit,
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppColors.purple,
+                                    backgroundColor: AppColors.primaryLight,
                                     foregroundColor: Colors.white,
                                     padding: const EdgeInsets.symmetric(
                                         vertical: 16),

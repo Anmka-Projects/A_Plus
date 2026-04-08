@@ -155,6 +155,7 @@ class _CoursesScreenState extends State<CoursesScreen> {
                             '⭐',
                             style: TextStyle(
                               fontSize: 24, // text-2xl
+                              fontFamily: AppTextStyles.indigoFamily,
                               color: AppColors.whiteOverlay20, // white/20
                             ),
                           ),
@@ -166,6 +167,7 @@ class _CoursesScreenState extends State<CoursesScreen> {
                             '✦',
                             style: TextStyle(
                               fontSize: 20, // text-xl
+                              fontFamily: AppTextStyles.indigoFamily,
                               color: AppColors.whiteOverlay20, // white/20
                             ),
                           ),
@@ -276,7 +278,10 @@ class _CoursesScreenState extends State<CoursesScreen> {
                                   angle: -0.2, // -rotate-12
                                   child: const Text(
                                     '🎓',
-                                    style: TextStyle(fontSize: 48), // text-6xl
+                                    style: TextStyle(
+                                      fontSize: 48, // text-6xl
+                                      fontFamily: AppTextStyles.indigoFamily,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -369,7 +374,7 @@ class _CoursesScreenState extends State<CoursesScreen> {
             ),
 
             // Bottom Navigation
-            const BottomNav(activeTab: 'courses'),
+            const BottomNav(activeTab: ''),
           ],
         ),
       ),

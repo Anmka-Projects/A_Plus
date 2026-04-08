@@ -2,16 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 import '../../core/design/app_colors.dart';
-import '../../core/design/app_text_styles.dart';
 import '../../core/design/app_radius.dart';
 import '../../core/navigation/route_names.dart';
 import '../../core/api/api_endpoints.dart';
 import '../../services/profile_service.dart';
-import '../../services/qr_code_service.dart';
 import '../../core/config/theme_provider.dart';
 import '../../l10n/app_localizations.dart';
+
+Widget _settingsGradientIcon(IconData icon, double size) {
+  return Center(
+    child: ShaderMask(
+      blendMode: BlendMode.srcIn,
+      shaderCallback: (bounds) => const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: AppColors.brandGradient,
+      ).createShader(bounds),
+      child: Icon(icon, size: size, color: Colors.white),
+    ),
+  );
+}
 
 /// Settings Screen - Pixel-perfect match to React version
 /// Matches: components/screens/settings-screen.tsx
@@ -29,11 +40,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _notifications = true;
   bool _emailNotifications = true;
   bool _pushNotifications = true;
-
-  // QR Code for offline students
-  String? _qrCode;
-  bool _isLoadingQrCode = false;
-  String? _qrCodeError;
 
   final ThemeProvider _themeProvider = ThemeProvider.instance;
 
@@ -111,20 +117,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             '  Will display: ${_profile?['name']?.toString() ?? AppLocalizations.of(context)!.user}');
       }
 
-      // Load QR code if user is offline
-      // Check both studentType (camelCase) and student_type (snake_case)
-      final studentType = profile['studentType']?.toString() ??
-          profile['student_type']?.toString();
-      if (kDebugMode) {
-        print('🔍 Settings - Student Type Check:');
-        print('  studentType: $studentType');
-        print('  profile["studentType"]: ${profile['studentType']}');
-        print('  profile["student_type"]: ${profile['student_type']}');
-        print('  Will show QR Code: ${studentType == 'offline'}');
-      }
-      if (studentType == 'offline') {
-        _loadQrCode();
-      }
     } catch (e) {
       if (kDebugMode) {
         print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -136,33 +128,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       }
       setState(() => _isLoading = false);
-    }
-  }
-
-  Future<void> _loadQrCode() async {
-    setState(() {
-      _isLoadingQrCode = true;
-      _qrCodeError = null;
-    });
-
-    try {
-      final qrCode = await QrCodeService.instance.getMyQrCode();
-      if (kDebugMode) {
-        print(
-            '✅ QR code loaded in settings: ${qrCode.length > 20 ? qrCode.substring(0, 20) : qrCode}...');
-      }
-      setState(() {
-        _qrCode = qrCode;
-        _isLoadingQrCode = false;
-      });
-    } catch (e) {
-      if (kDebugMode) {
-        print('❌ Error loading QR code in settings: $e');
-      }
-      setState(() {
-        _qrCodeError = e.toString().replaceFirst('Exception: ', '');
-        _isLoadingQrCode = false;
-      });
     }
   }
 
@@ -180,7 +145,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           SnackBar(
             content: Text(
               AppLocalizations.of(context)!.preferencesUpdated,
-              style: GoogleFonts.cairo(),
+              style: GoogleFonts.cairo(fontSize: 14),
             ),
             backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
@@ -199,7 +164,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           SnackBar(
             content: Text(
               AppLocalizations.of(context)!.errorUpdatingPreferences,
-              style: GoogleFonts.cairo(),
+              style: GoogleFonts.cairo(fontSize: 14),
             ),
             backgroundColor: AppColors.destructive,
             behavior: SnackBarBehavior.floating,
@@ -215,33 +180,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
+      return Scaffold(
         backgroundColor: AppColors.beige,
         body: Center(
           child: CircularProgressIndicator(
-            color: AppColors.purple,
+            color: AppColors.brandBlue,
           ),
         ),
       );
-    }
-
-    // Get student type for conditional rendering
-    final studentType = _profile?['studentType']?.toString() ??
-        _profile?['student_type']?.toString();
-
-    if (kDebugMode) {
-      print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      print('🔍 SETTINGS UI - BUILD METHOD - Student Type Check');
-      print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      print('_profile is null: ${_profile == null}');
-      if (_profile != null) {
-        print('_profile keys: ${_profile!.keys.toList()}');
-        print('_profile["studentType"]: ${_profile!['studentType']}');
-        print('_profile["student_type"]: ${_profile!['student_type']}');
-      }
-      print('Final studentType: $studentType');
-      print('Will show QR Code section: ${studentType == 'offline'}');
-      print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     }
 
     return Scaffold(
@@ -250,18 +196,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
         top: false,
         child: Column(
           children: [
-            // Header - uses brand primary/secondary gradient
+            // Header — brand blue → purple + shadow (matches enrolled / secondary)
             Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [AppColors.primary, AppColors.pureWhite],
+                  colors: AppColors.brandGradient,
                 ),
-                borderRadius: BorderRadius.only(
+                borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(AppRadius.largeCard),
                   bottomRight: Radius.circular(AppRadius.largeCard),
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.brandBlue.withOpacity(0.3),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                  BoxShadow(
+                    color: AppColors.brandPurple.withOpacity(0.12),
+                    blurRadius: 36,
+                    offset: const Offset(0, 18),
+                    spreadRadius: -6,
+                  ),
+                ],
               ),
               padding: EdgeInsets.only(
                 top: MediaQuery.of(context).padding.top + 16, // pt-4
@@ -290,7 +249,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const SizedBox(width: 16), // gap-4
                   Text(
                     AppLocalizations.of(context)!.settings,
-                    style: AppTextStyles.h3(color: Colors.white),
+                    style: GoogleFonts.cairo(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
                   ),
                 ],
               ),
@@ -328,9 +291,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               width: 64, // w-16
                               height: 64, // h-16
                               decoration: const BoxDecoration(
-                                color: AppColors.orangeLight,
                                 shape: BoxShape.circle,
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: AppColors.brandGradient,
+                                ),
                               ),
+                              padding: const EdgeInsets.all(2),
                               child: ClipOval(
                                 child: _profile?['avatar'] != null
                                     ? Image.network(
@@ -344,11 +312,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                           'assets/images/user-avatar.png',
                                           fit: BoxFit.cover,
                                           errorBuilder: (_, __, ___) =>
-                                              const Icon(
-                                            Icons.person,
-                                            size: 32,
-                                            color: AppColors.purple,
-                                          ),
+                                              _settingsGradientIcon(
+                                                  Icons.person, 32),
                                         ),
                                       )
                                     : Image.asset(
@@ -356,11 +321,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         fit: BoxFit.cover,
                                         errorBuilder:
                                             (context, error, stackTrace) =>
-                                                const Icon(
-                                          Icons.person,
-                                          size: 32,
-                                          color: AppColors.purple,
-                                        ),
+                                                _settingsGradientIcon(
+                                                    Icons.person, 32),
                                       ),
                               ),
                             ),
@@ -373,13 +335,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   Text(
                                     _profile?['name']?.toString() ??
                                         AppLocalizations.of(context)!.user,
-                                    style: AppTextStyles.h3(
+                                    style: GoogleFonts.cairo(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w600,
                                       color: AppColors.foreground,
                                     ),
                                   ),
                                   Text(
                                     _profile?['email']?.toString() ?? '',
-                                    style: AppTextStyles.bodyMedium(
+                                    style: GoogleFonts.cairo(
+                                      fontSize: 14,
                                       color: AppColors.mutedForeground,
                                     ),
                                   ),
@@ -401,14 +366,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 width: 40, // w-10
                                 height: 40, // h-10
                                 decoration: BoxDecoration(
-                                  color: AppColors.lavenderLight,
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      AppColors.brandBlue.withOpacity(0.12),
+                                      AppColors.brandPurple.withOpacity(0.12),
+                                    ],
+                                  ),
                                   borderRadius:
                                       BorderRadius.circular(12), // rounded-xl
                                 ),
-                                child: const Icon(
-                                  Icons.edit,
-                                  size: 20, // w-5 h-5
-                                  color: AppColors.purple,
+                                child: Center(
+                                  child: ShaderMask(
+                                    blendMode: BlendMode.srcIn,
+                                    shaderCallback: (bounds) =>
+                                        const LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: AppColors.brandGradient,
+                                    ).createShader(bounds),
+                                    child: const Icon(
+                                      Icons.edit,
+                                      size: 20,
+                                      color: Colors.white,
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),
@@ -421,7 +404,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         padding: const EdgeInsets.only(bottom: 16), // mb-4
                         child: Text(
                           AppLocalizations.of(context)!.generalSettings,
-                          style: AppTextStyles.h4(
+                          style: GoogleFonts.cairo(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
                             color: AppColors.foreground,
                           ),
                         ),
@@ -494,12 +479,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         onTap: () => context.push(RouteNames.supportAndHelp),
                       ),
 
-                      // QR Code Section for offline students only
-                      if (studentType == 'offline') ...[
-                        const SizedBox(height: 24),
-                        _buildQrCodeSection(),
-                      ],
-
                       const SizedBox(height: 32),
                     ],
                   ),
@@ -540,21 +519,40 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   width: 40, // w-10
                   height: 40, // h-10
                   decoration: BoxDecoration(
-                    color: AppColors.lavenderLight,
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        AppColors.brandBlue.withOpacity(0.12),
+                        AppColors.brandPurple.withOpacity(0.12),
+                      ],
+                    ),
                     borderRadius: BorderRadius.circular(12), // rounded-xl
                   ),
-                  child: Icon(
-                    icon,
-                    size: 20, // w-5 h-5
-                    color: AppColors.purple,
+                  child: Center(
+                    child: ShaderMask(
+                      blendMode: BlendMode.srcIn,
+                      shaderCallback: (bounds) => const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: AppColors.brandGradient,
+                      ).createShader(bounds),
+                      child: Icon(
+                        icon,
+                        size: 20,
+                        color: Colors.white,
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12), // gap-3
                 Text(
                   label,
-                  style: AppTextStyles.bodyMedium(
+                  style: GoogleFonts.cairo(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
                     color: AppColors.foreground,
-                  ).copyWith(fontWeight: FontWeight.w500),
+                  ),
                 ),
               ],
             ),
@@ -569,7 +567,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   height: 28, // h-7
                   padding: const EdgeInsets.all(4), // p-1
                   decoration: BoxDecoration(
-                    color: toggleValue ? AppColors.purple : Colors.grey[200],
+                    gradient: toggleValue
+                        ? const LinearGradient(
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                            colors: AppColors.brandGradient,
+                          )
+                        : null,
+                    color: toggleValue ? null : Colors.grey[200],
                     borderRadius: BorderRadius.circular(999), // rounded-full
                   ),
                   child: AnimatedAlign(
@@ -601,7 +606,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   if (value != null)
                     Text(
                       value,
-                      style: AppTextStyles.bodySmall(
+                      style: GoogleFonts.cairo(
+                        fontSize: 13,
                         color: AppColors.mutedForeground,
                       ),
                     ),
@@ -626,7 +632,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (context) => AlertDialog(
         title: Text(
           l10n.selectLanguage,
-          style: AppTextStyles.h4(color: AppColors.foreground),
+          style: GoogleFonts.cairo(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: AppColors.foreground,
+          ),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -654,7 +664,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           SnackBar(
             content: Text(
               AppLocalizations.of(context)!.languageChanged(name),
-              style: GoogleFonts.cairo(),
+              style: GoogleFonts.cairo(fontSize: 14),
             ),
             backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
@@ -667,34 +677,78 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.lavenderLight : Colors.white,
+          gradient: isSelected
+              ? LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: [
+                    AppColors.brandBlue.withOpacity(0.08),
+                    AppColors.brandPurple.withOpacity(0.08),
+                  ],
+                )
+              : null,
+          color: isSelected ? null : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? AppColors.purple : AppColors.border,
+            color: isSelected ? AppColors.brandPurple : AppColors.border,
             width: isSelected ? 2 : 1,
           ),
         ),
         child: Row(
           children: [
-            Icon(
-              icon,
-              color: isSelected ? AppColors.purple : AppColors.mutedForeground,
-            ),
+            isSelected
+                ? ShaderMask(
+                    blendMode: BlendMode.srcIn,
+                    shaderCallback: (bounds) => const LinearGradient(
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                      colors: AppColors.brandGradient,
+                    ).createShader(bounds),
+                    child: Icon(icon, color: Colors.white, size: 24),
+                  )
+                : Icon(
+                    icon,
+                    color: AppColors.mutedForeground,
+                  ),
             const SizedBox(width: 12),
-            Text(
-              name,
-              style: AppTextStyles.bodyMedium(
-                color: isSelected ? AppColors.purple : AppColors.foreground,
-              ).copyWith(
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              ),
-            ),
+            isSelected
+                ? ShaderMask(
+                    blendMode: BlendMode.srcIn,
+                    shaderCallback: (bounds) => const LinearGradient(
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                      colors: AppColors.brandGradient,
+                    ).createShader(bounds),
+                    child: Text(
+                      name,
+                      style: GoogleFonts.cairo(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  )
+                : Text(
+                    name,
+                    style: GoogleFonts.cairo(
+                      fontSize: 14,
+                      color: AppColors.foreground,
+                    ),
+                  ),
             const Spacer(),
             if (isSelected)
-              const Icon(
-                Icons.check_circle,
-                color: AppColors.purple,
-                size: 20,
+              ShaderMask(
+                blendMode: BlendMode.srcIn,
+                shaderCallback: (bounds) => const LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: AppColors.brandGradient,
+                ).createShader(bounds),
+                child: const Icon(
+                  Icons.check_circle,
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
           ],
         ),
@@ -702,173 +756,4 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildQrCodeSection() {
-    final l10n = AppLocalizations.of(context)!;
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Title
-          Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: AppColors.lavenderLight,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.qr_code_scanner_rounded,
-                  size: 20,
-                  color: AppColors.purple,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                l10n.centerAttendance,
-                style: AppTextStyles.h4(
-                  color: AppColors.foreground,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-
-          // Description
-          Text(
-            l10n.centerAttendanceDescription,
-            style: AppTextStyles.bodyMedium(
-              color: AppColors.mutedForeground,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 20),
-
-          // QR Code or Loading/Error
-          if (_isLoadingQrCode)
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Column(
-                  children: [
-                    const CircularProgressIndicator(
-                      color: AppColors.purple,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      l10n.loadingQrCode,
-                      style: AppTextStyles.bodySmall(
-                        color: AppColors.mutedForeground,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            )
-          else if (_qrCodeError != null)
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  children: [
-                    Icon(
-                      Icons.error_outline_rounded,
-                      size: 48,
-                      color: Colors.red[600],
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      l10n.errorLoadingQrCode,
-                      style: AppTextStyles.bodyMedium(
-                        color: Colors.red[600],
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      _qrCodeError!,
-                      style: AppTextStyles.bodySmall(
-                        color: AppColors.mutedForeground,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 16),
-                    OutlinedButton.icon(
-                      onPressed: _loadQrCode,
-                      icon: const Icon(Icons.refresh_rounded, size: 18),
-                      label: Text(l10n.retry),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.purple,
-                        side: const BorderSide(color: AppColors.purple),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            )
-          else if (_qrCode != null)
-            Center(
-              child: Column(
-                children: [
-                  // QR Code Container
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: AppColors.purple.withOpacity(0.2),
-                        width: 2,
-                      ),
-                    ),
-                    child: QrImageView(
-                      data: _qrCode!,
-                      version: QrVersions.auto,
-                      size: 200,
-                      backgroundColor: Colors.white,
-                      foregroundColor: AppColors.purple,
-                      errorCorrectionLevel: QrErrorCorrectLevel.H,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // Instruction
-                  Text(
-                    l10n.scanQrCodeInstruction,
-                    style: AppTextStyles.bodySmall(
-                      color: AppColors.mutedForeground,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 12),
-                  // Refresh Button
-                  OutlinedButton.icon(
-                    onPressed: _loadQrCode,
-                    icon: const Icon(Icons.refresh_rounded, size: 18),
-                    label: Text(l10n.refreshQrCode),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.purple,
-                      side: const BorderSide(color: AppColors.purple),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
-  }
 }

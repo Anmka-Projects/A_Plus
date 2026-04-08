@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-/// App Text Styles - Indigo & Radlush families
+/// App Text Styles - unified Cairo family
 class AppTextStyles {
   AppTextStyles._();
 
-  static const String indigoFamily = 'Indigo';
-  static const String radlushFamily = 'Radlush';
+  static const String indigoFamily = 'Cairo';
+  static const String radlushFamily = 'Cairo';
 
   /// Base TextTheme used by the app
   static TextTheme textTheme = const TextTheme(

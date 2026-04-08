@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 import 'app_text_styles.dart';
 import 'app_radius.dart';
@@ -21,6 +22,7 @@ class AppTheme {
 
     return ThemeData(
       useMaterial3: true,
+      fontFamily: AppTextStyles.indigoFamily,
       colorScheme: ColorScheme.light(
         primary: primaryColor,
         secondary: secondaryColor,
@@ -31,10 +33,26 @@ class AppTheme {
         error: errorColor,
         onError: AppColors.destructiveForeground,
       ),
+      appBarTheme: AppBarTheme(
+        backgroundColor: secondaryColor,
+        foregroundColor: AppColors.secondaryForeground,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        surfaceTintColor: Colors.transparent,
+        iconTheme: const IconThemeData(color: AppColors.secondaryForeground),
+        titleTextStyle: const TextStyle(
+          fontFamily: AppTextStyles.indigoFamily,
+          color: AppColors.secondaryForeground,
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
       scaffoldBackgroundColor: backgroundColor,
-      textTheme: AppTextStyles.themed(
-        AppTextStyles.textTheme,
-        color: textColor,
+      textTheme: GoogleFonts.cairoTextTheme(
+        AppTextStyles.themed(
+          AppTextStyles.textTheme,
+          color: textColor,
+        ),
       ),
       cardTheme: CardThemeData(
         color: cardColor,
@@ -45,7 +63,17 @@ class AppTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: primaryColor,
+          backgroundColor: AppColors.primaryLight,
+          foregroundColor: AppColors.primaryForeground,
+          shape: RoundedRectangleBorder(
+            borderRadius: AppRadius.buttonBorderRadius,
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: AppColors.primaryLight,
           foregroundColor: AppColors.primaryForeground,
           shape: RoundedRectangleBorder(
             borderRadius: AppRadius.buttonBorderRadius,
@@ -58,12 +86,16 @@ class AppTheme {
         fillColor: AppColors.input,
         border: OutlineInputBorder(
           borderRadius: AppRadius.inputBorderRadius,
-          borderSide: BorderSide.none,
+          borderSide: BorderSide(color: secondaryColor, width: 1),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: AppRadius.inputBorderRadius,
+          borderSide: BorderSide(color: secondaryColor, width: 1),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: AppRadius.inputBorderRadius,
           borderSide: BorderSide(
-            color: primaryColor,
+            color: secondaryColor,
             width: 2,
           ),
         ),
@@ -84,6 +116,7 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
+      fontFamily: AppTextStyles.indigoFamily,
       colorScheme: ColorScheme.dark(
         primary: primaryColor,
         secondary: secondaryColor,
@@ -94,10 +127,26 @@ class AppTheme {
         error: errorColor,
         onError: AppColors.destructiveForeground,
       ),
+      appBarTheme: AppBarTheme(
+        backgroundColor: secondaryColor,
+        foregroundColor: AppColors.secondaryForeground,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        surfaceTintColor: Colors.transparent,
+        iconTheme: const IconThemeData(color: AppColors.secondaryForeground),
+        titleTextStyle: const TextStyle(
+          fontFamily: AppTextStyles.indigoFamily,
+          color: AppColors.secondaryForeground,
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
       scaffoldBackgroundColor: backgroundColor,
-      textTheme: AppTextStyles.themed(
-        AppTextStyles.textTheme,
-        color: textColor,
+      textTheme: GoogleFonts.cairoTextTheme(
+        AppTextStyles.themed(
+          AppTextStyles.textTheme,
+          color: textColor,
+        ),
       ),
       cardTheme: CardThemeData(
         color: cardColor,
@@ -108,7 +157,17 @@ class AppTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: primaryColor,
+          backgroundColor: AppColors.primaryLight,
+          foregroundColor: AppColors.primaryForeground,
+          shape: RoundedRectangleBorder(
+            borderRadius: AppRadius.buttonBorderRadius,
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: AppColors.primaryLight,
           foregroundColor: AppColors.primaryForeground,
           shape: RoundedRectangleBorder(
             borderRadius: AppRadius.buttonBorderRadius,
@@ -121,12 +180,16 @@ class AppTheme {
         fillColor: cardColor,
         border: OutlineInputBorder(
           borderRadius: AppRadius.inputBorderRadius,
-          borderSide: BorderSide.none,
+          borderSide: BorderSide(color: secondaryColor, width: 1),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: AppRadius.inputBorderRadius,
+          borderSide: BorderSide(color: secondaryColor, width: 1),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: AppRadius.inputBorderRadius,
           borderSide: BorderSide(
-            color: primaryColor,
+            color: secondaryColor,
             width: 2,
           ),
         ),

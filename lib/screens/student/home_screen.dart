@@ -10,8 +10,8 @@ import '../../core/design/app_radius.dart';
 import '../../core/navigation/route_names.dart';
 import '../../core/api/api_endpoints.dart';
 import '../../widgets/bottom_nav.dart';
-import '../../widgets/premium_course_card.dart';
 import '../../services/home_service.dart';
+import '../../services/courses_service.dart';
 import '../../services/profile_service.dart';
 import '../../services/notifications_service.dart';
 import '../../services/teachers_service.dart';
@@ -37,11 +37,39 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Map<String, dynamic>? _homeData;
   Map<String, dynamic>? _userProfile;
   int _notificationsCount = 0;
-  List<Map<String, dynamic>> _featuredCourses = [];
-  List<Map<String, dynamic>> _popularCourses = [];
-  List<Map<String, dynamic>> _continueLearning = [];
-  List<Map<String, dynamic>> _categories = [];
+  /// Enrollment rows from [CoursesService.getEnrollments] (each may include `course`).
+  List<Map<String, dynamic>> _enrolledCourses = [];
   List<Map<String, dynamic>> _teachers = [];
+
+  /// Soft layered shadows for white cards (brand glow + depth).
+  List<BoxShadow> get _homeCardShadows => [
+        BoxShadow(
+          color: AppColors.brandBlue.withOpacity(0.12),
+          blurRadius: 24,
+          offset: const Offset(0, 10),
+          spreadRadius: -6,
+        ),
+        BoxShadow(
+          color: Colors.black.withOpacity(0.07),
+          blurRadius: 16,
+          offset: const Offset(0, 5),
+        ),
+      ];
+
+  /// Hero banner: colored glow under the card.
+  List<BoxShadow> get _homeHeroShadows => [
+        BoxShadow(
+          color: AppColors.primary.withOpacity(0.38),
+          blurRadius: 28,
+          offset: const Offset(0, 14),
+        ),
+        BoxShadow(
+          color: AppColors.brandPurple.withOpacity(0.16),
+          blurRadius: 40,
+          offset: const Offset(0, 20),
+          spreadRadius: -8,
+        ),
+      ];
 
   @override
   void initState() {
@@ -127,20 +155,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         teachers = List<Map<String, dynamic>>.from(kSampleTeachers);
       }
 
+      List<Map<String, dynamic>> enrolled = [];
+      try {
+        final enrResponse = await CoursesService.instance.getEnrollments(
+          status: 'all',
+          page: 1,
+          perPage: 50,
+        );
+        enrolled = _parseEnrollmentsData(enrResponse['data']);
+      } catch (_) {
+        enrolled = [];
+      }
+
       setState(() {
         _homeData = homeData;
-        _featuredCourses = List<Map<String, dynamic>>.from(
-          homeData['featured_courses'] ?? [],
-        );
-        _popularCourses = List<Map<String, dynamic>>.from(
-          homeData['popular_courses'] ?? [],
-        );
-        _continueLearning = List<Map<String, dynamic>>.from(
-          homeData['continue_learning'] ?? [],
-        );
-        _categories = List<Map<String, dynamic>>.from(
-          homeData['categories'] ?? [],
-        );
+        _enrolledCourses = enrolled;
         _teachers = teachers;
         _isLoading = false;
         _errorMessage = null;
@@ -150,10 +179,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       setState(() {
         _errorMessage = e.toString().replaceFirst('Exception: ', '');
         _isLoading = false;
-        _featuredCourses = [];
-        _popularCourses = [];
-        _continueLearning = [];
-        _categories = [];
+        _enrolledCourses = [];
       });
     }
   }
@@ -165,8 +191,45 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  List<Map<String, dynamic>> get _allCourses =>
-      [..._featuredCourses, ..._popularCourses, ..._continueLearning];
+  Map<String, dynamic>? _courseMapFromEnrollmentRow(Map<String, dynamic> row) {
+    final nested = row['course'];
+    if (nested is Map) {
+      return Map<String, dynamic>.from(nested);
+    }
+    if (row['title'] != null || row['id'] != null) {
+      return Map<String, dynamic>.from(row);
+    }
+    return null;
+  }
+
+  List<Map<String, dynamic>> get _allCourses {
+    final courses = <Map<String, dynamic>>[];
+    for (final e in _enrolledCourses) {
+      final c = _courseMapFromEnrollmentRow(e);
+      if (c != null) courses.add(c);
+    }
+    return courses;
+  }
+
+  List<Map<String, dynamic>> _parseEnrollmentsData(dynamic data) {
+    if (data == null) return [];
+    if (data is List) {
+      return data
+          .whereType<Map>()
+          .map((item) => Map<String, dynamic>.from(item))
+          .toList();
+    }
+    if (data is Map<String, dynamic>) {
+      final courses = data['courses'];
+      if (courses is List) {
+        return courses
+            .whereType<Map>()
+            .map((item) => Map<String, dynamic>.from(item))
+            .toList();
+      }
+    }
+    return [];
+  }
 
   void _handleTeacherTap(Map<String, dynamic> teacher) {
     if (!mounted) return;
@@ -197,8 +260,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 onPressed: () => Navigator.pop(context, true),
                 style:
                     ElevatedButton.styleFrom(backgroundColor: AppColors.purple),
-                child: Text(l10n.login,
-                    style: const TextStyle(color: Colors.white)),
+                child: Text(
+                  l10n.login,
+                  style: GoogleFonts.cairo(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
             ],
           ),
@@ -286,81 +354,23 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
                                 const SizedBox(height: 28),
 
-                                // Featured Courses
+                                // Enrolled courses only (replaces featured, categories, recommended)
                                 if (_isLoading) ...[
-                                  _buildSectionHeader(
-                                      AppLocalizations.of(context)!
-                                          .featuredCourses,
-                                      () {}),
+                                  _buildSectionHeader(l10n.myCourses, () {}),
                                   const SizedBox(height: 16),
-                                  _buildFeaturedCoursesSkeleton(),
+                                  _buildEnrolledCoursesSkeleton(),
                                   const SizedBox(height: 28),
-                                ] else if (_featuredCourses.isNotEmpty) ...[
+                                ] else ...[
                                   _buildSectionHeader(
-                                      AppLocalizations.of(context)!
-                                          .featuredCourses, () {
-                                    context.push(RouteNames.allCourses);
-                                  }),
+                                    l10n.myCourses,
+                                    () => context.push(RouteNames.enrolled),
+                                  ),
                                   const SizedBox(height: 16),
-                                  _buildFeaturedCourses(),
+                                  if (_enrolledCourses.isEmpty)
+                                    _buildEnrolledCoursesEmpty()
+                                  else
+                                    _buildEnrolledCoursesHome(),
                                   const SizedBox(height: 28),
-                                ],
-
-                                // Categories
-                                if (_isLoading) ...[
-                                  _buildSectionHeader(
-                                      AppLocalizations.of(context)!.categories,
-                                      () {}),
-                                  const SizedBox(height: 16),
-                                  _buildCategoriesSkeleton(),
-                                  const SizedBox(height: 28),
-                                ] else if (_categories.isNotEmpty) ...[
-                                  _buildSectionHeader(
-                                      AppLocalizations.of(context)!.categories,
-                                      () {
-                                    context.push(RouteNames.categories);
-                                  }),
-                                  const SizedBox(height: 16),
-                                  _buildCategories(),
-                                  const SizedBox(height: 28),
-                                ],
-
-                                // Continue Learning
-                                if (_isLoading) ...[
-                                  _buildSectionHeader(
-                                      AppLocalizations.of(context)!
-                                          .continueLearning,
-                                      () {}),
-                                  const SizedBox(height: 16),
-                                  _buildContinueLearningSkeleton(),
-                                  const SizedBox(height: 28),
-                                ] else if (_continueLearning.isNotEmpty) ...[
-                                  _buildSectionHeader(
-                                      AppLocalizations.of(context)!
-                                          .continueLearning, () {
-                                    context.push(RouteNames.enrolled);
-                                  }),
-                                  const SizedBox(height: 16),
-                                  _buildContinueLearning(),
-                                  const SizedBox(height: 28),
-                                ],
-
-                                // Popular Courses
-                                if (_isLoading) ...[
-                                  _buildSectionHeader(
-                                      AppLocalizations.of(context)!
-                                          .recommendedCourses,
-                                      () {}),
-                                  const SizedBox(height: 16),
-                                  _buildRecommendedCoursesSkeleton(),
-                                ] else if (_popularCourses.isNotEmpty) ...[
-                                  _buildSectionHeader(
-                                      AppLocalizations.of(context)!
-                                          .recommendedCourses, () {
-                                    context.push(RouteNames.allCourses);
-                                  }),
-                                  const SizedBox(height: 16),
-                                  _buildRecommendedCourses(),
                                 ],
 
                                 const SizedBox(height: 140),
@@ -382,11 +392,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   Widget _buildHeader(double statusBarHeight) {
     return Container(
-      decoration:  BoxDecoration(
+      decoration: BoxDecoration(
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [AppColors.berkeleyBlue, AppColors.pureWhite],
+          colors: AppColors.brandGradient,
         ),
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(AppRadius.largeCard),
@@ -394,9 +404,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.berkeleyBlue.withOpacity(0.3),
-            blurRadius: 20,
+            color: AppColors.brandBlue.withOpacity(0.32),
+            blurRadius: 22,
             offset: const Offset(0, 10),
+          ),
+          BoxShadow(
+            color: AppColors.brandPurple.withOpacity(0.14),
+            blurRadius: 42,
+            offset: const Offset(0, 22),
+            spreadRadius: -6,
           ),
         ],
       ),
@@ -469,9 +485,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.2),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
+                                  color: Colors.white.withOpacity(0.35),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 2),
+                                  spreadRadius: -2,
+                                ),
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.22),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 5),
                                 ),
                               ],
                             ),
@@ -641,6 +663,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           color: Colors.white.withOpacity(0.15),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: Colors.white.withOpacity(0.2)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.12),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Stack(
           alignment: Alignment.center,
@@ -679,9 +708,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         borderRadius: BorderRadius.circular(30), // Oval shape
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
+            color: AppColors.brandBlue.withOpacity(0.14),
+            blurRadius: 28,
+            offset: const Offset(0, 12),
+            spreadRadius: -6,
+          ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.09),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -787,13 +822,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ],
             ),
             borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withOpacity(0.4),
-                blurRadius: 25,
-                offset: const Offset(0, 12),
-              ),
-            ],
+            boxShadow: _homeHeroShadows,
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(24),
@@ -940,6 +969,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 decoration: BoxDecoration(
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.12),
+                                      blurRadius: 12,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
                                 ),
                                 child: Text(
                                   buttonText,
@@ -982,6 +1018,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ],
             ),
             borderRadius: BorderRadius.circular(24),
+            boxShadow: _homeHeroShadows,
           ),
           child: Padding(
             padding: const EdgeInsets.all(20),
@@ -1099,6 +1136,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(18),
+                  boxShadow: _homeCardShadows,
                 ),
                 child: Column(
                   children: [
@@ -1139,6 +1177,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(18),
+                  boxShadow: _homeCardShadows,
                 ),
                 child: Column(
                   children: [
@@ -1179,6 +1218,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(18),
+                  boxShadow: _homeCardShadows,
                 ),
                 child: Column(
                   children: [
@@ -1230,13 +1270,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          boxShadow: _homeCardShadows,
         ),
         child: Column(
           children: [
@@ -1289,24 +1323,51 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
               decoration: BoxDecoration(
-                color: AppColors.purple.withOpacity(0.1),
+                gradient: LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: [
+                    AppColors.brandBlue.withOpacity(0.12),
+                    AppColors.brandPurple.withOpacity(0.12),
+                  ],
+                ),
                 borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    AppLocalizations.of(context)!.viewMore,
-                    style: GoogleFonts.cairo(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.purple,
-                    ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.brandBlue.withOpacity(0.08),
+                    blurRadius: 14,
+                    offset: const Offset(0, 4),
                   ),
-                  const SizedBox(width: 4),
-                  const Icon(Icons.arrow_forward_ios,
-                      size: 12, color: AppColors.purple),
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
                 ],
+              ),
+              child: ShaderMask(
+                blendMode: BlendMode.srcIn,
+                shaderCallback: (bounds) => const LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: AppColors.brandGradient,
+                ).createShader(bounds),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      AppLocalizations.of(context)!.viewMore,
+                      style: GoogleFonts.cairo(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.arrow_forward_ios,
+                        size: 12, color: Colors.white),
+                  ],
+                ),
               ),
             ),
           ),
@@ -1325,6 +1386,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         itemCount: _teachers.length,
         itemBuilder: (context, index) {
           final teacher = _teachers[index];
+          final avatarUrl = teacher['avatar']?.toString() ?? '';
+          final hasAvatar = avatarUrl.isNotEmpty;
           return Padding(
             padding: const EdgeInsets.only(right: 12),
             child: GestureDetector(
@@ -1335,26 +1398,49 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+                  boxShadow: _homeCardShadows,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        CircleAvatar(
-                          radius: 26,
-                          backgroundColor: AppColors.purple.withOpacity(0.1),
-                          backgroundImage: NetworkImage(
-                            teacher['avatar']?.toString() ?? '',
+                        Container(
+                          width: 52,
+                          height: 52,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: AppColors.brandGradient,
+                            ),
                           ),
-                          onBackgroundImageError: (_, __) {},
+                          padding: const EdgeInsets.all(2),
+                          child: CircleAvatar(
+                            radius: 24,
+                            backgroundColor: Colors.white,
+                            backgroundImage: hasAvatar
+                                ? NetworkImage(avatarUrl)
+                                : null,
+                            onBackgroundImageError: (_, __) {},
+                            child: hasAvatar
+                                ? null
+                                : ShaderMask(
+                                    blendMode: BlendMode.srcIn,
+                                    shaderCallback: (bounds) =>
+                                        const LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: AppColors.brandGradient,
+                                    ).createShader(bounds),
+                                    child: const Icon(
+                                      Icons.person,
+                                      size: 26,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                          ),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
@@ -1409,15 +1495,32 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        const Icon(Icons.people_alt_rounded,
-                            size: 16, color: AppColors.purple),
+                        ShaderMask(
+                          blendMode: BlendMode.srcIn,
+                          shaderCallback: (bounds) => const LinearGradient(
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                            colors: AppColors.brandGradient,
+                          ).createShader(bounds),
+                          child: const Icon(Icons.people_alt_rounded,
+                              size: 16, color: Colors.white),
+                        ),
                         const SizedBox(width: 4),
-                        Text(
-                          l10n.studentsCount(
-                              (teacher['students'] as int?) ?? 0),
-                          style: GoogleFonts.cairo(
-                            fontSize: 12,
-                            color: AppColors.mutedForeground,
+                        ShaderMask(
+                          blendMode: BlendMode.srcIn,
+                          shaderCallback: (bounds) => const LinearGradient(
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                            colors: AppColors.brandGradient,
+                          ).createShader(bounds),
+                          child: Text(
+                            l10n.studentsCount(
+                                (teacher['students'] as int?) ?? 0),
+                            style: GoogleFonts.cairo(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                         const Spacer(),
@@ -1425,19 +1528,34 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 10, vertical: 6),
                           decoration: BoxDecoration(
-                            color: AppColors.purple.withOpacity(0.1),
+                            gradient: LinearGradient(
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                              colors: [
+                                AppColors.brandBlue.withOpacity(0.12),
+                                AppColors.brandPurple.withOpacity(0.12),
+                              ],
+                            ),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: Text(
-                            l10n.coursesCount(
-                              (teacher['courses_count'] as int?) ??
-                                  (teacher['courses'] as List?)?.length ??
-                                  0,
-                            ),
-                            style: GoogleFonts.cairo(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.purple,
+                          child: ShaderMask(
+                            blendMode: BlendMode.srcIn,
+                            shaderCallback: (bounds) => const LinearGradient(
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                              colors: AppColors.brandGradient,
+                            ).createShader(bounds),
+                            child: Text(
+                              l10n.coursesCount(
+                                (teacher['courses_count'] as int?) ??
+                                    (teacher['courses'] as List?)?.length ??
+                                    0,
+                              ),
+                              style: GoogleFonts.cairo(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ),
@@ -1472,13 +1590,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+                  boxShadow: _homeCardShadows,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1575,32 +1687,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildFeaturedCourses() {
-    if (_featuredCourses.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    return SizedBox(
-      height: 285,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.only(left: 20, right: 8),
-        itemCount: _featuredCourses.length,
-        itemBuilder: (context, index) {
-          final course = _featuredCourses[index];
-          return Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: PremiumCourseCard(
-              course: course,
-              onTap: () => _handleCourseClick(course),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
   Widget _buildErrorView() {
     return Center(
       child: Padding(
@@ -1662,179 +1748,57 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Color _parseColor(dynamic colorValue) {
-    if (colorValue == null) return const Color(0xFF6366F1);
-    if (colorValue is Color) return colorValue;
-    if (colorValue is String) {
-      // Handle hex color strings like "#7C3AED" or "7C3AED"
-      String hex = colorValue.replaceAll('#', '');
-      if (hex.length == 6) {
-        return Color(int.parse('FF$hex', radix: 16));
-      }
+  Widget _buildEnrolledCoursesHome() {
+    final rows = <Widget>[];
+    var n = 0;
+    const maxItems = 6;
+    for (final enrollment in _enrolledCourses) {
+      if (n >= maxItems) break;
+      final course = _courseMapFromEnrollmentRow(enrollment);
+      if (course == null) continue;
+      rows.add(
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: _buildHorizontalCourseCard(course),
+        ),
+      );
+      n++;
     }
-    return const Color(0xFF6366F1);
-  }
-
-  Widget _getCategoryIcon(dynamic iconValue, Color color) {
-    if (iconValue == null) {
-      return Icon(Icons.category, color: color, size: 26);
-    }
-
-    // If it's already an IconData, use it directly
-    if (iconValue is IconData) {
-      return Icon(iconValue, color: color, size: 26);
-    }
-
-    // If it's a string, map it to an IconData
-    if (iconValue is String) {
-      final iconMap = {
-        'design_services': Icons.design_services,
-        'code': Icons.code,
-        'trending_up': Icons.trending_up,
-        'analytics': Icons.analytics,
-        'school': Icons.school,
-        'computer': Icons.computer,
-        'business': Icons.business,
-        'science': Icons.science,
-        'palette': Icons.palette,
-        'language': Icons.language,
-        'music_note': Icons.music_note,
-        'fitness_center': Icons.fitness_center,
-        'restaurant': Icons.restaurant,
-        'local_movies': Icons.local_movies,
-        'photo_camera': Icons.photo_camera,
-        'briefcase': Icons.business_center,
-        'book': Icons.menu_book,
-        'calculate': Icons.calculate,
-        'bolt': Icons.bolt,
-      };
-
-      // Try to find the icon by name (case-insensitive)
-      final iconName = iconValue.toLowerCase().replaceAll(' ', '_');
-      final iconData = iconMap[iconName];
-
-      if (iconData != null) {
-        return Icon(iconData, color: color, size: 26);
-      }
-
-      // If icon is a URL, try to load the image, fallback to default icon on error
-      if (iconValue.startsWith('http://') ||
-          iconValue.startsWith('https://') ||
-          iconValue.startsWith('/')) {
-        return Image.network(
-          iconValue,
-          width: 26,
-          height: 26,
-          fit: BoxFit.contain,
-          errorBuilder: (context, error, stackTrace) {
-            // Return default icon on error, not an image
-            return Icon(Icons.category, color: color, size: 26);
-          },
-        );
-      }
-    }
-
-    // Default fallback
-    return Icon(Icons.category, color: color, size: 26);
-  }
-
-  Widget _buildCategories() {
-    if (_categories.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
-        children: _categories.take(4).map((cat) {
-          final categoryColor = _parseColor(cat['color']);
-          return Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(
-                  left: cat == _categories.take(4).last ? 0 : 10),
-              child: GestureDetector(
-                onTap: () => context.push(RouteNames.categories),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(18),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      Container(
-                        width: 50,
-                        height: 50,
-                        decoration: BoxDecoration(
-                          color: categoryColor.withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: _getCategoryIcon(cat['icon'], categoryColor),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        cat['name'] ?? cat['label'] ?? '',
-                        textAlign: TextAlign.center,
-                        overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.cairo(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.foreground,
-                        ),
-                      ),
-                      Text(
-                        '${cat['courses_count'] ?? cat['count'] ?? 0} دورة',
-                        style: GoogleFonts.cairo(
-                          fontSize: 10,
-                          color: AppColors.mutedForeground,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+      child: Column(children: rows),
+    );
+  }
+
+  Widget _buildEnrolledCoursesEmpty() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: _homeCardShadows,
+        ),
+        child: Column(
+          children: [
+            Icon(
+              Icons.school_outlined,
+              size: 48,
+              color: AppColors.mutedForeground,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              AppLocalizations.of(context)!.noEnrolledCourses,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.cairo(
+                fontSize: 14,
+                color: AppColors.mutedForeground,
               ),
             ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  Widget _buildRecommendedCourses() {
-    if (_popularCourses.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        children: _popularCourses.take(4).map((course) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _buildHorizontalCourseCard(course),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  Widget _buildContinueLearning() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        children: _continueLearning.take(4).map((course) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _buildHorizontalCourseCard(course),
-          );
-        }).toList(),
+          ],
+        ),
       ),
     );
   }
@@ -1847,13 +1811,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          boxShadow: _homeCardShadows,
         ),
         child: Row(
           children: [
@@ -1864,6 +1822,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(14),
                 boxShadow: [
+                  BoxShadow(
+                    color: AppColors.brandBlue.withOpacity(0.15),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                    spreadRadius: -2,
+                  ),
                   BoxShadow(
                     color: Colors.black.withOpacity(0.1),
                     blurRadius: 8,
@@ -2012,159 +1976,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   // Skeleton Loading Widgets
-  Widget _buildFeaturedCoursesSkeleton() {
-    return Skeletonizer(
-      enabled: true,
-      child: SizedBox(
-        height: 285,
-        child: ListView.builder(
-          scrollDirection: Axis.horizontal,
-          physics: const NeverScrollableScrollPhysics(),
-          padding: const EdgeInsets.only(left: 20, right: 8),
-          itemCount: 3,
-          itemBuilder: (context, index) {
-            return Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: Container(
-                width: 280,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      height: 160,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(20),
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            height: 12,
-                            width: 80,
-                            decoration: BoxDecoration(
-                              color: Colors.grey[300],
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Container(
-                            height: 16,
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              color: Colors.grey[300],
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Container(
-                            height: 14,
-                            width: 120,
-                            decoration: BoxDecoration(
-                              color: Colors.grey[300],
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              Container(
-                                height: 12,
-                                width: 40,
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[300],
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Container(
-                                height: 12,
-                                width: 40,
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[300],
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCategoriesSkeleton() {
-    return Skeletonizer(
-      enabled: true,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Row(
-          children: List.generate(4, (index) {
-            return Expanded(
-              child: Padding(
-                padding: EdgeInsets.only(left: index == 0 ? 0 : 10),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: Column(
-                    children: [
-                      Container(
-                        width: 50,
-                        height: 50,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[300],
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Container(
-                        height: 12,
-                        width: 50,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[300],
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Container(
-                        height: 10,
-                        width: 40,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[300],
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          }),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildContinueLearningSkeleton() {
+  Widget _buildEnrolledCoursesSkeleton() {
     return Skeletonizer(
       enabled: true,
       child: Padding(
@@ -2178,97 +1990,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 90,
-                      height: 90,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            height: 12,
-                            width: 60,
-                            decoration: BoxDecoration(
-                              color: Colors.grey[300],
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Container(
-                            height: 14,
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              color: Colors.grey[300],
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Container(
-                            height: 12,
-                            width: 100,
-                            decoration: BoxDecoration(
-                              color: Colors.grey[300],
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Container(
-                                height: 10,
-                                width: 30,
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[300],
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Container(
-                                height: 10,
-                                width: 30,
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[300],
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRecommendedCoursesSkeleton() {
-    return Skeletonizer(
-      enabled: true,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Column(
-          children: List.generate(3, (index) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: _homeCardShadows,
                 ),
                 child: Row(
                   children: [
@@ -2600,5 +2322,5 @@ class _SearchOverlayState extends State<_SearchOverlay> {
 }
 
 
-// 1- وفيها زرار عرض المزيد تدخلك علي صفحه كل المعلمين  اعمل سلايدر المعلمون
+// 1- وفيها زرار عرض المزيد تدخلك علي صفحه كل المحاضرين  اعمل سلايدر المحاضرون
 // 2- لو ضغط علي اي معلم يفتح صفحه سينجل للمدرس تعرض الصوره واسمو بشكل رايق ونبذه عنو وتحتها كورساتو 

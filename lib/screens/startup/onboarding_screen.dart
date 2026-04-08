@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/design/app_colors.dart';
-import '../../core/design/app_text_styles.dart';
 import '../../core/design/app_radius.dart';
 import '../../core/navigation/route_names.dart';
 import '../../l10n/app_localizations.dart';
@@ -69,18 +69,33 @@ class OnboardingScreen extends StatelessWidget {
                                 width: 96,
                                 height: 96,
                                 decoration: BoxDecoration(
-                                  color: (isStep1
-                                          ? AppColors.purple
-                                          : AppColors.orange)
-                                      .withOpacity(0.1),
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      AppColors.brandBlue.withOpacity(0.14),
+                                      AppColors.brandPurple.withOpacity(0.14),
+                                    ],
+                                  ),
                                   shape: BoxShape.circle,
                                 ),
-                                child: Icon(
-                                  isStep1 ? Icons.menu_book : Icons.emoji_events,
-                                  size: 48,
-                                  color: isStep1
-                                      ? AppColors.purple
-                                      : AppColors.orange,
+                                child: Center(
+                                  child: ShaderMask(
+                                    blendMode: BlendMode.srcIn,
+                                    shaderCallback: (bounds) =>
+                                        const LinearGradient(
+                                      begin: Alignment.centerLeft,
+                                      end: Alignment.centerRight,
+                                      colors: AppColors.brandGradient,
+                                    ).createShader(bounds),
+                                    child: Icon(
+                                      isStep1
+                                          ? Icons.menu_book
+                                          : Icons.emoji_events,
+                                      size: 48,
+                                      color: Colors.white,
+                                    ),
+                                  ),
                                 ),
                               ),
                               const SizedBox(height: 16),
@@ -91,9 +106,17 @@ class OnboardingScreen extends StatelessWidget {
                                     width: isStep1 ? 64 : 32,
                                     height: 12,
                                     decoration: BoxDecoration(
+                                      gradient: isStep1
+                                          ? const LinearGradient(
+                                              begin: Alignment.centerLeft,
+                                              end: Alignment.centerRight,
+                                              colors: AppColors.brandGradient,
+                                            )
+                                          : null,
                                       color: isStep1
-                                          ? AppColors.orange
-                                          : AppColors.purple.withOpacity(0.3),
+                                          ? null
+                                          : AppColors.mutedForeground
+                                              .withOpacity(0.2),
                                       borderRadius: BorderRadius.circular(6),
                                     ),
                                   ),
@@ -102,9 +125,17 @@ class OnboardingScreen extends StatelessWidget {
                                     width: isStep1 ? 32 : 64,
                                     height: 12,
                                     decoration: BoxDecoration(
-                                      color: isStep1
-                                          ? AppColors.purple.withOpacity(0.3)
-                                          : AppColors.purple,
+                                      gradient: !isStep1
+                                          ? const LinearGradient(
+                                              begin: Alignment.centerLeft,
+                                              end: Alignment.centerRight,
+                                              colors: AppColors.brandGradient,
+                                            )
+                                          : null,
+                                      color: !isStep1
+                                          ? null
+                                          : AppColors.mutedForeground
+                                              .withOpacity(0.2),
                                       borderRadius: BorderRadius.circular(6),
                                     ),
                                   ),
@@ -122,12 +153,16 @@ class OnboardingScreen extends StatelessWidget {
                             width: 48,
                             height: 48,
                             decoration: BoxDecoration(
-                              color: AppColors.orange,
+                              gradient: const LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: AppColors.brandGradient,
+                              ),
                               borderRadius: BorderRadius.circular(16),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.2),
-                                  blurRadius: 8,
+                                  color: AppColors.brandPurple.withOpacity(0.35),
+                                  blurRadius: 10,
                                   offset: const Offset(0, 4),
                                 ),
                               ],
@@ -142,12 +177,16 @@ class OnboardingScreen extends StatelessWidget {
                             width: 64,
                             height: 64,
                             decoration: BoxDecoration(
-                              color: AppColors.purple,
+                              gradient: const LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: AppColors.brandGradient,
+                              ),
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.2),
-                                  blurRadius: 8,
+                                  color: AppColors.brandPurple.withOpacity(0.35),
+                                  blurRadius: 10,
                                   offset: const Offset(0, 4),
                                 ),
                               ],
@@ -180,9 +219,14 @@ class OnboardingScreen extends StatelessWidget {
                           width: 32,
                           height: 8,
                           decoration: BoxDecoration(
-                            color: step == 1
-                                ? AppColors.purple
-                                : Colors.grey[200],
+                            gradient: step == 1
+                                ? const LinearGradient(
+                                    begin: Alignment.centerLeft,
+                                    end: Alignment.centerRight,
+                                    colors: AppColors.brandGradient,
+                                  )
+                                : null,
+                            color: step == 1 ? null : AppColors.muted,
                             borderRadius: BorderRadius.circular(4),
                           ),
                         ),
@@ -191,9 +235,14 @@ class OnboardingScreen extends StatelessWidget {
                           width: 32,
                           height: 8,
                           decoration: BoxDecoration(
-                            color: step == 2
-                                ? AppColors.purple
-                                : Colors.grey[200],
+                            gradient: step == 2
+                                ? const LinearGradient(
+                                    begin: Alignment.centerLeft,
+                                    end: Alignment.centerRight,
+                                    colors: AppColors.brandGradient,
+                                  )
+                                : null,
+                            color: step == 2 ? null : AppColors.muted,
                             borderRadius: BorderRadius.circular(4),
                           ),
                         ),
@@ -204,59 +253,92 @@ class OnboardingScreen extends StatelessWidget {
                     // Title
                     Text(
                       title,
-                      style: AppTextStyles.h2(color: AppColors.foreground),
                       textAlign: TextAlign.center,
+                      style: GoogleFonts.cairo(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.foreground,
+                        height: 1.3,
+                      ),
                     ),
                     const SizedBox(height: 16),
 
                     // Subtitle
                     Text(
                       subtitle,
-                      style: AppTextStyles.bodyMedium(
-                        color: AppColors.mutedForeground,
-                      ),
                       textAlign: TextAlign.center,
+                      style: GoogleFonts.cairo(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w400,
+                        color: AppColors.mutedForeground,
+                        height: 1.45,
+                      ),
                     ),
                     const SizedBox(height: 32),
 
                     // Button
                     SizedBox(
                       width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          if (isStep1) {
-                            context.go(RouteNames.onboarding2);
-                          } else {
-                            // Mark onboarding as completed
-                            final prefs = await SharedPreferences.getInstance();
-                            await prefs.setBool('hasLaunched', true);
-                            if (kDebugMode) {
-                              print('✅ Onboarding completed, hasLaunched set to true');
-                            }
-                            context.go(RouteNames.login);
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.purple,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                            colors: AppColors.brandGradient,
                           ),
-                          elevation: 4,
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              buttonText,
-                              style: AppTextStyles.buttonLarge(
-                                color: Colors.white,
-                              ),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.brandPurple.withOpacity(0.25),
+                              blurRadius: 12,
+                              offset: const Offset(0, 6),
                             ),
-                            const SizedBox(width: 8),
-                            const Icon(Icons.arrow_back, size: 20),
                           ],
+                        ),
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            if (isStep1) {
+                              context.go(RouteNames.onboarding2);
+                            } else {
+                              // Mark onboarding as completed
+                              final prefs = await SharedPreferences.getInstance();
+                              await prefs.setBool('hasLaunched', true);
+                              if (kDebugMode) {
+                                print('✅ Onboarding completed, hasLaunched set to true');
+                              }
+                              context.go(RouteNames.login);
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            shadowColor: Colors.transparent,
+                            foregroundColor: AppColors.primaryForeground,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            textStyle: GoogleFonts.cairo(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primaryForeground,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                buttonText,
+                                style: GoogleFonts.cairo(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.primaryForeground,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              const Icon(Icons.arrow_back, size: 20),
+                            ],
+                          ),
                         ),
                       ),
                     ),

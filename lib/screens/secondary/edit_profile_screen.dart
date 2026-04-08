@@ -550,7 +550,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ElevatedButton(
                       onPressed: _isSaving ? null : _saveProfile,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.purple,
+                        backgroundColor: AppColors.primaryLight,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(

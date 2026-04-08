@@ -11,6 +11,29 @@ import '../core/notification_service/notification_service.dart';
 import '../models/auth_response.dart';
 import 'token_storage_service.dart';
 
+/// [ApiClient] already puts the server `message` in [ApiException.message] for non-2xx
+/// responses. Use that text for the user; only parse JSON when the message is a raw body.
+String _userMessageFromApiException(ApiException e, String fallback) {
+  final raw = e.message.trim();
+  if (raw.isEmpty) return fallback;
+  if (raw.startsWith('{')) {
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map<String, dynamic>) {
+        final m = decoded['message'] ?? decoded['error'];
+        if (m != null) {
+          if (m is String && m.isNotEmpty) return m;
+          if (m is List && m.isNotEmpty) {
+            return m.map((x) => x.toString()).where((s) => s.isNotEmpty).join('\n');
+          }
+        }
+      }
+    } catch (_) {}
+    return fallback;
+  }
+  return raw;
+}
+
 /// Authentication Service
 class AuthService {
   AuthService._();
@@ -112,18 +135,10 @@ class AuthService {
       }
     } catch (e) {
       if (e is ApiException) {
-        // Try to parse error message from response body
-        try {
-          final errorBody = e.message;
-          final match = RegExp(r'\{.*\}').firstMatch(errorBody);
-          if (match != null) {
-            final errorJson = jsonDecode(match.group(0)!);
-            final message =
-                errorJson['message'] ?? errorJson['error'] ?? 'Login failed';
-            throw Exception(message);
-          }
-        } catch (_) {}
-        throw Exception('فشل تسجيل الدخول. تحقق من بيانات الاعتماد');
+        throw Exception(_userMessageFromApiException(
+          e,
+          'فشل تسجيل الدخول. تحقق من بيانات الاعتماد',
+        ));
       }
       rethrow;
     }
@@ -251,19 +266,10 @@ class AuthService {
       }
     } catch (e) {
       if (e is ApiException) {
-        // Try to parse error message from response body
-        try {
-          final errorBody = e.message;
-          final match = RegExp(r'\{.*\}').firstMatch(errorBody);
-          if (match != null) {
-            final errorJson = jsonDecode(match.group(0)!);
-            final message = errorJson['message'] ??
-                errorJson['error'] ??
-                'Registration failed';
-            throw Exception(message);
-          }
-        } catch (_) {}
-        throw Exception('فشل إنشاء الحساب. يرجى المحاولة مرة أخرى');
+        throw Exception(_userMessageFromApiException(
+          e,
+          'فشل إنشاء الحساب. يرجى المحاولة مرة أخرى',
+        ));
       }
       rethrow;
     }
@@ -309,20 +315,10 @@ class AuthService {
       }
     } catch (e) {
       if (e is ApiException) {
-        // Try to parse error message from response body
-        try {
-          final errorBody = e.message;
-          final match = RegExp(r'\{.*\}').firstMatch(errorBody);
-          if (match != null) {
-            final errorJson = jsonDecode(match.group(0)!);
-            final message = errorJson['message'] ??
-                errorJson['error'] ??
-                'فشل تجديد الـ access token';
-            throw Exception(message);
-          }
-        } catch (_) {}
-        throw Exception(
-            'فشل تجديد الـ access token. يرجى تسجيل الدخول مرة أخرى');
+        throw Exception(_userMessageFromApiException(
+          e,
+          'فشل تجديد الـ access token. يرجى تسجيل الدخول مرة أخرى',
+        ));
       }
       rethrow;
     }
@@ -366,20 +362,10 @@ class AuthService {
       }
     } catch (e) {
       if (e is ApiException) {
-        // Try to parse error message from response body
-        try {
-          final errorBody = e.message;
-          final match = RegExp(r'\{.*\}').firstMatch(errorBody);
-          if (match != null) {
-            final errorJson = jsonDecode(match.group(0)!);
-            final message = errorJson['message'] ??
-                errorJson['error'] ??
-                'فشل إرسال رابط إعادة تعيين كلمة المرور';
-            throw Exception(message);
-          }
-        } catch (_) {}
-        throw Exception(
-            'فشل إرسال رابط إعادة تعيين كلمة المرور. يرجى المحاولة مرة أخرى');
+        throw Exception(_userMessageFromApiException(
+          e,
+          'فشل إرسال رابط إعادة تعيين كلمة المرور. يرجى المحاولة مرة أخرى',
+        ));
       }
       rethrow;
     }
@@ -530,19 +516,10 @@ class AuthService {
       }
 
       if (e is ApiException) {
-        // Try to parse error message from response body
-        try {
-          final errorBody = e.message;
-          final match = RegExp(r'\{.*\}').firstMatch(errorBody);
-          if (match != null) {
-            final errorJson = jsonDecode(match.group(0)!);
-            final message = errorJson['message'] ??
-                errorJson['error'] ??
-                'فشل تسجيل الدخول عبر جوجل';
-            throw Exception(message);
-          }
-        } catch (_) {}
-        throw Exception('فشل تسجيل الدخول عبر جوجل. يرجى المحاولة مرة أخرى');
+        throw Exception(_userMessageFromApiException(
+          e,
+          'فشل تسجيل الدخول عبر جوجل. يرجى المحاولة مرة أخرى',
+        ));
       }
 
       // Re-throw if it's already a user-friendly Exception
@@ -662,19 +639,10 @@ class AuthService {
       }
     } catch (e) {
       if (e is ApiException) {
-        // Try to parse error message from response body
-        try {
-          final errorBody = e.message;
-          final match = RegExp(r'\{.*\}').firstMatch(errorBody);
-          if (match != null) {
-            final errorJson = jsonDecode(match.group(0)!);
-            final message = errorJson['message'] ??
-                errorJson['error'] ??
-                'فشل تسجيل الدخول عبر Apple';
-            throw Exception(message);
-          }
-        } catch (_) {}
-        throw Exception('فشل تسجيل الدخول عبر Apple. يرجى المحاولة مرة أخرى');
+        throw Exception(_userMessageFromApiException(
+          e,
+          'فشل تسجيل الدخول عبر Apple. يرجى المحاولة مرة أخرى',
+        ));
       }
       rethrow;
     }

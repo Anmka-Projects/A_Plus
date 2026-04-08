@@ -211,8 +211,8 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
         'icon': Icons.assignment_rounded,
         'label': l10n.myExams,
         'subtitle': l10n.viewAllExams,
-        'color': const Color(0xFFF97316),
-        'bgColor': const Color(0xFFFFF7ED),
+        'color': AppColors.brandPurple,
+        'bgColor': AppColors.brandBlue.withOpacity(0.08),
         'onTap': () => context.push(RouteNames.myExams),
         'showFor': ['online', 'offline'], // Show for both
       },
@@ -220,8 +220,8 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
         'icon': Icons.videocam_rounded,
         'label': l10n.liveCourses,
         'subtitle': l10n.comingSoon,
-        'color': const Color(0xFF10B981),
-        'bgColor': const Color(0xFFD1FAE5),
+        'color': AppColors.brandBlue,
+        'bgColor': AppColors.brandPurple.withOpacity(0.08),
         'onTap': () => context.push(RouteNames.liveCourses),
         'showFor': ['online'], // Only for online
       },
@@ -229,20 +229,10 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
         'icon': Icons.emoji_events_rounded,
         'label': l10n.certificates,
         'subtitle': '$certificates ${l10n.certificates}',
-        'color': const Color(0xFFEAB308),
-        'bgColor': const Color(0xFFFEF9C3),
+        'color': AppColors.brandPurple,
+        'bgColor': AppColors.brandBlue.withOpacity(0.08),
         'onTap': () => context.push(RouteNames.certificates),
         'showFor': ['online', 'offline'], // Show for both
-      },
-      // Downloads card disabled per request.
-      {
-        'icon': Icons.qr_code_scanner_rounded,
-        'label': l10n.centerAttendance,
-        'subtitle': l10n.scanQrCodeInstruction,
-        'color': const Color(0xFF8B5CF6),
-        'bgColor': const Color(0xFFF3E8FF),
-        'onTap': () => context.push(RouteNames.centerAttendance),
-        'showFor': ['offline'], // Only for offline
       },
       {
         'icon': Icons.chat_bubble_rounded,
@@ -252,8 +242,8 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
         'subtitle': Localizations.localeOf(context).languageCode == 'ar'
             ? 'تواصل مع المعلمين'
             : 'Message teachers',
-        'color': AppColors.purple,
-        'bgColor': AppColors.purple.withOpacity(0.12),
+        'color': AppColors.brandPurple,
+        'bgColor': AppColors.brandBlue.withOpacity(0.1),
         'onTap': () => context.push(RouteNames.chatConversations),
         'showFor': ['online', 'offline'], // Show for both
       },
@@ -398,7 +388,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [AppColors.primary, AppColors.pureWhite],
+          colors: AppColors.brandGradient,
         ),
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(AppRadius.largeCard),
@@ -406,7 +396,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.purple.withOpacity(0.3),
+            color: AppColors.brandBlue.withOpacity(0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),

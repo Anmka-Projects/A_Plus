@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import '../core/api/api_client.dart';
 import '../core/api/api_endpoints.dart';
+import '../data/registration_categories_catalog.dart';
 
 /// Service for courses, categories, and enrollments
 class CoursesService {
@@ -465,9 +466,54 @@ class CoursesService {
         print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       }
 
-      if (response['success'] == true && response['data'] != null) {
-        final categories =
-            List<Map<String, dynamic>>.from(response['data'] as List);
+      final dynamic successValue = response['success'];
+      final isSuccess = successValue == true ||
+          successValue?.toString().toLowerCase() == 'true' ||
+          (response['error'] == null && response['message'] == null);
+
+      final dynamic data = response['data'] ??
+          response['categories'] ??
+          response['items'] ??
+          response['results'];
+
+      if (isSuccess && data != null) {
+        List<Map<String, dynamic>> categories = [];
+
+        // Support multiple backend shapes:
+        // - data: [...]
+        // - data: { categories: [...] }
+        // - data: { items: [...] }
+        if (data is List) {
+          categories = data
+              .whereType<Map>()
+              .map((item) => Map<String, dynamic>.from(item))
+              .toList();
+        } else if (data is Map<String, dynamic>) {
+          final nestedCategories = data['categories'];
+          final nestedItems = data['items'];
+          final nestedData = data['data'];
+
+          if (nestedCategories is List) {
+            categories = nestedCategories
+                .whereType<Map>()
+                .map((item) => Map<String, dynamic>.from(item))
+                .toList();
+          } else if (nestedItems is List) {
+            categories = nestedItems
+                .whereType<Map>()
+                .map((item) => Map<String, dynamic>.from(item))
+                .toList();
+          } else if (nestedData is List) {
+            categories = nestedData
+                .whereType<Map>()
+                .map((item) => Map<String, dynamic>.from(item))
+                .toList();
+          }
+        }
+
+        if (categories.isEmpty) {
+          throw Exception('Categories payload is empty or unsupported');
+        }
 
         // Process categories to add base URL to icons if needed
         final processedCategories = categories.map((category) {
@@ -485,6 +531,12 @@ class CoursesService {
         }).toList();
 
         return processedCategories;
+      } else if (isSuccess && response is List) {
+        final categories = (response as List)
+            .whereType<Map>()
+            .map((item) => Map<String, dynamic>.from(item))
+            .toList();
+        return categories;
       } else {
         throw Exception(response['message'] ?? 'Failed to fetch categories');
       }
@@ -501,6 +553,40 @@ class CoursesService {
       }
       rethrow;
     }
+  }
+
+  /// Categories for registration: same endpoint as [getCategories], filtered
+  /// to the canonical Arabic faculty list and year subcategories.
+  Future<List<Map<String, dynamic>>> getCategoriesForRegistration() async {
+    final raw = await getCategories(useAdmin: false);
+    if (raw.isEmpty) return raw;
+
+    final filtered = RegistrationCategoriesCatalog.filterApiCategories(raw);
+
+    // Use strict catalog only when backend actually provides that catalog.
+    // Otherwise, keep registration usable with raw API categories.
+    final expectedCount = RegistrationCategoriesCatalog.categorySpecs.length;
+    if (filtered.length == expectedCount) {
+      return filtered;
+    }
+
+    return raw.map((category) {
+      final copy = Map<String, dynamic>.from(category);
+      for (final key in ['subcategories', 'sub_categories', 'children']) {
+        final rawSubs = copy[key];
+        if (rawSubs is List) {
+          final normalizedSubs = rawSubs
+              .whereType<Map>()
+              .map((sub) => Map<String, dynamic>.from(sub))
+              .toList();
+          copy['subcategories'] = normalizedSubs;
+          copy['sub_categories'] = normalizedSubs;
+          copy.remove('children');
+          break;
+        }
+      }
+      return copy;
+    }).toList();
   }
 
   /// Get category courses

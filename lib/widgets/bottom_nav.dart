@@ -1,8 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../core/design/app_colors.dart';
-import '../core/design/app_text_styles.dart';
 import '../core/navigation/route_names.dart';
 import '../core/localization/localization_helper.dart';
 
@@ -30,7 +30,7 @@ class BottomNav extends StatelessWidget {
         ),
         child: Center(
           child: Container(
-            constraints: const BoxConstraints(maxWidth: 380),
+            constraints: const BoxConstraints(maxWidth: 320),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(28),
               child: BackdropFilter(
@@ -78,26 +78,15 @@ class BottomNav extends StatelessWidget {
                         onTap: () => context.go(RouteNames.home),
                       ),
                       _NavItem(
-                        icon: Icons.grid_view_rounded,
-                        label: context.l10n.courses,
-                        id: 'courses',
-                        activeTab: activeTab,
-                        onTap: () => context.go(RouteNames.allCourses),
-                      ),
-                      _CenterNavItem(
-                        activeTab: activeTab,
-                        onTap: () => context.go(RouteNames.progress),
-                      ),
-                      _NavItem(
                         icon: Icons.menu_book_rounded,
                         label: context.l10n.myCourses,
                         id: 'enrolled',
                         activeTab: activeTab,
-                        onTap: () => context.push(RouteNames.enrolled),
+                        onTap: () => context.go(RouteNames.enrolled),
                       ),
                       _NavItem(
                         icon: Icons.person_rounded,
-                        label: context.l10n.myAccount,
+                        label: context.l10n.profile,
                         id: 'dashboard',
                         activeTab: activeTab,
                         onTap: () => context.go(RouteNames.dashboard),
@@ -149,8 +138,8 @@ class _NavItem extends StatelessWidget {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    AppColors.fireEngineRed.withOpacity(0.18),
-                    AppColors.fireEngineRed.withOpacity(0.10),
+                    AppColors.brandBlue.withOpacity(0.16),
+                    AppColors.brandPurple.withOpacity(0.12),
                   ],
                 )
               : null,
@@ -164,78 +153,27 @@ class _NavItem extends StatelessWidget {
               child: Icon(
                 icon,
                 size: isActive ? 26 : 24,
-                color: isActive ? AppColors.fireEngineRed : Colors.grey[500],
+                color: isActive
+                    ? AppColors.brandPurple
+                    : AppColors.mutedForeground,
               ),
             ),
             const SizedBox(height: 4),
             Text(
               label,
-              style: AppTextStyles.labelSmall(
-                color: isActive ? AppColors.fireEngineRed : Colors.grey[500],
-              ).copyWith(
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.cairo(
                 fontSize: isActive ? 11 : 10,
                 fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                color: isActive
+                    ? AppColors.brandPurple
+                    : AppColors.mutedForeground,
+                height: 1.2,
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CenterNavItem extends StatelessWidget {
-  final String activeTab;
-  final VoidCallback onTap;
-
-  const _CenterNavItem({
-    required this.activeTab,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isActive = activeTab == 'progress';
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 56,
-        height: 56,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              AppColors.berkeleyBlue,
-              AppColors.secondary,
-            ],
-          ),
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.berkeleyBlue.withOpacity(0.4),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
-              spreadRadius: 0,
-            ),
-          ],
-        ),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(
-              color:
-                  isActive ? Colors.white.withOpacity(0.5) : Colors.transparent,
-              width: 3,
-            ),
-          ),
-          child: const Icon(
-            Icons.insights_rounded,
-            color: Colors.white,
-            size: 28,
-          ),
         ),
       ),
     );

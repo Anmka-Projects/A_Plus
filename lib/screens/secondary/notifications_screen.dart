@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import '../../core/design/app_colors.dart';
-import '../../core/design/app_text_styles.dart';
 import '../../core/design/app_radius.dart';
 import '../../core/localization/localization_helper.dart';
 import '../../services/notifications_service.dart';
@@ -114,7 +113,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(context.l10n.errorLoadingNotifications(e.toString())),
+            content: Text(
+              context.l10n.errorLoadingNotifications(e.toString()),
+              style: GoogleFonts.cairo(fontSize: 14),
+            ),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 3),
           ),
@@ -142,7 +144,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(context.l10n.errorUpdatingNotification(e.toString())),
+            content: Text(
+              context.l10n.errorUpdatingNotification(e.toString()),
+              style: GoogleFonts.cairo(fontSize: 14),
+            ),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 2),
           ),
@@ -167,8 +172,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content:
-                Text(context.l10n.errorUpdatingNotifications(e.toString())),
+            content: Text(
+              context.l10n.errorUpdatingNotifications(e.toString()),
+              style: GoogleFonts.cairo(fontSize: 14),
+            ),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 2),
           ),
@@ -230,7 +237,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Color _parseColor(dynamic colorValue) {
-    if (colorValue == null) return AppColors.purple;
+    if (colorValue == null) return AppColors.brandPurple;
     if (colorValue is Color) return colorValue;
     if (colorValue is String) {
       String hex = colorValue.replaceAll('#', '');
@@ -238,7 +245,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         return Color(int.parse('FF$hex', radix: 16));
       }
     }
-    return AppColors.purple;
+    return AppColors.brandPurple;
   }
 
   @override
@@ -249,18 +256,31 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         top: false,
         child: Column(
           children: [
-            // Header - Purple gradient like Home
+            // Header — brand blue → purple
             Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [AppColors.berkeleyBlue, AppColors.pureWhite],
+                  colors: AppColors.brandGradient,
                 ),
-                borderRadius: BorderRadius.only(
+                borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(AppRadius.largeCard),
                   bottomRight: Radius.circular(AppRadius.largeCard),
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.brandBlue.withOpacity(0.3),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                  BoxShadow(
+                    color: AppColors.brandPurple.withOpacity(0.12),
+                    blurRadius: 36,
+                    offset: const Offset(0, 18),
+                    spreadRadius: -6,
+                  ),
+                ],
               ),
               padding: EdgeInsets.only(
                 top: MediaQuery.of(context).padding.top + 16, // pt-4
@@ -293,7 +313,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       const SizedBox(width: 16), // gap-4
                       Text(
                         context.l10n.notificationsTitle,
-                        style: AppTextStyles.h3(color: Colors.white),
+                        style: GoogleFonts.cairo(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
                       ),
                     ],
                   ),
@@ -313,8 +337,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                               ? _unreadCount
                               : _newNotifications.length,
                         ),
-                        style: AppTextStyles.bodyMedium(
-                          color: Colors.white.withOpacity(0.7), // white/70
+                        style: GoogleFonts.cairo(
+                          fontSize: 14,
+                          color: Colors.white.withOpacity(0.7),
                         ),
                       ),
                       const Spacer(),
@@ -363,9 +388,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             if (_newNotifications.isNotEmpty) ...[
                               Text(
                                 context.l10n.newSection,
-                                style: AppTextStyles.bodySmall(
+                                style: GoogleFonts.cairo(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
                                   color: AppColors.foreground,
-                                ).copyWith(fontWeight: FontWeight.bold),
+                                ),
                               ),
                               const SizedBox(height: 12), // mb-3
                               ..._newNotifications.asMap().entries.map((entry) {
@@ -414,9 +441,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             if (_readNotifications.isNotEmpty) ...[
                               Text(
                                 context.l10n.past,
-                                style: AppTextStyles.bodySmall(
+                                style: GoogleFonts.cairo(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
                                   color: AppColors.foreground,
-                                ).copyWith(fontWeight: FontWeight.bold),
+                                ),
                               ),
                               const SizedBox(height: 12), // mb-3
                               ..._readNotifications
@@ -460,27 +489,50 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                     Container(
                                       width: 96, // w-24
                                       height: 96, // h-24
-                                      decoration: const BoxDecoration(
-                                        color: AppColors.lavenderLight,
+                                      decoration: BoxDecoration(
                                         shape: BoxShape.circle,
+                                        gradient: LinearGradient(
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                          colors: [
+                                            AppColors.brandBlue
+                                                .withOpacity(0.14),
+                                            AppColors.brandPurple
+                                                .withOpacity(0.14),
+                                          ],
+                                        ),
                                       ),
-                                      child: const Icon(
-                                        Icons.notifications,
-                                        size: 48, // w-12 h-12
-                                        color: AppColors.purple,
+                                      child: Center(
+                                        child: ShaderMask(
+                                          blendMode: BlendMode.srcIn,
+                                          shaderCallback: (bounds) =>
+                                              const LinearGradient(
+                                            begin: Alignment.topLeft,
+                                            end: Alignment.bottomRight,
+                                            colors: AppColors.brandGradient,
+                                          ).createShader(bounds),
+                                          child: const Icon(
+                                            Icons.notifications,
+                                            size: 48,
+                                            color: Colors.white,
+                                          ),
+                                        ),
                                       ),
                                     ),
                                     const SizedBox(height: 16), // mb-4
                                     Text(
                                       context.l10n.noNotifications,
-                                      style: AppTextStyles.h4(
+                                      style: GoogleFonts.cairo(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w600,
                                         color: AppColors.foreground,
                                       ),
                                     ),
                                     const SizedBox(height: 8), // mb-2
                                     Text(
                                       context.l10n.newNotificationsWillAppear,
-                                      style: AppTextStyles.bodyMedium(
+                                      style: GoogleFonts.cairo(
+                                        fontSize: 14,
                                         color: AppColors.mutedForeground,
                                       ),
                                       textAlign: TextAlign.center,
@@ -524,8 +576,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         boxShadow: isNew
             ? [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 4,
+                  color: AppColors.brandBlue.withOpacity(0.1),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                  spreadRadius: -4,
+                ),
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.06),
+                  blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
               ]
@@ -533,7 +591,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       ),
       child: Stack(
         children: [
-          // Purple indicator for new notifications - matches React
+          // Brand gradient strip for new notifications
           if (isNew)
             Positioned(
               top: 0,
@@ -542,7 +600,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               child: Container(
                 width: 8, // w-2
                 decoration: const BoxDecoration(
-                  color: AppColors.purple,
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: AppColors.brandGradient,
+                  ),
                   borderRadius: BorderRadius.only(
                     topRight: Radius.circular(16),
                     bottomRight: Radius.circular(16),
@@ -585,16 +647,18 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     children: [
                       Text(
                         title.toString(),
-                        style: AppTextStyles.bodyMedium(
+                        style: GoogleFonts.cairo(
+                          fontSize: 14,
+                          fontWeight:
+                              isNew ? FontWeight.w700 : FontWeight.w500,
                           color: AppColors.foreground,
-                        ).copyWith(
-                          fontWeight: isNew ? FontWeight.bold : FontWeight.w500,
                         ),
                       ),
                       const SizedBox(height: 4), // mb-1
                       Text(
                         message.toString(),
-                        style: AppTextStyles.bodySmall(
+                        style: GoogleFonts.cairo(
+                          fontSize: 13,
                           color: AppColors.mutedForeground,
                         ),
                         maxLines: 2,
@@ -603,7 +667,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       const SizedBox(height: 8), // mb-2
                       Text(
                         time.toString(),
-                        style: AppTextStyles.labelSmall(
+                        style: GoogleFonts.cairo(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
                           color: AppColors.mutedForeground,
                         ),
                       ),

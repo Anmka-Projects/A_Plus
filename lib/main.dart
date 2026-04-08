@@ -61,7 +61,7 @@ class EducationalApp extends StatelessWidget {
           listenable: themeProvider,
           builder: (context, _) {
             return MaterialApp.router(
-              title: configProvider.config?.appName ?? 'STP',
+              title: configProvider.config?.appName ?? 'A Plus',
               debugShowCheckedModeBanner: false,
 
               // RTL & Localization

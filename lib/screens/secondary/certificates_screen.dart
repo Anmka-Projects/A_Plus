@@ -8,7 +8,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import '../../core/design/app_colors.dart';
-import '../../core/design/app_text_styles.dart';
 import '../../core/design/app_radius.dart';
 import '../../core/localization/localization_helper.dart';
 import '../../services/certificates_service.dart';
@@ -98,16 +97,23 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
           children: [
             // Header - Purple gradient like Home
             Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [AppColors.primary, AppColors.pureWhite],
+                  colors: AppColors.brandGradient,
                 ),
-                borderRadius: BorderRadius.only(
+                borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(AppRadius.largeCard),
                   bottomRight: Radius.circular(AppRadius.largeCard),
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.brandBlue.withOpacity(0.3),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
               ),
               padding: EdgeInsets.only(
                 top: MediaQuery.of(context).padding.top + 16, // pt-4
@@ -140,7 +146,11 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
                       const SizedBox(width: 16), // gap-4
                       Text(
                         context.l10n.certificates,
-                        style: AppTextStyles.h3(color: Colors.white),
+                        style: GoogleFonts.cairo(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
                       ),
                     ],
                   ),
@@ -156,8 +166,9 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
                       const SizedBox(width: 8), // gap-2
                       Text(
                         context.l10n.achievedCertificates(_certificates.length),
-                        style: AppTextStyles.bodyMedium(
-                          color: Colors.white.withOpacity(0.7), // white/70
+                        style: GoogleFonts.cairo(
+                          fontSize: 14,
+                          color: Colors.white.withOpacity(0.7),
                         ),
                       ),
                     ],
@@ -218,7 +229,7 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
           SnackBar(
             content: Text(
               context.l10n.downloadLinkNotAvailable,
-              style: AppTextStyles.bodySmall(),
+              style: GoogleFonts.cairo(fontSize: 13),
             ),
             backgroundColor: Colors.orange,
             behavior: SnackBarBehavior.floating,
@@ -248,11 +259,11 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
                 const SizedBox(width: 12),
                 Text(
                   context.l10n.downloading,
-                  style: AppTextStyles.bodySmall(),
+                  style: GoogleFonts.cairo(fontSize: 13),
                 ),
               ],
             ),
-            backgroundColor: AppColors.purple,
+            backgroundColor: AppColors.brandPurple,
             behavior: SnackBarBehavior.floating,
             duration: const Duration(seconds: 30),
             shape: RoundedRectangleBorder(
@@ -307,7 +318,7 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
             SnackBar(
               content: Text(
                 context.l10n.downloadSuccessful(file.path),
-                style: AppTextStyles.bodySmall(),
+                style: GoogleFonts.cairo(fontSize: 13),
               ),
               backgroundColor: const Color(0xFF10B981),
               behavior: SnackBarBehavior.floating,
@@ -333,7 +344,7 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
             content: Text(
               context.l10n.errorDownloading(
                   e.toString().replaceFirst('Exception: ', '')),
-              style: AppTextStyles.bodySmall(),
+              style: GoogleFonts.cairo(fontSize: 13),
             ),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
@@ -408,7 +419,7 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
           SnackBar(
             content: Text(
               context.l10n.errorSharing,
-              style: AppTextStyles.bodySmall(),
+              style: GoogleFonts.cairo(fontSize: 13),
             ),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
@@ -457,8 +468,8 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
                 begin: Alignment.topRight,
                 end: Alignment.bottomLeft,
                 colors: [
-                  AppColors.purple.withOpacity(0.1),
-                  AppColors.orange.withOpacity(0.1),
+                  AppColors.brandBlue.withOpacity(0.1),
+                  AppColors.brandPurple.withOpacity(0.1),
                 ],
               ),
               borderRadius: const BorderRadius.vertical(
@@ -466,7 +477,7 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
               ),
               border: Border(
                 bottom: BorderSide(
-                  color: AppColors.purple.withOpacity(0.2),
+                  color: AppColors.brandPurple.withOpacity(0.25),
                   width: 2,
                   style: BorderStyle
                       .solid, // Flutter doesn't have dashed, using solid
@@ -481,9 +492,9 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
                   height: 64, // h-16
                   decoration: const BoxDecoration(
                     gradient: LinearGradient(
-                      begin: Alignment.topRight,
-                      end: Alignment.bottomLeft,
-                      colors: [AppColors.orange, AppColors.purple],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: AppColors.brandGradient,
                     ),
                     shape: BoxShape.circle,
                   ),
@@ -498,7 +509,9 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
                 // Certificate title - matches React
                 Text(
                   context.l10n.certificateOfCompletion,
-                  style: AppTextStyles.h4(
+                  style: GoogleFonts.cairo(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
                     color: AppColors.foreground,
                   ),
                   textAlign: TextAlign.center,
@@ -508,9 +521,11 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
                 // Course name - matches React
                 Text(
                   courseTitle,
-                  style: AppTextStyles.bodyMedium(
-                    color: AppColors.purple,
-                  ).copyWith(fontWeight: FontWeight.w500),
+                  style: GoogleFonts.cairo(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.brandPurple,
+                  ),
                   textAlign: TextAlign.center,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -520,7 +535,8 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
                 // "Certifies that" text
                 Text(
                   context.l10n.certifiesThat,
-                  style: AppTextStyles.bodySmall(
+                  style: GoogleFonts.cairo(
+                    fontSize: 13,
                     color: AppColors.foreground,
                   ),
                   textAlign: TextAlign.center,
@@ -530,7 +546,9 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
                 // Student name - matches React: text-xl font-bold
                 Text(
                   studentName,
-                  style: AppTextStyles.h3(
+                  style: GoogleFonts.cairo(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
                     color: AppColors.foreground,
                   ),
                   textAlign: TextAlign.center,
@@ -540,7 +558,8 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
                 // "Has completed with grade" text
                 Text(
                   context.l10n.hasCompletedWithGrade,
-                  style: AppTextStyles.bodySmall(
+                  style: GoogleFonts.cairo(
+                    fontSize: 13,
                     color: AppColors.mutedForeground,
                   ),
                   textAlign: TextAlign.center,
@@ -549,7 +568,9 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
                 // Grade - matches React: font-bold text-[var(--orange)] text-lg
                 Text(
                   grade,
-                  style: AppTextStyles.h4(
+                  style: GoogleFonts.cairo(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
                     color: AppColors.orange,
                   ),
                   textAlign: TextAlign.center,
@@ -579,7 +600,8 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
                           const SizedBox(width: 8), // gap-2
                           Text(
                             _formatDate(context, issueDate),
-                            style: AppTextStyles.bodySmall(
+                            style: GoogleFonts.cairo(
+                              fontSize: 13,
                               color: AppColors.mutedForeground,
                             ),
                           ),
@@ -589,7 +611,9 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
                         certificateNumber.isNotEmpty
                             ? '#$certificateNumber'
                             : '',
-                        style: AppTextStyles.labelSmall(
+                        style: GoogleFonts.cairo(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
                           color: AppColors.mutedForeground,
                         ),
                       ),
@@ -608,7 +632,11 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
                           padding:
                               const EdgeInsets.symmetric(vertical: 12), // py-3
                           decoration: BoxDecoration(
-                            color: AppColors.purple,
+                            gradient: const LinearGradient(
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                              colors: AppColors.brandGradient,
+                            ),
                             borderRadius:
                                 BorderRadius.circular(12), // rounded-xl
                           ),
@@ -623,9 +651,11 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
                               const SizedBox(width: 8), // gap-2
                               Text(
                                 context.l10n.download,
-                                style: AppTextStyles.bodyMedium(
+                                style: GoogleFonts.cairo(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
                                   color: Colors.white,
-                                ).copyWith(fontWeight: FontWeight.w500),
+                                ),
                               ),
                             ],
                           ),
@@ -641,24 +671,26 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
                           padding:
                               const EdgeInsets.symmetric(vertical: 12), // py-3
                           decoration: BoxDecoration(
-                            color: AppColors.orange.withOpacity(0.1),
+                            color: AppColors.brandBlue.withOpacity(0.1),
                             borderRadius:
                                 BorderRadius.circular(12), // rounded-xl
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.share,
                                 size: 20, // w-5 h-5
-                                color: AppColors.orange,
+                                color: AppColors.brandBlue,
                               ),
                               const SizedBox(width: 8), // gap-2
                               Text(
                                 context.l10n.share,
-                                style: AppTextStyles.bodyMedium(
-                                  color: AppColors.orange,
-                                ).copyWith(fontWeight: FontWeight.w500),
+                                style: GoogleFonts.cairo(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.brandBlue,
+                                ),
                               ),
                             ],
                           ),
@@ -689,16 +721,18 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
                 color: AppColors.lavenderLight,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.emoji_events,
                 size: 48, // w-12 h-12
-                color: AppColors.purple,
+                color: AppColors.brandPurple,
               ),
             ),
             const SizedBox(height: 16), // mb-4
             Text(
               context.l10n.noCertificatesYet,
-              style: AppTextStyles.h4(
+              style: GoogleFonts.cairo(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
                 color: AppColors.foreground,
               ),
             ),
@@ -707,7 +741,8 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 48),
               child: Text(
                 context.l10n.completeCoursesForCertificates,
-                style: AppTextStyles.bodyMedium(
+                style: GoogleFonts.cairo(
+                  fontSize: 14,
                   color: AppColors.mutedForeground,
                 ),
                 textAlign: TextAlign.center,

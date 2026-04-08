@@ -9,7 +9,7 @@ class AppLocalizationsAr extends AppLocalizations {
   AppLocalizationsAr([String locale = 'ar']) : super(locale);
 
   @override
-  String get appName => 'منصة أنمكا التعليمية';
+  String get appName => 'A Plus';
 
   @override
   String get settings => 'الإعدادات';
@@ -1353,7 +1353,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get unknownError => 'حدث خطأ غير معروف';
 
   @override
-  String get teachers => 'المعلمون';
+  String get teachers => 'المحاضرون';
 
   @override
   String get allTeachers => 'جميع المعلمين';

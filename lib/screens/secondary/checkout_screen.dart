@@ -558,6 +558,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                         isDense: true,
                                         contentPadding: EdgeInsets.zero,
                                         hintStyle: const TextStyle(
+                                          fontFamily:
+                                              AppTextStyles.indigoFamily,
                                           color: AppColors.mutedForeground,
                                         ),
                                       ),

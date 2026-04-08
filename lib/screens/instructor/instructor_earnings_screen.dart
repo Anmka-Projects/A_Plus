@@ -2000,7 +2000,7 @@ class _InstructorEarningsScreenState extends State<InstructorEarningsScreen> {
             child: ElevatedButton.icon(
               onPressed: _isLoading ? null : _calculateSalary,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.purple,
+                backgroundColor: AppColors.primaryLight,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(

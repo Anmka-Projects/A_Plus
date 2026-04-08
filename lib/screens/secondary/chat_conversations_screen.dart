@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/design/app_colors.dart';
+import '../../core/design/app_radius.dart';
 import '../../core/api/api_endpoints.dart';
 import '../../core/navigation/route_names.dart';
 import '../../services/chat_service.dart';
@@ -62,36 +63,88 @@ class _ChatConversationsScreenState extends State<ChatConversationsScreen> {
     final isAr = Localizations.localeOf(context).languageCode == 'ar';
     return Scaffold(
       backgroundColor: AppColors.beige,
-      appBar: AppBar(
-        title: Text(
-          isAr ? 'المحادثات' : 'Chat',
-          style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: AppColors.purple,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () => context.pop(),
-        ),
-      ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? _buildError(isAr)
-              : _conversations.isEmpty
-                  ? _buildEmpty(isAr)
-                  : RefreshIndicator(
-                      onRefresh: _loadConversations,
-                      child: ListView.builder(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        itemCount: _conversations.length,
-                        itemBuilder: (_, i) => _buildConversationTile(
-                          _conversations[i],
-                          isAr,
-                        ),
+      body: SafeArea(
+        top: false,
+        child: Column(
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: AppColors.brandGradient,
+                ),
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(AppRadius.largeCard),
+                  bottomRight: Radius.circular(AppRadius.largeCard),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.brandBlue.withOpacity(0.3),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              padding: EdgeInsets.only(
+                top: MediaQuery.paddingOf(context).top + 16,
+                bottom: 20,
+                left: 16,
+                right: 16,
+              ),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () => context.pop(),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: const BoxDecoration(
+                        color: AppColors.whiteOverlay20,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.chevron_right,
+                        color: Colors.white,
+                        size: 20,
                       ),
                     ),
+                  ),
+                  const SizedBox(width: 16),
+                  Text(
+                    isAr ? 'المحادثات' : 'Chat',
+                    style: GoogleFonts.cairo(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: _loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _error != null
+                      ? _buildError(isAr)
+                      : _conversations.isEmpty
+                          ? _buildEmpty(isAr)
+                          : RefreshIndicator(
+                              onRefresh: _loadConversations,
+                              child: ListView.builder(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 8),
+                                itemCount: _conversations.length,
+                                itemBuilder: (_, i) => _buildConversationTile(
+                                  _conversations[i],
+                                  isAr,
+                                ),
+                              ),
+                            ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -132,7 +185,7 @@ class _ChatConversationsScreenState extends State<ChatConversationsScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(Icons.chat_bubble_outline_rounded,
-              size: 64, color: AppColors.purple.withOpacity(0.5)),
+              size: 64, color: AppColors.brandPurple.withOpacity(0.45)),
           const SizedBox(height: 16),
           Text(
             isAr ? 'لا توجد محادثات' : 'No conversations yet',
@@ -186,7 +239,7 @@ class _ChatConversationsScreenState extends State<ChatConversationsScreen> {
           children: [
             CircleAvatar(
               radius: 28,
-              backgroundColor: AppColors.purple.withOpacity(0.2),
+              backgroundColor: AppColors.brandPurple.withOpacity(0.2),
               backgroundImage: avatar != null && avatar.toString().isNotEmpty
                   ? NetworkImage(ApiEndpoints.getImageUrl(avatar.toString()))
                   : null,
@@ -197,7 +250,7 @@ class _ChatConversationsScreenState extends State<ChatConversationsScreen> {
                       style: GoogleFonts.cairo(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.purple,
+                        color: AppColors.brandPurple,
                       ),
                     )
                   : null,
@@ -252,7 +305,11 @@ class _ChatConversationsScreenState extends State<ChatConversationsScreen> {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.purple,
+                            gradient: const LinearGradient(
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                              colors: AppColors.brandGradient,
+                            ),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(

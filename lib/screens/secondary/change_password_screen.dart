@@ -189,7 +189,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               ElevatedButton(
                 onPressed: _isSaving ? null : _changePassword,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.purple,
+                  backgroundColor: AppColors.primaryLight,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(

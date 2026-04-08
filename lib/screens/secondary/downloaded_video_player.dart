@@ -344,7 +344,7 @@ class _DownloadedVideoPlayerState extends State<DownloadedVideoPlayer> {
                           ),
                         ),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.purple,
+                          backgroundColor: AppColors.primaryLight,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 24,
                             vertical: 12,

@@ -101,7 +101,7 @@ abstract class AppLocalizations {
   /// Application name
   ///
   /// In en, this message translates to:
-  /// **'Anmka Educational Platform'**
+  /// **'A Plus'**
   String get appName;
 
   /// Settings screen title

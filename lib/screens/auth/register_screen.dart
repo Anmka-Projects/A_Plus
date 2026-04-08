@@ -8,6 +8,7 @@ import '../../core/design/app_colors.dart';
 import '../../core/navigation/route_names.dart';
 import '../../services/auth_service.dart';
 import '../../services/courses_service.dart';
+import '../../data/registration_categories_catalog.dart';
 import '../../l10n/app_localizations.dart';
 
 /// Register: name, code, phone, category, and subcategory.
@@ -41,12 +42,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isLoadingCategories = true);
     try {
       final categories =
-          await CoursesService.instance.getCategories(useAdmin: false);
-      if (mounted) {
+          await CoursesService.instance.getCategoriesForRegistration();
+      if (mounted && categories.isNotEmpty) {
         setState(() => _allCategories = categories);
+        return;
       }
-    } catch (_) {
-      if (mounted) setState(() => _allCategories = []);
+
+      // Fallback: if filtered registration list is empty, load raw categories.
+      final rawCategories = await CoursesService.instance.getCategories();
+      if (mounted) {
+        setState(() {
+          _allCategories = rawCategories.isNotEmpty
+              ? rawCategories
+              : RegistrationCategoriesCatalog.seededFallbackCategories();
+        });
+      }
+    } catch (e) {
+      // Keep UI informative if backend payload changes unexpectedly.
+      debugPrint('Failed to load registration categories: $e');
+      if (mounted) {
+        setState(() {
+          _allCategories = RegistrationCategoriesCatalog.seededFallbackCategories();
+        });
+      }
     } finally {
       if (mounted) setState(() => _isLoadingCategories = false);
     }
@@ -82,7 +100,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(l10n.selectCategory, style: GoogleFonts.cairo()),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.destructive,
         ),
       );
       return;
@@ -90,11 +108,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     final subs = _subcategoriesOf(_selectedCategory!);
     if (subs.isNotEmpty &&
-        (_selectedSubcategory == null || _entityId(_selectedSubcategory) == null)) {
+        (_selectedSubcategory == null ||
+            _entityId(_selectedSubcategory) == null)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(l10n.selectSubcategory, style: GoogleFonts.cairo()),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.destructive,
         ),
       );
       return;
@@ -137,7 +156,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               e.toString().replaceFirst('Exception: ', ''),
               style: GoogleFonts.cairo(),
             ),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.destructive,
             duration: const Duration(seconds: 3),
           ),
         );
@@ -177,7 +196,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [AppColors.primary, AppColors.pureWhite],
+                colors: AppColors.brandGradient,
               ),
             ),
             child: SafeArea(
@@ -194,12 +213,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             width: 44,
                             height: 44,
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.15),
+                              color: AppColors.whiteOverlay20,
                               borderRadius: BorderRadius.circular(14),
                             ),
                             child: const Icon(
                               Icons.arrow_back_ios_new_rounded,
-                              color: Colors.white,
+                              color: AppColors.pureWhite,
                               size: 18,
                             ),
                           ),
@@ -210,7 +229,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           style: GoogleFonts.cairo(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            color: AppColors.pureWhite,
                           ),
                         ),
                         const Spacer(),
@@ -222,7 +241,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       l10n.joinUsMessage,
                       style: GoogleFonts.cairo(
                         fontSize: 15,
-                        color: Colors.white.withOpacity(0.85),
+                        color: AppColors.whiteOverlay40,
                       ),
                     ),
                   ],
@@ -253,7 +272,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           icon: Icons.person_outline_rounded,
                         ),
                         const SizedBox(height: 16),
-
                         _buildLabel(l10n.studentCode),
                         const SizedBox(height: 8),
                         _buildTextField(
@@ -262,16 +280,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           icon: Icons.badge_outlined,
                         ),
                         const SizedBox(height: 16),
-
                         _buildLabel(l10n.phone),
                         const SizedBox(height: 8),
                         Container(
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: AppColors.pureWhite,
                             borderRadius: BorderRadius.circular(14),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.04),
+                                color: AppColors.blackOverlay20,
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               ),
@@ -281,9 +298,41 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             controller: _phoneController,
                             initialCountryCode: 'EG',
                             disableLengthCheck: true,
-                            dropdownTextStyle: GoogleFonts.cairo(fontSize: 13),
+                            showDropdownIcon: true,
+                            dropdownIconPosition: IconPosition.trailing,
+                            dropdownIcon: Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                              size: 20,
+                              color: Theme.of(context).colorScheme.secondary,
+                            ),
+                            flagsButtonPadding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 8,
+                            ),
+                            flagsButtonMargin: const EdgeInsets.only(
+                              left: 10,
+                              top: 10,
+                              bottom: 10,
+                              right: 6,
+                            ),
+                            dropdownTextStyle: GoogleFonts.cairo(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.foreground,
+                            ),
                             style: GoogleFonts.cairo(fontSize: 15),
+                            dropdownDecoration: BoxDecoration(
+                              color: AppColors.pureWhite,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color:
+                                    Theme.of(context).colorScheme.secondary,
+                                width: 1,
+                              ),
+                            ),
                             decoration: InputDecoration(
+                              filled: true,
+                              fillColor: AppColors.pureWhite,
                               prefixIcon: const Icon(
                                 Icons.phone_outlined,
                                 color: AppColors.purple,
@@ -291,15 +340,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(14),
-                                borderSide: BorderSide.none,
+                                borderSide: BorderSide(
+                                  color:
+                                      Theme.of(context).colorScheme.secondary,
+                                  width: 1,
+                                ),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(14),
-                                borderSide: BorderSide.none,
+                                borderSide: BorderSide(
+                                  color:
+                                      Theme.of(context).colorScheme.secondary,
+                                  width: 1,
+                                ),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(14),
-                                borderSide: BorderSide.none,
+                                borderSide: BorderSide(
+                                  color:
+                                      Theme.of(context).colorScheme.secondary,
+                                  width: 2,
+                                ),
                               ),
                               contentPadding: const EdgeInsets.symmetric(
                                 vertical: 14,
@@ -327,47 +388,68 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                         ),
                         const SizedBox(height: 16),
-
                         _buildLabel(l10n.category),
                         const SizedBox(height: 8),
                         _buildCategoryPicker(context),
                         const SizedBox(height: 16),
-
                         _buildLabel(l10n.subcategory),
                         const SizedBox(height: 8),
                         _buildSubcategoryPicker(context),
                         const SizedBox(height: 24),
-
                         SizedBox(
                           width: double.infinity,
                           height: 54,
-                          child: ElevatedButton(
-                            onPressed: _isLoading ? null : _handleRegister,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.purple,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                                colors: AppColors.brandGradient,
                               ),
-                              elevation: 0,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color:
+                                      AppColors.brandPurple.withOpacity(0.25),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 6),
+                                ),
+                              ],
                             ),
-                            child: _isLoading
-                                ? const SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: CircularProgressIndicator(
-                                        color: Colors.white, strokeWidth: 2.5),
-                                  )
-                                : Text(
-                                    l10n.createAccount,
-                                    style: GoogleFonts.cairo(
+                            child: ElevatedButton(
+                              onPressed: _isLoading ? null : _handleRegister,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.transparent,
+                                shadowColor: Colors.transparent,
+                                foregroundColor: AppColors.primaryForeground,
+                                disabledForegroundColor:
+                                    AppColors.primaryForeground,
+                                disabledBackgroundColor: Colors.transparent,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                elevation: 0,
+                              ),
+                              child: _isLoading
+                                  ? const SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(
+                                        color: AppColors.primaryForeground,
+                                        strokeWidth: 2.5,
+                                      ),
+                                    )
+                                  : Text(
+                                      l10n.createAccount,
+                                      style: GoogleFonts.cairo(
                                         fontSize: 16,
-                                        fontWeight: FontWeight.bold),
-                                  ),
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                            ),
                           ),
                         ),
                         const SizedBox(height: 20),
-
                         Center(
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -380,12 +462,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                               TextButton(
                                 onPressed: () => context.go(RouteNames.login),
-                                child: Text(
-                                  l10n.login,
-                                  style: GoogleFonts.cairo(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.purple,
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                ),
+                                child: ShaderMask(
+                                  blendMode: BlendMode.srcIn,
+                                  shaderCallback: (bounds) =>
+                                      const LinearGradient(
+                                        begin: Alignment.centerLeft,
+                                        end: Alignment.centerRight,
+                                        colors: AppColors.brandGradient,
+                                      ).createShader(bounds),
+                                  child: Text(
+                                    l10n.login,
+                                    style: GoogleFonts.cairo(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -414,86 +511,87 @@ class _RegisterScreenState extends State<RegisterScreen> {
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
           builder: (ctx) {
-            return Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.category,
-                    style: GoogleFonts.cairo(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.foreground,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  if (_isLoadingCategories)
-                    const Center(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(vertical: 16),
-                        child:
-                            CircularProgressIndicator(color: AppColors.purple),
-                      ),
-                    )
-                  else if (_allCategories.isEmpty)
-                    Text(
-                      l10n.categoriesComingSoon,
-                      style: GoogleFonts.cairo(
-                        fontSize: 13,
-                        color: AppColors.mutedForeground,
-                      ),
-                    )
-                  else
-                    ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxHeight: MediaQuery.of(ctx).size.height * 0.45,
-                      ),
-                      child: ListView.builder(
-                        shrinkWrap: true,
-                        itemCount: _allCategories.length,
-                        itemBuilder: (context, index) {
-                          final category = _allCategories[index];
-                          final id = category['id']?.toString() ?? '';
-                          final name = _entityName(category);
-                          final isSelected =
-                              _entityId(_selectedCategory) == id;
-                          return RadioListTile<String>(
-                            value: id,
-                            groupValue: _entityId(_selectedCategory),
-                            onChanged: (value) {
-                              setState(() {
-                                _selectedCategory = category;
-                                _selectedSubcategory = null;
-                              });
-                              Navigator.of(ctx).pop();
-                            },
-                            title: Text(
-                              name,
-                              style: GoogleFonts.cairo(fontSize: 14),
-                            ),
-                            selected: isSelected,
-                          );
-                        },
-                      ),
-                    ),
-                  const SizedBox(height: 8),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () => Navigator.of(ctx).pop(),
-                      child: Text(
-                        l10n.cancel,
+            return SafeArea(
+              child: FractionallySizedBox(
+                heightFactor: 0.9,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.category,
                         style: GoogleFonts.cairo(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.purple,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.foreground,
                         ),
                       ),
-                    ),
+                      const SizedBox(height: 12),
+                      Expanded(
+                        child: _isLoadingCategories
+                            ? const Center(
+                                child: CircularProgressIndicator(
+                                  color: AppColors.purple,
+                                ),
+                              )
+                            : _allCategories.isEmpty
+                                ? Center(
+                                    child: Text(
+                                      l10n.categoriesComingSoon,
+                                      style: GoogleFonts.cairo(
+                                        fontSize: 13,
+                                        color: AppColors.mutedForeground,
+                                      ),
+                                    ),
+                                  )
+                                : ListView.builder(
+                                    itemCount: _allCategories.length,
+                                    itemBuilder: (context, index) {
+                                      final category = _allCategories[index];
+                                      final id =
+                                          category['id']?.toString() ?? '';
+                                      final name = _entityName(category);
+                                      final isSelected =
+                                          _entityId(_selectedCategory) == id;
+                                      return RadioListTile<String>(
+                                        value: id,
+                                        groupValue:
+                                            _entityId(_selectedCategory),
+                                        onChanged: (value) {
+                                          setState(() {
+                                            _selectedCategory = category;
+                                            _selectedSubcategory = null;
+                                          });
+                                          Navigator.of(ctx).pop();
+                                        },
+                                        title: Text(
+                                          name,
+                                          style: GoogleFonts.cairo(fontSize: 14),
+                                        ),
+                                        selected: isSelected,
+                                      );
+                                    },
+                                  ),
+                      ),
+                      const SizedBox(height: 8),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: () => Navigator.of(ctx).pop(),
+                          child: Text(
+                            l10n.cancel,
+                            style: GoogleFonts.cairo(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.purple,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             );
           },
@@ -503,18 +601,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.pureWhite,
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: AppColors.blackOverlay20,
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
           ],
           border: Border.all(
-            color: AppColors.mutedForeground,
-            width: 1.2,
+            color: Theme.of(context).colorScheme.secondary,
+            width: 1,
           ),
         ),
         child: Row(
@@ -690,18 +788,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.pureWhite,
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: AppColors.blackOverlay20,
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
           ],
           border: Border.all(
-            color: AppColors.mutedForeground,
-            width: 1.2,
+            color: Theme.of(context).colorScheme.secondary,
+            width: 1,
           ),
         ),
         child: Row(
@@ -742,11 +840,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final l10n = AppLocalizations.of(context)!;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.pureWhite,
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: AppColors.blackOverlay20,
               blurRadius: 10,
               offset: const Offset(0, 4)),
         ],
@@ -756,13 +854,33 @@ class _RegisterScreenState extends State<RegisterScreen> {
         keyboardType: keyboardType,
         style: GoogleFonts.cairo(fontSize: 15),
         decoration: InputDecoration(
+          filled: true,
+          fillColor: AppColors.pureWhite,
           hintText: hint,
           hintStyle:
               GoogleFonts.cairo(color: AppColors.mutedForeground, fontSize: 14),
           prefixIcon: Icon(icon, color: AppColors.purple, size: 22),
           border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide.none),
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(
+              color: Theme.of(context).colorScheme.secondary,
+              width: 1,
+            ),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(
+              color: Theme.of(context).colorScheme.secondary,
+              width: 1,
+            ),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(
+              color: Theme.of(context).colorScheme.secondary,
+              width: 2,
+            ),
+          ),
           contentPadding:
               const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
         ),

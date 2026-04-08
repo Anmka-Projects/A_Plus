@@ -463,9 +463,14 @@ class _ProgressScreenState extends State<ProgressScreen> {
                                                   shape: BoxShape.circle,
                                                 ),
                                                 child: const Center(
-                                                  child: Text('⭐',
-                                                      style: TextStyle(
-                                                          fontSize: 18)),
+                                                  child: Text(
+                                                    '⭐',
+                                                    style: TextStyle(
+                                                      fontSize: 18,
+                                                      fontFamily: AppTextStyles
+                                                          .indigoFamily,
+                                                    ),
+                                                  ),
                                                 ),
                                               ),
                                               const SizedBox(
@@ -686,7 +691,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
             ),
 
             // Bottom Navigation
-            const BottomNav(activeTab: 'progress'),
+            const BottomNav(activeTab: ''),
           ],
         ),
       ),

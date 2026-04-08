@@ -3,11 +3,11 @@ class ApiEndpoints {
   ApiEndpoints._();
 
   static const String baseUrl =
-      'https://rigtech-training-academy.anmka.com/api';
+      'https://a-plus.anmka.com/api';
 
   /// Base URL for images and media files
   static const String imageBaseUrl =
-      'https://rigtech-training-academy.anmka.com';
+      'https://a-plus.anmka.com';
 
   /// Helper method to convert relative image path to full URL
   static String getImageUrl(String? imagePath) {

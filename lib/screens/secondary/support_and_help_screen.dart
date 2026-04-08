@@ -184,7 +184,7 @@ class SupportAndHelpScreen extends StatelessWidget {
                             ClipRRect(
                               borderRadius: BorderRadius.circular(18),
                               child: Image.asset(
-                                'assets/images/play_store_512.png',
+                                'assets/images/app_logo.png',
                                 width: 88,
                                 height: 88,
                                 fit: BoxFit.cover,

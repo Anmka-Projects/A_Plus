@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
@@ -277,7 +276,7 @@ class _EnrolledScreenState extends State<EnrolledScreen> {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [AppColors.primary, AppColors.pureWhite],
+          colors: AppColors.brandGradient,
         ),
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(AppRadius.largeCard),
@@ -285,7 +284,7 @@ class _EnrolledScreenState extends State<EnrolledScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.purple.withOpacity(0.3),
+            color: AppColors.brandBlue.withOpacity(0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -863,11 +862,31 @@ class _EnrolledScreenState extends State<EnrolledScreen> {
             width: 120,
             height: 120,
             decoration: BoxDecoration(
-              color: AppColors.purple.withOpacity(0.1),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppColors.brandBlue.withOpacity(0.14),
+                  AppColors.brandPurple.withOpacity(0.14),
+                ],
+              ),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.school_rounded,
-                size: 60, color: AppColors.purple),
+            child: Center(
+              child: ShaderMask(
+                blendMode: BlendMode.srcIn,
+                shaderCallback: (bounds) => const LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: AppColors.brandGradient,
+                ).createShader(bounds),
+                child: const Icon(
+                  Icons.school_rounded,
+                  size: 60,
+                  color: Colors.white,
+                ),
+              ),
+            ),
           ),
           const SizedBox(height: 24),
           Text(
@@ -893,12 +912,14 @@ class _EnrolledScreenState extends State<EnrolledScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [AppColors.primary, AppColors.pureWhite],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: AppColors.brandGradient,
                 ),
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primary.withOpacity(0.3),
+                    color: AppColors.brandPurple.withOpacity(0.28),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),

@@ -1,6 +1,6 @@
 {
   "@@locale": "ar",
-  "appName": "منصة أنمكا التعليمية",
+  "appName": "A Plus",
   "@appName": {
     "description": "اسم التطبيق"
   },
@@ -1940,7 +1940,7 @@
   "@unknownError": {
     "description": "خطأ غير معروف"
   },
-  "teachers": "المعلمون",
+  "teachers": "المحاضرون",
   "@teachers": {
     "description": "عنوان قسم المعلمين"
   },

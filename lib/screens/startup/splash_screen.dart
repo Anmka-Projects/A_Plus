@@ -237,12 +237,7 @@ class _SplashScreenState extends State<SplashScreen>
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              AppColors.primaryDark,
-              AppColors.primary,
-              AppColors.pureWhite,
-            ],
-            stops: [0.0, 0.6, 1.0],
+            colors: AppColors.brandGradient,
           ),
         ),
         child: Stack(
@@ -272,14 +267,17 @@ class _SplashScreenState extends State<SplashScreen>
                   // Educational Tip - Smart Idea
                   _buildEducationalTip(),
 
-                  const SizedBox(height: 40),
+                  const Spacer(flex: 2),
 
-                  // Loading Progress
+                  // Loading + attribution anchored at bottom
                   _buildLoadingSection(),
 
-                  const Spacer(flex: 1),
+                  const SizedBox(height: 20),
 
-                  // Bottom Branding
+                  _buildCeoAttribution(),
+
+                  const SizedBox(height: 16),
+
                   _buildBottomBranding(),
 
                   const SizedBox(height: 20),
@@ -448,7 +446,7 @@ class _SplashScreenState extends State<SplashScreen>
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(35),
                     child: Image.asset(
-                      'assets/images/play_store_512.png',
+                      'assets/images/app_logo.png',
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => Container(
                         decoration: BoxDecoration(
@@ -456,8 +454,8 @@ class _SplashScreenState extends State<SplashScreen>
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                             colors: [
-                              AppColors.purple,
-                              AppColors.purple.withOpacity(0.8),
+                              AppColors.brandBlue,
+                              AppColors.brandPurple,
                             ],
                           ),
                         ),
@@ -509,10 +507,7 @@ class _SplashScreenState extends State<SplashScreen>
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [
-                        AppColors.primary,
-                        AppColors.pureWhite,
-                      ],
+                      colors: AppColors.brandGradient,
                     ),
                     shape: BoxShape.circle,
                     boxShadow: [
@@ -560,7 +555,7 @@ class _SplashScreenState extends State<SplashScreen>
               colors: [Colors.white, Color(0xFFE0D4FF)],
             ).createShader(bounds),
             child: Text(
-              'RigTech Training Academy',
+              'A Plus',
               textAlign: TextAlign.center,
               style: AppTextStyles.h1(color: Colors.white).copyWith(
                 fontSize: 32,
@@ -676,61 +671,55 @@ class _SplashScreenState extends State<SplashScreen>
     return AnimatedBuilder(
       animation: _loadingController,
       builder: (context, child) {
-        return Column(
-          children: [
-            // Custom loading indicator
-            Container(
-              width: 180,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(2),
-              ),
-              child: FractionallySizedBox(
-                alignment: Alignment.centerRight,
-                widthFactor: _loadingController.value,
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Colors.white70, Colors.white],
-                    ),
-                    borderRadius: BorderRadius.circular(2),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.white.withOpacity(0.5),
-                        blurRadius: 6,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            // Loading dots
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(3, (index) {
-                return AnimatedBuilder(
-                  animation: _glowController,
-                  builder: (context, child) {
-                    final delay = index * 0.3;
-                    final value = ((_glowController.value + delay) % 1.0);
-                    return Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withOpacity(0.4 + value * 0.6),
-                      ),
-                    );
-                  },
-                );
-              }),
-            ),
-          ],
+        return SizedBox(
+          width: 40,
+          height: 40,
+          child: CircularProgressIndicator(
+            value: _loadingController.value,
+            strokeWidth: 3,
+            strokeCap: StrokeCap.round,
+            backgroundColor: Colors.white.withOpacity(0.2),
+            valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+          ),
         );
       },
+    );
+  }
+
+  Widget _buildCeoAttribution() {
+    return AnimatedBuilder(
+      animation: _textController,
+      builder: (context, child) {
+        return Opacity(
+          opacity: _textFadeAnimation.value * 0.85,
+          child: child,
+        );
+      },
+      child: Column(
+        children: [
+          Text(
+            'Dr. Mohamed Elsherif',
+            textAlign: TextAlign.center,
+            style: AppTextStyles.bodyMedium(
+              color: Colors.white.withOpacity(0.92),
+            ).copyWith(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'CEO & Founder',
+            textAlign: TextAlign.center,
+            style: AppTextStyles.labelMedium(
+              color: Colors.white.withOpacity(0.65),
+            ).copyWith(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
     );
   }
 

@@ -56,7 +56,7 @@ class _LoginScreenState extends State<LoginScreen> {
               e.toString().replaceFirst('Exception: ', ''),
               style: GoogleFonts.cairo(),
             ),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.destructive,
             duration: const Duration(seconds: 3),
           ),
         );
@@ -178,7 +178,7 @@ class _LoginScreenState extends State<LoginScreen> {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [AppColors.primary, AppColors.pureWhite],
+                colors: AppColors.brandGradient,
               ),
             ),
             child: SafeArea(
@@ -196,12 +196,12 @@ class _LoginScreenState extends State<LoginScreen> {
                             width: 44,
                             height: 44,
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.15),
+                              color: AppColors.whiteOverlay20,
                               borderRadius: BorderRadius.circular(14),
                             ),
                             child: const Icon(
                               Icons.arrow_back_ios_new_rounded,
-                              color: Colors.white,
+                              color: AppColors.pureWhite,
                               size: 18,
                             ),
                           ),
@@ -212,7 +212,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           style: GoogleFonts.cairo(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            color: AppColors.pureWhite,
                           ),
                         ),
                         const Spacer(),
@@ -225,15 +225,15 @@ class _LoginScreenState extends State<LoginScreen> {
                       width: 90,
                       height: 90,
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AppColors.pureWhite,
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.4),
+                          color: AppColors.whiteOverlay40,
                           width: 3,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
+                            color: AppColors.blackOverlay20,
                             blurRadius: 20,
                             offset: const Offset(0, 10),
                           ),
@@ -241,7 +241,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       child: ClipOval(
                         child: Image.asset(
-                          'assets/images/play_store_512.png',
+                          'assets/images/app_logo.png',
                           fit: BoxFit.cover,
                           errorBuilder: (_, __, ___) => const Icon(
                             Icons.school_rounded,
@@ -257,7 +257,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: GoogleFonts.cairo(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: AppColors.pureWhite,
                       ),
                     ),
                   ],
@@ -301,32 +301,54 @@ class _LoginScreenState extends State<LoginScreen> {
                         SizedBox(
                           width: double.infinity,
                           height: 54,
-                          child: ElevatedButton(
-                            onPressed: _isLoading ? null : _handleLogin,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.purple,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                                colors: AppColors.brandGradient,
                               ),
-                              elevation: 0,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color:
+                                      AppColors.brandPurple.withOpacity(0.25),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 6),
+                                ),
+                              ],
                             ),
-                            child: _isLoading
-                                ? const SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 2.5,
+                            child: ElevatedButton(
+                              onPressed: _isLoading ? null : _handleLogin,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.transparent,
+                                shadowColor: Colors.transparent,
+                                foregroundColor: AppColors.primaryForeground,
+                                disabledForegroundColor:
+                                    AppColors.primaryForeground,
+                                disabledBackgroundColor: Colors.transparent,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                elevation: 0,
+                              ),
+                              child: _isLoading
+                                  ? const SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(
+                                        color: AppColors.primaryForeground,
+                                        strokeWidth: 2.5,
+                                      ),
+                                    )
+                                  : Text(
+                                      AppLocalizations.of(context)!.login,
+                                      style: GoogleFonts.cairo(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
-                                  )
-                                : Text(
-                                    AppLocalizations.of(context)!.login,
-                                    style: GoogleFonts.cairo(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
+                            ),
                           ),
                         ),
                         const SizedBox(height: 24),
@@ -392,12 +414,27 @@ class _LoginScreenState extends State<LoginScreen> {
                               TextButton(
                                 onPressed: () =>
                                     context.go(RouteNames.register),
-                                child: Text(
-                                  AppLocalizations.of(context)!.registerNow,
-                                  style: GoogleFonts.cairo(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.purple,
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                ),
+                                child: ShaderMask(
+                                  blendMode: BlendMode.srcIn,
+                                  shaderCallback: (bounds) =>
+                                      const LinearGradient(
+                                        begin: Alignment.centerLeft,
+                                        end: Alignment.centerRight,
+                                        colors: AppColors.brandGradient,
+                                      ).createShader(bounds),
+                                  child: Text(
+                                    AppLocalizations.of(context)!.registerNow,
+                                    style: GoogleFonts.cairo(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -435,11 +472,18 @@ class _LoginScreenState extends State<LoginScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.brandBlue.withOpacity(0.06),
+            AppColors.brandPurple.withOpacity(0.06),
+          ],
+        ),
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: AppColors.blackOverlay20,
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -456,7 +500,24 @@ class _LoginScreenState extends State<LoginScreen> {
           prefixIcon: Icon(icon, color: AppColors.purple, size: 22),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide.none,
+            borderSide: BorderSide(
+              color: Theme.of(context).colorScheme.secondary,
+              width: 1,
+            ),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(
+              color: Theme.of(context).colorScheme.secondary,
+              width: 1,
+            ),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(
+              color: Theme.of(context).colorScheme.secondary,
+              width: 2,
+            ),
           ),
           contentPadding:
               const EdgeInsets.symmetric(vertical: 16, horizontal: 16),

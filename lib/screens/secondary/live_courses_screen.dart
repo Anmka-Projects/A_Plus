@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import '../../core/design/app_colors.dart';
-import '../../core/design/app_text_styles.dart';
 import '../../core/design/app_radius.dart';
 import '../../core/localization/localization_helper.dart';
 import '../../services/live_courses_service.dart';
@@ -94,16 +93,23 @@ class _LiveCoursesScreenState extends State<LiveCoursesScreen> {
           children: [
             // Header - Orange gradient like exams page
             Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [AppColors.primary, AppColors.pureWhite],
+                  colors: AppColors.brandGradient,
                 ),
-                borderRadius: BorderRadius.only(
+                borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(AppRadius.largeCard),
                   bottomRight: Radius.circular(AppRadius.largeCard),
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.brandBlue.withOpacity(0.3),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
               ),
               padding: EdgeInsets.only(
                 top: MediaQuery.of(context).padding.top + 16, // pt-4
@@ -136,7 +142,11 @@ class _LiveCoursesScreenState extends State<LiveCoursesScreen> {
                       const SizedBox(width: 16), // gap-4
                       Text(
                         context.l10n.liveCourses,
-                        style: AppTextStyles.h3(color: Colors.white),
+                        style: GoogleFonts.cairo(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
                       ),
                     ],
                   ),
@@ -157,8 +167,9 @@ class _LiveCoursesScreenState extends State<LiveCoursesScreen> {
                               ? context.l10n.live
                               : context.l10n.upcoming,
                         ),
-                        style: AppTextStyles.bodyMedium(
-                          color: Colors.white.withOpacity(0.7), // white/70
+                        style: GoogleFonts.cairo(
+                          fontSize: 14,
+                          color: Colors.white.withOpacity(0.7),
                         ),
                       ),
                     ],
@@ -231,7 +242,7 @@ class _LiveCoursesScreenState extends State<LiveCoursesScreen> {
           SnackBar(
             content: Text(
               context.l10n.registeredForSession,
-              style: AppTextStyles.bodySmall(),
+              style: GoogleFonts.cairo(fontSize: 13),
             ),
             backgroundColor: const Color(0xFF10B981),
             behavior: SnackBarBehavior.floating,
@@ -257,7 +268,7 @@ class _LiveCoursesScreenState extends State<LiveCoursesScreen> {
                       e.toString().contains('Unauthorized')
                   ? context.l10n.mustLoginFirst
                   : context.l10n.errorRegistering,
-              style: AppTextStyles.bodySmall(),
+              style: GoogleFonts.cairo(fontSize: 13),
             ),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
@@ -282,9 +293,9 @@ class _LiveCoursesScreenState extends State<LiveCoursesScreen> {
         SnackBar(
           content: Text(
             context.l10n.willOpenSessionLink,
-            style: AppTextStyles.bodySmall(),
+            style: GoogleFonts.cairo(fontSize: 13),
           ),
-          backgroundColor: AppColors.purple,
+          backgroundColor: AppColors.brandPurple,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
@@ -296,7 +307,7 @@ class _LiveCoursesScreenState extends State<LiveCoursesScreen> {
         SnackBar(
           content: Text(
             context.l10n.sessionLinkUnavailable,
-            style: AppTextStyles.bodySmall(),
+            style: GoogleFonts.cairo(fontSize: 13),
           ),
           backgroundColor: Colors.orange,
           behavior: SnackBarBehavior.floating,
@@ -337,26 +348,46 @@ class _LiveCoursesScreenState extends State<LiveCoursesScreen> {
             width: 120,
             height: 120,
             decoration: BoxDecoration(
-              color: AppColors.orange.withOpacity(0.1),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppColors.brandBlue.withOpacity(0.14),
+                  AppColors.brandPurple.withOpacity(0.14),
+                ],
+              ),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
-              Icons.videocam_off_rounded,
-              size: 60,
-              color: AppColors.orange,
+            child: Center(
+              child: ShaderMask(
+                blendMode: BlendMode.srcIn,
+                shaderCallback: (bounds) => const LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: AppColors.brandGradient,
+                ).createShader(bounds),
+                child: const Icon(
+                  Icons.videocam_off_rounded,
+                  size: 60,
+                  color: Colors.white,
+                ),
+              ),
             ),
           ),
           const SizedBox(height: 24),
           Text(
             context.l10n.noLiveSessions,
-            style: AppTextStyles.h2(
+            style: GoogleFonts.cairo(
+              fontSize: 22,
+              fontWeight: FontWeight.w600,
               color: AppColors.foreground,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             context.l10n.sessionsComingSoon,
-            style: AppTextStyles.bodyMedium(
+            style: GoogleFonts.cairo(
+              fontSize: 14,
               color: AppColors.mutedForeground,
             ),
             textAlign: TextAlign.center,
@@ -438,20 +469,20 @@ class _LiveCourseCard extends StatelessWidget {
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) =>
                               Container(
-                            color: AppColors.purple.withOpacity(0.1),
+                            color: AppColors.brandPurple.withOpacity(0.1),
                             child: const Icon(
                               Icons.video_library,
                               size: 48,
-                              color: AppColors.purple,
+                              color: AppColors.brandPurple,
                             ),
                           ),
                         )
                       : Container(
-                          color: AppColors.purple.withOpacity(0.1),
+                          color: AppColors.brandPurple.withOpacity(0.1),
                           child: const Icon(
                             Icons.video_library,
                             size: 48,
-                            color: AppColors.purple,
+                            color: AppColors.brandPurple,
                           ),
                         ),
                 ),
@@ -484,9 +515,11 @@ class _LiveCourseCard extends StatelessWidget {
                         const SizedBox(width: 4), // gap-1
                         Text(
                           context.l10n.liveNow,
-                          style: AppTextStyles.bodySmall(
+                          style: GoogleFonts.cairo(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
                             color: Colors.white,
-                          ).copyWith(fontWeight: FontWeight.w500),
+                          ),
                         ),
                       ],
                     ),
@@ -502,14 +535,20 @@ class _LiveCourseCard extends StatelessWidget {
                       vertical: 4, // py-1
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.purple,
-                      borderRadius: BorderRadius.circular(999), // rounded-full
+                      gradient: const LinearGradient(
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                        colors: AppColors.brandGradient,
+                      ),
+                      borderRadius: BorderRadius.circular(999),
                     ),
                     child: Text(
                       context.l10n.comingSoon,
-                      style: AppTextStyles.bodySmall(
+                      style: GoogleFonts.cairo(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
                         color: Colors.white,
-                      ).copyWith(fontWeight: FontWeight.w500),
+                      ),
                     ),
                   ),
                 ),
@@ -524,15 +563,18 @@ class _LiveCourseCard extends StatelessWidget {
               children: [
                 Text(
                   courseTitle,
-                  style: AppTextStyles.bodyMedium(
+                  style: GoogleFonts.cairo(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
                     color: AppColors.foreground,
-                  ).copyWith(fontWeight: FontWeight.bold),
+                  ),
                 ),
                 const SizedBox(height: 8), // mb-2
                 Text(
                   instructor,
-                  style: AppTextStyles.bodySmall(
-                    color: AppColors.purple,
+                  style: GoogleFonts.cairo(
+                    fontSize: 13,
+                    color: AppColors.brandPurple,
                   ),
                 ),
                 const SizedBox(height: 12), // mb-3
@@ -554,7 +596,9 @@ class _LiveCourseCard extends StatelessWidget {
                             startDate != null
                                 ? _formatDate(context, startDate)
                                 : context.l10n.undefinedDate,
-                            style: AppTextStyles.labelSmall(
+                            style: GoogleFonts.cairo(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
                               color: AppColors.mutedForeground,
                             ),
                           ),
@@ -571,7 +615,9 @@ class _LiveCourseCard extends StatelessWidget {
                           const SizedBox(width: 4), // gap-1
                           Text(
                             duration,
-                            style: AppTextStyles.labelSmall(
+                            style: GoogleFonts.cairo(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
                               color: AppColors.mutedForeground,
                             ),
                           ),
@@ -588,7 +634,9 @@ class _LiveCourseCard extends StatelessWidget {
                           const SizedBox(width: 4), // gap-1
                           Text(
                             '$participants',
-                            style: AppTextStyles.labelSmall(
+                            style: GoogleFonts.cairo(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
                               color: AppColors.mutedForeground,
                             ),
                           ),
@@ -606,7 +654,9 @@ class _LiveCourseCard extends StatelessWidget {
                       children: [
                         Text(
                           context.l10n.startsIn,
-                          style: AppTextStyles.labelSmall(
+                          style: GoogleFonts.cairo(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
                             color: AppColors.mutedForeground,
                           ),
                           textAlign: TextAlign.center,
@@ -624,15 +674,21 @@ class _LiveCourseCard extends StatelessWidget {
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(vertical: 12), // py-3
                       decoration: BoxDecoration(
-                        color: AppColors.purple,
-                        borderRadius: BorderRadius.circular(16), // rounded-2xl
+                        gradient: const LinearGradient(
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                          colors: AppColors.brandGradient,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
                       ),
                       child: Center(
                         child: Text(
                           context.l10n.remindMe,
-                          style: AppTextStyles.bodyMedium(
+                          style: GoogleFonts.cairo(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
                             color: Colors.white,
-                          ).copyWith(fontWeight: FontWeight.bold),
+                          ),
                         ),
                       ),
                     ),
@@ -658,9 +714,11 @@ class _LiveCourseCard extends StatelessWidget {
                           const SizedBox(width: 8), // gap-2
                           Text(
                             context.l10n.joinNow,
-                            style: AppTextStyles.bodyMedium(
+                            style: GoogleFonts.cairo(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
                               color: Colors.white,
-                            ).copyWith(fontWeight: FontWeight.bold),
+                            ),
                           ),
                         ],
                       ),
@@ -777,22 +835,26 @@ class _CountdownTimerState extends State<_CountdownTimer> {
       width: 50, // min-w-[50px]
       padding: const EdgeInsets.all(8), // p-2
       decoration: BoxDecoration(
-        color: AppColors.purple.withOpacity(0.1),
+        color: AppColors.brandPurple.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12), // rounded-xl
       ),
       child: Column(
         children: [
           Text(
             value.toString().padLeft(2, '0'),
-            style: AppTextStyles.h4(
-              color: AppColors.purple,
+            style: GoogleFonts.cairo(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: AppColors.brandPurple,
             ),
           ),
           Text(
             label,
-            style: AppTextStyles.labelSmall(
+            style: GoogleFonts.cairo(
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
               color: AppColors.mutedForeground,
-            ).copyWith(fontSize: 10),
+            ),
           ),
         ],
       ),

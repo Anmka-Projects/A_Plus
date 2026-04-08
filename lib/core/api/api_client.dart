@@ -5,6 +5,20 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import '../../services/token_storage_service.dart';
 
+/// Normalize backend `message` / `error` fields (string, list of validation errors, etc.).
+String? _coerceApiBodyMessage(dynamic value) {
+  if (value == null) return null;
+  if (value is String) return value.isEmpty ? null : value;
+  if (value is List) {
+    final parts =
+        value.map((e) => e.toString()).where((s) => s.isNotEmpty).toList();
+    if (parts.isEmpty) return null;
+    return parts.join('\n');
+  }
+  final s = value.toString();
+  return s.isEmpty ? null : s;
+}
+
 /// API Client for making HTTP requests
 class ApiClient {
   ApiClient._();
@@ -424,7 +438,9 @@ class ApiClient {
 
       try {
         errorData = jsonDecode(response.body) as Map<String, dynamic>;
-        errorMessage = errorData['message'] as String? ?? errorMessage;
+        errorMessage = _coerceApiBodyMessage(errorData['message']) ??
+            _coerceApiBodyMessage(errorData['error']) ??
+            errorMessage;
       } catch (e) {
         // Not JSON, use raw body
       }

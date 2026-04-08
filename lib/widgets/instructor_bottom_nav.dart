@@ -1,8 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../core/design/app_colors.dart';
-import '../core/design/app_text_styles.dart';
 import '../core/navigation/route_names.dart';
 import '../core/localization/localization_helper.dart';
 
@@ -226,16 +226,21 @@ class _NavItem extends StatelessWidget {
             Icon(
               icon,
               size: isActive ? 26 : 24,
-              color: isActive ? AppColors.secondary : Colors.grey[500],
+              color:
+                  isActive ? AppColors.secondary : AppColors.mutedForeground,
             ),
             const SizedBox(height: 4),
             Text(
               label,
-              style: AppTextStyles.labelSmall(
-                color: isActive ? AppColors.secondary : Colors.grey[500],
-              ).copyWith(
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.cairo(
                 fontSize: isActive ? 11 : 10,
                 fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                color:
+                    isActive ? AppColors.secondary : AppColors.mutedForeground,
+                height: 1.2,
               ),
             ),
           ],

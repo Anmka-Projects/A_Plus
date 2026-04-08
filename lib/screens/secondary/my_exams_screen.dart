@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import '../../core/design/app_colors.dart';
-import '../../core/design/app_text_styles.dart';
 import '../../core/design/app_radius.dart';
 import '../../core/localization/localization_helper.dart';
 import '../../services/exams_service.dart';
@@ -102,16 +102,23 @@ class _MyExamsScreenState extends State<MyExamsScreen> {
           children: [
             // Header - matches React: bg-[var(--orange)] rounded-b-[3rem] pt-4 pb-8 px-4
             Container(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: const LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [AppColors.primary, AppColors.pureWhite],
-                ), // Orange header!
-                borderRadius: BorderRadius.only(
+                  colors: AppColors.brandGradient,
+                ),
+                borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(AppRadius.largeCard),
                   bottomRight: Radius.circular(AppRadius.largeCard),
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.brandBlue.withOpacity(0.3),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
               ),
               padding: EdgeInsets.only(
                 top: MediaQuery.of(context).padding.top + 16, // pt-4
@@ -144,15 +151,20 @@ class _MyExamsScreenState extends State<MyExamsScreen> {
                       const SizedBox(width: 16), // gap-4
                       Text(
                         context.l10n.myExams,
-                        style: AppTextStyles.h2(color: Colors.white),
+                        style: GoogleFonts.cairo(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16), // mb-4
                   Text(
                     context.l10n.viewAllCompletedExams,
-                    style: AppTextStyles.bodyMedium(
-                      color: Colors.white.withOpacity(0.7), // white/70
+                    style: GoogleFonts.cairo(
+                      fontSize: 14,
+                      color: Colors.white.withOpacity(0.7),
                     ),
                   ),
                 ],
@@ -200,15 +212,19 @@ class _MyExamsScreenState extends State<MyExamsScreen> {
                                             children: [
                                               Text(
                                                 '${_completedExams.length}',
-                                                style: AppTextStyles.h2(
-                                                  color: AppColors.purple,
+                                                style: GoogleFonts.cairo(
+                                                  fontSize: 24,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: AppColors.brandPurple,
                                                 ),
                                               ),
                                               Text(
                                                 context.l10n.totalExams,
-                                                style: AppTextStyles.labelSmall(
-                                                  color:
-                                                      AppColors.mutedForeground,
+                                                style: GoogleFonts.cairo(
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: AppColors
+                                                      .mutedForeground,
                                                 ),
                                                 textAlign: TextAlign.center,
                                               ),
@@ -221,15 +237,19 @@ class _MyExamsScreenState extends State<MyExamsScreen> {
                                             children: [
                                               Text(
                                                 '$passedCount',
-                                                style: AppTextStyles.h2(
+                                                style: GoogleFonts.cairo(
+                                                  fontSize: 24,
+                                                  fontWeight: FontWeight.w600,
                                                   color: Colors.green,
                                                 ),
                                               ),
                                               Text(
                                                 context.l10n.passed,
-                                                style: AppTextStyles.labelSmall(
-                                                  color:
-                                                      AppColors.mutedForeground,
+                                                style: GoogleFonts.cairo(
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: AppColors
+                                                      .mutedForeground,
                                                 ),
                                                 textAlign: TextAlign.center,
                                               ),
@@ -242,15 +262,19 @@ class _MyExamsScreenState extends State<MyExamsScreen> {
                                             children: [
                                               Text(
                                                 '$failedCount',
-                                                style: AppTextStyles.h2(
+                                                style: GoogleFonts.cairo(
+                                                  fontSize: 24,
+                                                  fontWeight: FontWeight.w600,
                                                   color: Colors.red,
                                                 ),
                                               ),
                                               Text(
                                                 context.l10n.failed,
-                                                style: AppTextStyles.labelSmall(
-                                                  color:
-                                                      AppColors.mutedForeground,
+                                                style: GoogleFonts.cairo(
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: AppColors
+                                                      .mutedForeground,
                                                 ),
                                                 textAlign: TextAlign.center,
                                               ),
@@ -336,9 +360,11 @@ class _MyExamsScreenState extends State<MyExamsScreen> {
                   children: [
                     Text(
                       examTitle,
-                      style: AppTextStyles.bodyMedium(
+                      style: GoogleFonts.cairo(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
                         color: AppColors.foreground,
-                      ).copyWith(fontWeight: FontWeight.bold),
+                      ),
                     ),
                     const SizedBox(height: 4), // mb-1
                     Row(
@@ -351,7 +377,8 @@ class _MyExamsScreenState extends State<MyExamsScreen> {
                         const SizedBox(width: 8), // gap-2
                         Text(
                           _formatDate(context, completedAt),
-                          style: AppTextStyles.bodySmall(
+                          style: GoogleFonts.cairo(
+                            fontSize: 13,
                             color: AppColors.mutedForeground,
                           ),
                         ),
@@ -366,13 +393,17 @@ class _MyExamsScreenState extends State<MyExamsScreen> {
                 children: [
                   Text(
                     '$score%',
-                    style: AppTextStyles.h2(
+                    style: GoogleFonts.cairo(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w600,
                       color: passed ? Colors.green[600] : Colors.red[600],
                     ),
                   ),
                   Text(
                     '$correctAnswers/$totalQuestions',
-                    style: AppTextStyles.labelSmall(
+                    style: GoogleFonts.cairo(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
                       color: AppColors.mutedForeground,
                     ),
                   ),
@@ -416,9 +447,11 @@ class _MyExamsScreenState extends State<MyExamsScreen> {
               ),
               child: Text(
                 passed ? context.l10n.passed : context.l10n.failed,
-                style: AppTextStyles.labelSmall(
+                style: GoogleFonts.cairo(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
                   color: passed ? Colors.green[700] : Colors.red[700],
-                ).copyWith(fontWeight: FontWeight.w500),
+                ),
               ),
             ),
           ),
@@ -598,26 +631,46 @@ class _MyExamsScreenState extends State<MyExamsScreen> {
             width: 120,
             height: 120,
             decoration: BoxDecoration(
-              color: AppColors.orange.withOpacity(0.1),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppColors.brandBlue.withOpacity(0.14),
+                  AppColors.brandPurple.withOpacity(0.14),
+                ],
+              ),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
-              Icons.quiz_rounded,
-              size: 60,
-              color: AppColors.orange,
+            child: Center(
+              child: ShaderMask(
+                blendMode: BlendMode.srcIn,
+                shaderCallback: (bounds) => const LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: AppColors.brandGradient,
+                ).createShader(bounds),
+                child: const Icon(
+                  Icons.quiz_rounded,
+                  size: 60,
+                  color: Colors.white,
+                ),
+              ),
             ),
           ),
           const SizedBox(height: 24),
           Text(
             context.l10n.noCompletedExams,
-            style: AppTextStyles.h2(
+            style: GoogleFonts.cairo(
+              fontSize: 22,
+              fontWeight: FontWeight.w600,
               color: AppColors.foreground,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             context.l10n.startCompletingExams,
-            style: AppTextStyles.bodyMedium(
+            style: GoogleFonts.cairo(
+              fontSize: 14,
               color: AppColors.mutedForeground,
             ),
             textAlign: TextAlign.center,

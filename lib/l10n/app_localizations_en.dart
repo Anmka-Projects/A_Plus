@@ -9,7 +9,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get appName => 'Anmka Educational Platform';
+  String get appName => 'A Plus';
 
   @override
   String get settings => 'Settings';

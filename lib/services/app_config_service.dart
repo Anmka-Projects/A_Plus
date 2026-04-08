@@ -44,8 +44,8 @@ class AppConfigService {
   /// Get default configuration (fallback)
   AppConfig _getDefaultConfig() {
     return AppConfig(
-      appName: 'Anmka LMS',
-      appNameAr: 'منصة أنمكا التعليمية',
+      appName: 'A Plus',
+      appNameAr: 'A Plus',
       tagline: 'منصة التعليم الذكية',
       version: '1.0.0',
       forceUpdate: false,

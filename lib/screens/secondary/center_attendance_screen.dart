@@ -422,7 +422,7 @@ class _CenterAttendanceScreenState extends State<CenterAttendanceScreen> {
             ElevatedButton(
               onPressed: _loadData,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.purple,
+                backgroundColor: AppColors.primaryLight,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 32,
