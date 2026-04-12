@@ -2,11 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../core/design/app_text_styles.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import '../../core/design/app_colors.dart';
-import '../../core/design/app_text_styles.dart';
-import '../../core/design/app_radius.dart';
 import '../../core/localization/localization_helper.dart';
 import '../../services/video_download_service.dart';
 import '../../models/download_model.dart';
@@ -41,6 +38,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
   }
 
   Future<void> _loadDownloads() async {
+    if (!mounted) return;
     setState(() => _isLoading = true);
     try {
       // تحميل الفيديوهات المحملة محلياً
@@ -58,6 +56,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
         print('  total size: ${totalSize.toStringAsFixed(2)} MB');
       }
 
+      if (!mounted) return;
       setState(() {
         _downloadedVideos = videos;
         _storageUsedMB = totalSize;
@@ -70,6 +69,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
       if (kDebugMode) {
         print('❌ Error loading downloads: $e');
       }
+      if (!mounted) return;
       setState(() {
         _downloadedVideos = [];
         _storageUsedMB = 0;
@@ -91,73 +91,90 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.beige,
+      backgroundColor: const Color(0xFFF2F6F7),
       body: SafeArea(
         top: false,
         child: Column(
           children: [
-            // Header - Purple gradient like Home
             Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [AppColors.primary, AppColors.pureWhite],
+                  colors: AppColors.brandGradient,
                 ),
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(AppRadius.largeCard),
-                  bottomRight: Radius.circular(AppRadius.largeCard),
-                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.brandTealDark.withValues(alpha: 0.25),
+                    blurRadius: 16,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
               ),
               padding: EdgeInsets.only(
-                top: MediaQuery.of(context).padding.top + 16, // pt-4
-                bottom: 32, // pb-8
-                left: 16, // px-4
+                top: MediaQuery.of(context).padding.top + 12,
+                bottom: 28,
+                left: 16,
                 right: 16,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Back button and title - matches React: gap-4 mb-4
                   Row(
                     children: [
-                      GestureDetector(
-                        onTap: () => context.pop(),
-                        child: Container(
-                          width: 40, // w-10
-                          height: 40, // h-10
-                          decoration: const BoxDecoration(
-                            color: AppColors.whiteOverlay20, // bg-white/20
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.chevron_right,
-                            color: Colors.white,
-                            size: 20, // w-5 h-5
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () => context.pop(),
+                          borderRadius: BorderRadius.circular(14),
+                          child: Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: AppColors.whiteOverlay20,
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: Icon(
+                              Directionality.of(context) == TextDirection.rtl
+                                  ? Icons.arrow_forward_ios_rounded
+                                  : Icons.arrow_back_ios_new_rounded,
+                              color: Colors.white,
+                              size: 18,
+                            ),
                           ),
                         ),
                       ),
-                      const SizedBox(width: 16), // gap-4
-                      Text(
-                        context.l10n.downloads,
-                        style: AppTextStyles.h3(color: Colors.white),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          context.l10n.downloads,
+                          style: GoogleFonts.cairo(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            height: 1.2,
+                          ),
+                        ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16), // mb-4
-                  // Download count - matches React: gap-2
+                  const SizedBox(height: 14),
                   Row(
                     children: [
                       Icon(
-                        Icons.download,
-                        size: 20, // w-5 h-5
-                        color: Colors.white.withOpacity(0.7), // white/70
+                        Icons.download_rounded,
+                        size: 20,
+                        color: Colors.white.withValues(alpha: 0.88),
                       ),
-                      const SizedBox(width: 8), // gap-2
-                      Text(
-                        context.l10n.downloadedFiles(_downloadedVideos.length),
-                        style: AppTextStyles.bodyMedium(
-                          color: Colors.white.withOpacity(0.7), // white/70
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          context.l10n.downloadedFiles(_downloadedVideos.length),
+                          style: GoogleFonts.cairo(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white.withValues(alpha: 0.88),
+                          ),
                         ),
                       ),
                     ],
@@ -237,9 +254,14 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
         borderRadius: BorderRadius.circular(24), // rounded-3xl
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 12,
+            color: AppColors.brandTeal.withValues(alpha: 0.08),
+            blurRadius: 16,
             offset: const Offset(0, 6),
+          ),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -254,8 +276,8 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                   width: 48, // w-12
                   height: 48, // h-12
                   decoration: BoxDecoration(
-                    color: AppColors.purple.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12), // rounded-xl
+                    color: AppColors.brandTeal.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(
                     Icons.storage,
@@ -270,16 +292,20 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                     children: [
                       Text(
                         context.l10n.storage,
-                        style: AppTextStyles.bodyMedium(
+                        style: GoogleFonts.cairo(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
                           color: AppColors.foreground,
-                        ).copyWith(fontWeight: FontWeight.bold),
+                        ),
                       ),
                       Text(
                         context.l10n.storageUsed(
                           usedGB.toStringAsFixed(1),
                           limitGB.toStringAsFixed(1),
                         ),
-                        style: AppTextStyles.bodySmall(
+                        style: GoogleFonts.cairo(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
                           color: AppColors.mutedForeground,
                         ),
                       ),
@@ -293,17 +319,22 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
           Container(
             height: 12, // h-3
             decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(999), // rounded-full
+              color: AppColors.muted,
+              borderRadius: BorderRadius.circular(999),
             ),
             child: FractionallySizedBox(
-              alignment: Alignment.centerRight,
+              alignment: AlignmentDirectional.centerStart,
               widthFactor:
                   percentage > 1 ? 1 : (percentage < 0 ? 0 : percentage),
               child: Container(
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [AppColors.purple, AppColors.orange],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                    colors: [
+                      AppColors.brandTealLight,
+                      AppColors.brandTeal,
+                    ],
                   ),
                   borderRadius: BorderRadius.circular(999),
                 ),
@@ -330,9 +361,9 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
         borderRadius: BorderRadius.circular(16), // rounded-2xl
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            color: AppColors.brandTeal.withValues(alpha: 0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -346,12 +377,12 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                 width: 64, // w-16
                 height: 64, // h-16
                 decoration: BoxDecoration(
-                  color: AppColors.purple.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12), // rounded-xl
+                  color: AppColors.brandTeal.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
-                  Icons.video_library,
-                  color: AppColors.purple,
+                  Icons.video_library_rounded,
+                  color: AppColors.brandTeal,
                   size: 32,
                 ),
               ),
@@ -364,16 +395,20 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                   children: [
                     Text(
                       title,
-                      style: AppTextStyles.bodyMedium(
+                      style: GoogleFonts.cairo(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
                         color: AppColors.foreground,
-                      ).copyWith(fontWeight: FontWeight.bold),
+                      ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4), // mb-1
+                    const SizedBox(height: 4),
                     Text(
                       courseTitle,
-                      style: AppTextStyles.labelSmall(
+                      style: GoogleFonts.cairo(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
                         color: AppColors.mutedForeground,
                       ),
                       maxLines: 1,
@@ -384,21 +419,26 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                       children: [
                         Text(
                           durationText,
-                          style: AppTextStyles.labelSmall(
+                          style: GoogleFonts.cairo(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
                             color: AppColors.mutedForeground,
                           ),
                         ),
                         const SizedBox(width: 8),
                         Text(
                           '•',
-                          style: AppTextStyles.labelSmall(
+                          style: GoogleFonts.cairo(
+                            fontSize: 11,
                             color: AppColors.mutedForeground,
                           ),
                         ),
                         const SizedBox(width: 8),
                         Text(
                           sizeStr,
-                          style: AppTextStyles.labelSmall(
+                          style: GoogleFonts.cairo(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
                             color: AppColors.mutedForeground,
                           ),
                         ),
@@ -436,25 +476,34 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
             child: Container(
               alignment: Alignment.center,
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 12), // py-3
+              padding: const EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
-                color: AppColors.purple,
-                borderRadius: BorderRadius.circular(12), // rounded-xl
+                gradient: const LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: [
+                    Color(0xFF102027),
+                    Color(0xFF4DD0E1),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Icon(
-                    Icons.play_arrow,
-                    size: 20, // w-5 h-5
+                    Icons.play_arrow_rounded,
+                    size: 22,
                     color: Colors.white,
                   ),
-                  const SizedBox(width: 8), // gap-2
+                  const SizedBox(width: 8),
                   Text(
                     context.l10n.watchOffline,
-                    style: AppTextStyles.bodyMedium(
+                    style: GoogleFonts.cairo(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
                       color: Colors.white,
-                    ).copyWith(fontWeight: FontWeight.w500),
+                    ),
                   ),
                 ],
               ),
@@ -479,30 +528,49 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
 
   Future<void> _handleDelete(DownloadedVideoModel video) async {
     // Show confirmation dialog
+    final l10n = context.l10n;
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
-          'حذف الفيديو',
-          style: AppTextStyles.bodyMedium(),
+          l10n.deleteFile,
+          style: GoogleFonts.cairo(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: AppColors.foreground,
+          ),
         ),
         content: Text(
-          'هل أنت متأكد من حذف هذا الفيديو؟',
-          style: AppTextStyles.bodySmall(),
+          l10n.confirmDeleteFile,
+          style: GoogleFonts.cairo(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: AppColors.mutedForeground,
+            height: 1.4,
+          ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
+            onPressed: () => Navigator.of(ctx).pop(false),
             child: Text(
-              'إلغاء',
-              style: AppTextStyles.bodySmall(),
+              l10n.cancel,
+              style: GoogleFonts.cairo(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.mutedForeground,
+              ),
             ),
           ),
           TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
+            onPressed: () => Navigator.of(ctx).pop(true),
             child: Text(
-              'حذف',
-              style: AppTextStyles.bodySmall(color: Colors.red),
+              l10n.delete,
+              style: GoogleFonts.cairo(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: AppColors.destructive,
+              ),
             ),
           ),
         ],
@@ -515,13 +583,19 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
       final success = await _downloadService.deleteDownloadedVideo(video.id);
 
       if (mounted) {
+        final l10n = context.l10n;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              success ? 'تم حذف الفيديو بنجاح' : 'فشل حذف الفيديو',
-              style: AppTextStyles.bodySmall(),
+              success ? l10n.fileDeleted : l10n.unknownError,
+              style: GoogleFonts.cairo(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.white,
+              ),
             ),
-            backgroundColor: success ? const Color(0xFF10B981) : Colors.red,
+            backgroundColor:
+                success ? AppColors.success : AppColors.destructive,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
@@ -541,10 +615,14 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'خطأ في حذف الفيديو: ${e.toString().replaceFirst('Exception: ', '')}',
-              style: AppTextStyles.bodySmall(),
+              '${context.l10n.unknownError}: ${e.toString().replaceFirst('Exception: ', '')}',
+              style: GoogleFonts.cairo(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.white,
+              ),
             ),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.destructive,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
@@ -595,28 +673,33 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
           Container(
             width: 96, // w-24
             height: 96, // h-24
-            decoration: const BoxDecoration(
-              color: AppColors.lavenderLight,
+            decoration: BoxDecoration(
+              color: AppColors.brandTeal.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
-              Icons.download,
-              size: 48, // w-12 h-12
-              color: AppColors.purple,
+            child: Icon(
+              Icons.download_rounded,
+              size: 48,
+              color: AppColors.brandTeal,
             ),
           ),
-          const SizedBox(height: 16), // mb-4
+          const SizedBox(height: 16),
           Text(
             context.l10n.noDownloads,
-            style: AppTextStyles.h4(
+            style: GoogleFonts.cairo(
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
               color: AppColors.foreground,
             ),
           ),
-          const SizedBox(height: 8), // mb-2
+          const SizedBox(height: 8),
           Text(
             context.l10n.downloadCoursesToWatchOffline,
-            style: AppTextStyles.bodyMedium(
+            style: GoogleFonts.cairo(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
               color: AppColors.mutedForeground,
+              height: 1.45,
             ),
             textAlign: TextAlign.center,
           ),

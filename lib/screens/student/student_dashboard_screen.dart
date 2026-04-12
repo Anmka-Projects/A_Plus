@@ -247,15 +247,6 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
         'onTap': () => context.push(RouteNames.chatConversations),
         'showFor': ['online', 'offline'], // Show for both
       },
-      {
-        'icon': Icons.settings_rounded,
-        'label': l10n.settings,
-        'subtitle': l10n.customizeApp,
-        'color': const Color(0xFF6B7280),
-        'bgColor': const Color(0xFFF3F4F6),
-        'onTap': () => context.push(RouteNames.settings),
-        'showFor': ['online', 'offline'], // Show for both
-      },
     ];
 
     // Filter menu items based on student type
@@ -436,19 +427,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
                       color: Colors.white,
                     ),
                   ),
-                  GestureDetector(
-                    onTap: () => context.push(RouteNames.settings),
-                    child: Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: const Icon(Icons.edit_outlined,
-                          color: Colors.white, size: 20),
-                    ),
-                  ),
+                  const SizedBox(width: 44),
                 ],
               ),
 

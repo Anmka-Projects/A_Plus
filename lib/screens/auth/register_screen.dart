@@ -6,12 +6,11 @@ import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/design/app_colors.dart';
 import '../../core/navigation/route_names.dart';
+import '../../services/academic_structure_service.dart';
 import '../../services/auth_service.dart';
-import '../../services/courses_service.dart';
-import '../../data/registration_categories_catalog.dart';
 import '../../l10n/app_localizations.dart';
 
-/// Register: name, code, phone, category, and subcategory.
+/// Register: quad name, national ID, code, phone, faculty → section → grade (API).
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
@@ -20,74 +19,108 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
+  static const Color _headerNavy = Color(0xFF102027);
+  static const Color _buttonTealEnd = Color(0xFF4DD0E1);
+  static const Color _fieldFill = Color(0xFFD8D8D8);
+
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
+  final _nameFirstController = TextEditingController();
+  final _nameFatherController = TextEditingController();
+  final _nameGrandfatherController = TextEditingController();
+  final _nameFamilyController = TextEditingController();
+  final _nationalIdController = TextEditingController();
   final _codeController = TextEditingController();
   final _phoneController = TextEditingController();
   String? _phoneE164;
   bool _isLoading = false;
 
-  List<Map<String, dynamic>> _allCategories = [];
-  bool _isLoadingCategories = false;
-  Map<String, dynamic>? _selectedCategory;
-  Map<String, dynamic>? _selectedSubcategory;
+  List<Map<String, dynamic>> _faculties = [];
+  List<Map<String, dynamic>> _sections = [];
+  List<Map<String, dynamic>> _grades = [];
+  bool _loadingFaculties = false;
+  bool _loadingSections = false;
+  bool _loadingGrades = false;
+  bool _facultiesLoadFailed = false;
+
+  Map<String, dynamic>? _selectedFaculty;
+  Map<String, dynamic>? _selectedSection;
+  Map<String, dynamic>? _selectedGrade;
 
   @override
   void initState() {
     super.initState();
-    _loadCategories();
+    _loadFaculties();
   }
 
-  Future<void> _loadCategories() async {
-    setState(() => _isLoadingCategories = true);
+  Future<void> _loadFaculties() async {
+    setState(() {
+      _loadingFaculties = true;
+      _facultiesLoadFailed = false;
+    });
     try {
-      final categories =
-          await CoursesService.instance.getCategoriesForRegistration();
-      if (mounted && categories.isNotEmpty) {
-        setState(() => _allCategories = categories);
-        return;
-      }
-
-      // Fallback: if filtered registration list is empty, load raw categories.
-      final rawCategories = await CoursesService.instance.getCategories();
-      if (mounted) {
-        setState(() {
-          _allCategories = rawCategories.isNotEmpty
-              ? rawCategories
-              : RegistrationCategoriesCatalog.seededFallbackCategories();
-        });
-      }
+      final list = await AcademicStructureService.instance.getFaculties();
+      if (!mounted) return;
+      setState(() {
+        _faculties = list;
+        _facultiesLoadFailed = list.isEmpty;
+      });
     } catch (e) {
-      // Keep UI informative if backend payload changes unexpectedly.
-      debugPrint('Failed to load registration categories: $e');
+      debugPrint('Faculties load failed: $e');
       if (mounted) {
         setState(() {
-          _allCategories = RegistrationCategoriesCatalog.seededFallbackCategories();
+          _faculties = [];
+          _facultiesLoadFailed = true;
         });
       }
     } finally {
-      if (mounted) setState(() => _isLoadingCategories = false);
+      if (mounted) setState(() => _loadingFaculties = false);
     }
   }
 
-  List<Map<String, dynamic>> _subcategoriesOf(Map<String, dynamic> category) {
-    for (final key in ['subcategories', 'sub_categories', 'children']) {
-      final raw = category[key];
-      if (raw is List) {
-        return raw
-            .map((e) => e is Map<String, dynamic>
-                ? e
-                : Map<String, dynamic>.from(e as Map))
-            .toList();
-      }
+  Future<void> _loadSections(String facultyId) async {
+    setState(() {
+      _loadingSections = true;
+      _sections = [];
+      _grades = [];
+      _selectedSection = null;
+      _selectedGrade = null;
+    });
+    try {
+      final list =
+          await AcademicStructureService.instance.getSectionsForFaculty(facultyId);
+      if (!mounted) return;
+      setState(() => _sections = list);
+    } catch (e) {
+      debugPrint('Sections load failed: $e');
+      if (mounted) setState(() => _sections = []);
+    } finally {
+      if (mounted) setState(() => _loadingSections = false);
     }
-    return [];
+  }
+
+  Future<void> _loadGrades(String sectionId) async {
+    setState(() {
+      _loadingGrades = true;
+      _grades = [];
+      _selectedGrade = null;
+    });
+    try {
+      final list =
+          await AcademicStructureService.instance.getGradesForSection(sectionId);
+      if (!mounted) return;
+      setState(() => _grades = list);
+    } catch (e) {
+      debugPrint('Grades load failed: $e');
+      if (mounted) setState(() => _grades = []);
+    } finally {
+      if (mounted) setState(() => _loadingGrades = false);
+    }
   }
 
   String _entityName(Map<String, dynamic> map) {
     return map['name']?.toString() ??
-        map['name_en']?.toString() ??
         map['name_ar']?.toString() ??
+        map['name_en']?.toString() ??
         '';
   }
 
@@ -96,23 +129,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Future<void> _handleRegister() async {
     final l10n = AppLocalizations.of(context)!;
 
-    if (_selectedCategory == null || _entityId(_selectedCategory) == null) {
+    if (_entityId(_selectedFaculty) == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(l10n.selectCategory, style: GoogleFonts.cairo()),
+          content: Text(l10n.selectFaculty, style: GoogleFonts.cairo()),
           backgroundColor: AppColors.destructive,
         ),
       );
       return;
     }
-
-    final subs = _subcategoriesOf(_selectedCategory!);
-    if (subs.isNotEmpty &&
-        (_selectedSubcategory == null ||
-            _entityId(_selectedSubcategory) == null)) {
+    if (_entityId(_selectedSection) == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(l10n.selectSubcategory, style: GoogleFonts.cairo()),
+          content: Text(l10n.selectSection, style: GoogleFonts.cairo()),
+          backgroundColor: AppColors.destructive,
+        ),
+      );
+      return;
+    }
+    if (_entityId(_selectedGrade) == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.selectGrade, style: GoogleFonts.cairo()),
           backgroundColor: AppColors.destructive,
         ),
       );
@@ -124,14 +162,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       try {
         final phoneE164 = (_phoneE164 ?? '').trim();
-        final subId = subs.isNotEmpty ? _entityId(_selectedSubcategory) : null;
 
         final authResponse = await AuthService.instance.register(
-          name: _nameController.text.trim(),
+          nameFirst: _nameFirstController.text.trim(),
+          nameFather: _nameFatherController.text.trim(),
+          nameGrandfather: _nameGrandfatherController.text.trim(),
+          nameFamily: _nameFamilyController.text.trim(),
+          nationalId: _nationalIdController.text.trim(),
           code: _codeController.text.trim(),
           phone: phoneE164,
-          categoryId: _entityId(_selectedCategory)!,
-          subcategoryId: subId,
+          facultyId: _entityId(_selectedFaculty)!,
+          sectionId: _entityId(_selectedSection)!,
+          gradeId: _entityId(_selectedGrade)!,
         );
 
         if (!mounted) return;
@@ -170,7 +212,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _nameFirstController.dispose();
+    _nameFatherController.dispose();
+    _nameGrandfatherController.dispose();
+    _nameFamilyController.dispose();
+    _nationalIdController.dispose();
     _codeController.dispose();
     _phoneController.dispose();
     super.dispose();
@@ -191,64 +237,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       backgroundColor: AppColors.beige,
       body: Column(
         children: [
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: AppColors.brandGradient,
-              ),
-            ),
-            child: SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () => context.go(RouteNames.login),
-                          child: Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: AppColors.whiteOverlay20,
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            child: const Icon(
-                              Icons.arrow_back_ios_new_rounded,
-                              color: AppColors.pureWhite,
-                              size: 18,
-                            ),
-                          ),
-                        ),
-                        const Spacer(),
-                        Text(
-                          l10n.register,
-                          style: GoogleFonts.cairo(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.pureWhite,
-                          ),
-                        ),
-                        const Spacer(),
-                        const SizedBox(width: 44),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      l10n.joinUsMessage,
-                      style: GoogleFonts.cairo(
-                        fontSize: 15,
-                        color: AppColors.whiteOverlay40,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
+          _buildHeader(context, l10n),
           Expanded(
             child: Transform.translate(
               offset: const Offset(0, -20),
@@ -264,191 +253,41 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildLabel(l10n.fullName),
+                        _buildLabel(l10n.quadNameTitle),
                         const SizedBox(height: 8),
-                        _buildTextField(
-                          controller: _nameController,
-                          hint: l10n.pleaseEnterName,
-                          icon: Icons.person_outline_rounded,
-                        ),
-                        const SizedBox(height: 16),
-                        _buildLabel(l10n.studentCode),
-                        const SizedBox(height: 8),
-                        _buildTextField(
-                          controller: _codeController,
-                          hint: l10n.enterStudentCode,
-                          icon: Icons.badge_outlined,
-                        ),
+                        _buildQuadNameRow(l10n),
                         const SizedBox(height: 16),
                         _buildLabel(l10n.phone),
                         const SizedBox(height: 8),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: AppColors.pureWhite,
-                            borderRadius: BorderRadius.circular(14),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.blackOverlay20,
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: IntlPhoneField(
-                            controller: _phoneController,
-                            initialCountryCode: 'EG',
-                            disableLengthCheck: true,
-                            showDropdownIcon: true,
-                            dropdownIconPosition: IconPosition.trailing,
-                            dropdownIcon: Icon(
-                              Icons.keyboard_arrow_down_rounded,
-                              size: 20,
-                              color: Theme.of(context).colorScheme.secondary,
-                            ),
-                            flagsButtonPadding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 8,
-                            ),
-                            flagsButtonMargin: const EdgeInsets.only(
-                              left: 10,
-                              top: 10,
-                              bottom: 10,
-                              right: 6,
-                            ),
-                            dropdownTextStyle: GoogleFonts.cairo(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.foreground,
-                            ),
-                            style: GoogleFonts.cairo(fontSize: 15),
-                            dropdownDecoration: BoxDecoration(
-                              color: AppColors.pureWhite,
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                color:
-                                    Theme.of(context).colorScheme.secondary,
-                                width: 1,
-                              ),
-                            ),
-                            decoration: InputDecoration(
-                              filled: true,
-                              fillColor: AppColors.pureWhite,
-                              prefixIcon: const Icon(
-                                Icons.phone_outlined,
-                                color: AppColors.purple,
-                                size: 22,
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(14),
-                                borderSide: BorderSide(
-                                  color:
-                                      Theme.of(context).colorScheme.secondary,
-                                  width: 1,
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(14),
-                                borderSide: BorderSide(
-                                  color:
-                                      Theme.of(context).colorScheme.secondary,
-                                  width: 1,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(14),
-                                borderSide: BorderSide(
-                                  color:
-                                      Theme.of(context).colorScheme.secondary,
-                                  width: 2,
-                                ),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                vertical: 14,
-                                horizontal: 16,
-                              ),
-                            ),
-                            validator: (phone) {
-                              final digitsOnly = (phone?.number ?? '')
-                                  .replaceAll(RegExp(r'[^0-9]'), '');
-                              if (digitsOnly.isEmpty) return l10n.fieldRequired;
-                              if (digitsOnly.length < 6 ||
-                                  digitsOnly.length > 15) {
-                                return l10n.invalidPhone;
-                              }
-                              return null;
-                            },
-                            onChanged: (phone) {
-                              _phoneE164 = phone.completeNumber;
-                            },
-                            onCountryChanged: (country) {
-                              final digitsOnly = _phoneController.text
-                                  .replaceAll(RegExp(r'[^0-9]'), '');
-                              _phoneE164 = '+${country.dialCode}$digitsOnly';
-                            },
-                          ),
+                        _buildPhoneField(context, l10n),
+                        const SizedBox(height: 16),
+                        _buildLabel(l10n.studentCode),
+                        const SizedBox(height: 8),
+                        _buildGrayTextField(
+                          context: context,
+                          controller: _codeController,
+                          hint: l10n.enterStudentCode,
+                          icon: Icons.badge_outlined,
+                          keyboardType: TextInputType.text,
                         ),
                         const SizedBox(height: 16),
-                        _buildLabel(l10n.category),
+                        _buildLabel(l10n.nationalId),
                         const SizedBox(height: 8),
-                        _buildCategoryPicker(context),
+                        _buildNationalIdField(context, l10n),
                         const SizedBox(height: 16),
-                        _buildLabel(l10n.subcategory),
+                        _buildLabel(l10n.faculty),
                         const SizedBox(height: 8),
-                        _buildSubcategoryPicker(context),
+                        _buildFacultyPicker(context, l10n),
+                        const SizedBox(height: 16),
+                        _buildLabel(l10n.section),
+                        const SizedBox(height: 8),
+                        _buildSectionPicker(context, l10n),
+                        const SizedBox(height: 16),
+                        _buildLabel(l10n.grade),
+                        const SizedBox(height: 8),
+                        _buildGradePicker(context, l10n),
                         const SizedBox(height: 24),
-                        SizedBox(
-                          width: double.infinity,
-                          height: 54,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                begin: Alignment.centerLeft,
-                                end: Alignment.centerRight,
-                                colors: AppColors.brandGradient,
-                              ),
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color:
-                                      AppColors.brandPurple.withOpacity(0.25),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 6),
-                                ),
-                              ],
-                            ),
-                            child: ElevatedButton(
-                              onPressed: _isLoading ? null : _handleRegister,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.transparent,
-                                shadowColor: Colors.transparent,
-                                foregroundColor: AppColors.primaryForeground,
-                                disabledForegroundColor:
-                                    AppColors.primaryForeground,
-                                disabledBackgroundColor: Colors.transparent,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                elevation: 0,
-                              ),
-                              child: _isLoading
-                                  ? const SizedBox(
-                                      width: 24,
-                                      height: 24,
-                                      child: CircularProgressIndicator(
-                                        color: AppColors.primaryForeground,
-                                        strokeWidth: 2.5,
-                                      ),
-                                    )
-                                  : Text(
-                                      l10n.createAccount,
-                                      style: GoogleFonts.cairo(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                            ),
-                          ),
-                        ),
+                        _buildSignUpButton(l10n),
                         const SizedBox(height: 20),
                         Center(
                           child: Row(
@@ -457,8 +296,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               Text(
                                 l10n.alreadyHaveAccount,
                                 style: GoogleFonts.cairo(
-                                    fontSize: 14,
-                                    color: AppColors.mutedForeground),
+                                  fontSize: 14,
+                                  color: AppColors.mutedForeground,
+                                ),
                               ),
                               TextButton(
                                 onPressed: () => context.go(RouteNames.login),
@@ -472,10 +312,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   blendMode: BlendMode.srcIn,
                                   shaderCallback: (bounds) =>
                                       const LinearGradient(
-                                        begin: Alignment.centerLeft,
-                                        end: Alignment.centerRight,
-                                        colors: AppColors.brandGradient,
-                                      ).createShader(bounds),
+                                    begin: Alignment.centerLeft,
+                                    end: Alignment.centerRight,
+                                    colors: [
+                                      _headerNavy,
+                                      _buttonTealEnd,
+                                    ],
+                                  ).createShader(bounds),
                                   child: Text(
                                     l10n.login,
                                     style: GoogleFonts.cairo(
@@ -501,321 +344,626 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Widget _buildCategoryPicker(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    return GestureDetector(
-      onTap: () async {
-        await showModalBottomSheet<void>(
-          context: context,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          builder: (ctx) {
-            return SafeArea(
-              child: FractionallySizedBox(
-                heightFactor: 0.9,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        l10n.category,
-                        style: GoogleFonts.cairo(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.foreground,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Expanded(
-                        child: _isLoadingCategories
-                            ? const Center(
-                                child: CircularProgressIndicator(
-                                  color: AppColors.purple,
-                                ),
-                              )
-                            : _allCategories.isEmpty
-                                ? Center(
-                                    child: Text(
-                                      l10n.categoriesComingSoon,
-                                      style: GoogleFonts.cairo(
-                                        fontSize: 13,
-                                        color: AppColors.mutedForeground,
-                                      ),
-                                    ),
-                                  )
-                                : ListView.builder(
-                                    itemCount: _allCategories.length,
-                                    itemBuilder: (context, index) {
-                                      final category = _allCategories[index];
-                                      final id =
-                                          category['id']?.toString() ?? '';
-                                      final name = _entityName(category);
-                                      final isSelected =
-                                          _entityId(_selectedCategory) == id;
-                                      return RadioListTile<String>(
-                                        value: id,
-                                        groupValue:
-                                            _entityId(_selectedCategory),
-                                        onChanged: (value) {
-                                          setState(() {
-                                            _selectedCategory = category;
-                                            _selectedSubcategory = null;
-                                          });
-                                          Navigator.of(ctx).pop();
-                                        },
-                                        title: Text(
-                                          name,
-                                          style: GoogleFonts.cairo(fontSize: 14),
-                                        ),
-                                        selected: isSelected,
-                                      );
-                                    },
-                                  ),
-                      ),
-                      const SizedBox(height: 8),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton(
-                          onPressed: () => Navigator.of(ctx).pop(),
-                          child: Text(
-                            l10n.cancel,
-                            style: GoogleFonts.cairo(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.purple,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-      },
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
-        decoration: BoxDecoration(
-          color: AppColors.pureWhite,
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.blackOverlay20,
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-          border: Border.all(
-            color: Theme.of(context).colorScheme.secondary,
-            width: 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.category_outlined,
-                size: 22, color: AppColors.purple),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                _selectedCategory != null
-                    ? _entityName(_selectedCategory!)
-                    : l10n.tapToSelectCategory,
-                style: GoogleFonts.cairo(
-                  fontSize: 13,
-                  color: _selectedCategory != null
-                      ? AppColors.foreground
-                      : AppColors.mutedForeground,
-                ),
-              ),
-            ),
-            const Icon(
-              Icons.keyboard_arrow_down_rounded,
-              size: 22,
-              color: AppColors.mutedForeground,
-            ),
-          ],
+  Widget _buildHeader(BuildContext context, AppLocalizations l10n) {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: AppColors.brandGradient,
         ),
       ),
-    );
-  }
-
-  Widget _buildSubcategoryPicker(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final subs = _selectedCategory != null
-        ? _subcategoriesOf(_selectedCategory!)
-        : <Map<String, dynamic>>[];
-
-    if (_selectedCategory == null) {
-      return _buildPickerShell(
-        child: Text(
-          l10n.selectCategoryFirst,
-          style: GoogleFonts.cairo(
-            fontSize: 13,
-            color: AppColors.mutedForeground,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned(
+            top: -30,
+            right: -40,
+            child: CircleAvatar(
+              radius: 70,
+              backgroundColor: _headerNavy.withValues(alpha: 0.35),
+            ),
           ),
-        ),
-        onTap: null,
-      );
-    }
-
-    if (subs.isEmpty) {
-      return _buildPickerShell(
-        child: Text(
-          l10n.noSubcategoriesForCategory,
-          style: GoogleFonts.cairo(
-            fontSize: 13,
-            color: AppColors.mutedForeground,
+          Positioned(
+            top: 40,
+            left: -50,
+            child: CircleAvatar(
+              radius: 55,
+              backgroundColor: _headerNavy.withValues(alpha: 0.28),
+            ),
           ),
-        ),
-        onTap: null,
-      );
-    }
-
-    return GestureDetector(
-      onTap: () async {
-        await showModalBottomSheet<void>(
-          context: context,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          Positioned(
+            bottom: 20,
+            right: 40,
+            child: CircleAvatar(
+              radius: 40,
+              backgroundColor: _headerNavy.withValues(alpha: 0.22),
+            ),
           ),
-          builder: (ctx) {
-            return Padding(
-              padding: const EdgeInsets.all(16),
+          SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
               child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    l10n.subcategory,
-                    style: GoogleFonts.cairo(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.foreground,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxHeight: MediaQuery.of(ctx).size.height * 0.45,
-                    ),
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: subs.length,
-                      itemBuilder: (context, index) {
-                        final sub = subs[index];
-                        final id = sub['id']?.toString() ?? '';
-                        final name = _entityName(sub);
-                        final isSelected =
-                            _entityId(_selectedSubcategory) == id;
-                        return RadioListTile<String>(
-                          value: id,
-                          groupValue: _entityId(_selectedSubcategory),
-                          onChanged: (_) {
-                            setState(() => _selectedSubcategory = sub);
-                            Navigator.of(ctx).pop();
-                          },
-                          title: Text(
-                            name,
-                            style: GoogleFonts.cairo(fontSize: 14),
+                  Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () => context.go(RouteNames.login),
+                        child: Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: AppColors.whiteOverlay20,
+                            borderRadius: BorderRadius.circular(14),
                           ),
-                          selected: isSelected,
-                        );
-                      },
-                    ),
-                  ),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () => Navigator.of(ctx).pop(),
-                      child: Text(
-                        l10n.cancel,
-                        style: GoogleFonts.cairo(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.purple,
+                          child: const Icon(
+                            Icons.arrow_back_ios_new_rounded,
+                            color: AppColors.pureWhite,
+                            size: 18,
+                          ),
                         ),
                       ),
+                      const Spacer(),
+                      Text(
+                        l10n.register,
+                        style: GoogleFonts.cairo(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.pureWhite,
+                        ),
+                      ),
+                      const Spacer(),
+                      const SizedBox(width: 44),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    l10n.joinUsMessage,
+                    style: GoogleFonts.cairo(
+                      fontSize: 15,
+                      color: AppColors.whiteOverlay40,
                     ),
                   ),
                 ],
               ),
-            );
-          },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuadNameRow(AppLocalizations l10n) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: _buildNamePart(
+            label: l10n.namePartFirst,
+            controller: _nameFirstController,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _buildNamePart(
+            label: l10n.namePartFather,
+            controller: _nameFatherController,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _buildNamePart(
+            label: l10n.namePartGrandfather,
+            controller: _nameGrandfatherController,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _buildNamePart(
+            label: l10n.namePartFamily,
+            controller: _nameFamilyController,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNamePart({
+    required String label,
+    required TextEditingController controller,
+  }) {
+    final l10n = AppLocalizations.of(context)!;
+    return TextFormField(
+      controller: controller,
+      textAlign: TextAlign.center,
+      style: GoogleFonts.cairo(fontSize: 14, fontWeight: FontWeight.w600),
+      decoration: InputDecoration(
+        hintText: label,
+        hintStyle: GoogleFonts.cairo(
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+          color: AppColors.mutedForeground,
+        ),
+        filled: true,
+        fillColor: _fieldFill,
+        isDense: true,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 6, vertical: 12),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+        ),
+      ),
+      validator: (v) {
+        if (v == null || v.trim().isEmpty) return l10n.fieldRequired;
+        return null;
+      },
+    );
+  }
+
+  Widget _buildPhoneField(BuildContext context, AppLocalizations l10n) {
+    return Container(
+      decoration: BoxDecoration(
+        color: _fieldFill,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.blackOverlay20,
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: IntlPhoneField(
+        controller: _phoneController,
+        initialCountryCode: 'EG',
+        disableLengthCheck: true,
+        showDropdownIcon: true,
+        dropdownIconPosition: IconPosition.trailing,
+        dropdownIcon: Icon(
+          Icons.keyboard_arrow_down_rounded,
+          size: 20,
+          color: Theme.of(context).colorScheme.secondary,
+        ),
+        flagsButtonPadding:
+            const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        flagsButtonMargin:
+            const EdgeInsets.only(left: 10, top: 10, bottom: 10, right: 6),
+        dropdownTextStyle: GoogleFonts.cairo(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: AppColors.foreground,
+        ),
+        style: GoogleFonts.cairo(fontSize: 15),
+        dropdownDecoration: BoxDecoration(
+          color: AppColors.pureWhite,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.secondary,
+            width: 1,
+          ),
+        ),
+        decoration: InputDecoration(
+          filled: true,
+          fillColor: _fieldFill,
+          prefixIcon: const Icon(
+            Icons.phone_outlined,
+            color: AppColors.purple,
+            size: 22,
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: AppColors.primary, width: 2),
+          ),
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+        ),
+        validator: (phone) {
+          final digitsOnly =
+              (phone?.number ?? '').replaceAll(RegExp(r'[^0-9]'), '');
+          if (digitsOnly.isEmpty) return l10n.fieldRequired;
+          if (digitsOnly.length < 6 || digitsOnly.length > 15) {
+            return l10n.invalidPhone;
+          }
+          return null;
+        },
+        onChanged: (phone) {
+          _phoneE164 = phone.completeNumber;
+        },
+        onCountryChanged: (country) {
+          final digitsOnly =
+              _phoneController.text.replaceAll(RegExp(r'[^0-9]'), '');
+          _phoneE164 = '+${country.dialCode}$digitsOnly';
+        },
+      ),
+    );
+  }
+
+  Widget _buildNationalIdField(BuildContext context, AppLocalizations l10n) {
+    return TextFormField(
+      controller: _nationalIdController,
+      keyboardType: TextInputType.number,
+      inputFormatters: [
+        FilteringTextInputFormatter.digitsOnly,
+        LengthLimitingTextInputFormatter(14),
+      ],
+      style: GoogleFonts.cairo(fontSize: 15),
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: _fieldFill,
+        hintText: l10n.nationalIdHint,
+        hintStyle:
+            GoogleFonts.cairo(color: AppColors.mutedForeground, fontSize: 14),
+        prefixIcon: const Icon(
+          Icons.credit_card_outlined,
+          color: AppColors.purple,
+          size: 22,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+        ),
+        contentPadding:
+            const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+      ),
+      validator: (v) {
+        final s = v?.trim() ?? '';
+        if (s.isEmpty) return l10n.fieldRequired;
+        if (!RegExp(r'^\d{14}$').hasMatch(s)) {
+          return l10n.invalidNationalId;
+        }
+        return null;
+      },
+    );
+  }
+
+  Widget _buildGrayTextField({
+    required BuildContext context,
+    required TextEditingController controller,
+    required String hint,
+    required IconData icon,
+    TextInputType? keyboardType,
+  }) {
+    final l10n = AppLocalizations.of(context)!;
+    return TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      style: GoogleFonts.cairo(fontSize: 15),
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: _fieldFill,
+        hintText: hint,
+        hintStyle:
+            GoogleFonts.cairo(color: AppColors.mutedForeground, fontSize: 14),
+        prefixIcon: Icon(icon, color: AppColors.purple, size: 22),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+        ),
+        contentPadding:
+            const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+      ),
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return l10n.fieldRequired;
+        }
+        return null;
+      },
+    );
+  }
+
+  Widget _buildFacultyPicker(BuildContext context, AppLocalizations l10n) {
+    final canOpenList = !_loadingFaculties && _faculties.isNotEmpty;
+    final canRetryLoad =
+        !_loadingFaculties && _faculties.isEmpty && _facultiesLoadFailed;
+
+    return _buildAcademicPickerTile(
+      context: context,
+      icon: Icons.school_outlined,
+      placeholder: _loadingFaculties
+          ? l10n.academicDataLoading
+          : (_facultiesLoadFailed
+              ? l10n.academicDataUnavailable
+              : l10n.tapToSelectFaculty),
+      selectedName: _selectedFaculty != null
+          ? _entityName(_selectedFaculty!)
+          : null,
+      enabled: canOpenList || canRetryLoad,
+      onTap: canRetryLoad
+          ? _loadFaculties
+          : canOpenList
+              ? () => _openAcademicSheet(
+                    title: l10n.faculty,
+                    items: _faculties,
+                    selectedId: _entityId(_selectedFaculty),
+                    onPick: (map) {
+                      setState(() => _selectedFaculty = map);
+                      final id = _entityId(map);
+                      if (id != null) _loadSections(id);
+                    },
+                  )
+              : null,
+    );
+  }
+
+  Widget _buildSectionPicker(BuildContext context, AppLocalizations l10n) {
+    final ready = _entityId(_selectedFaculty) != null;
+    return _buildAcademicPickerTile(
+      context: context,
+      icon: Icons.groups_2_outlined,
+      placeholder: !ready
+          ? l10n.selectFacultyFirst
+          : (_loadingSections
+              ? l10n.academicDataLoading
+              : l10n.tapToSelectSection),
+      selectedName: _selectedSection != null
+          ? _entityName(_selectedSection!)
+          : null,
+      enabled: ready && !_loadingSections && _sections.isNotEmpty,
+      onTap: !ready || _loadingSections
+          ? null
+          : () => _openAcademicSheet(
+                title: l10n.section,
+                items: _sections,
+                selectedId: _entityId(_selectedSection),
+                onPick: (map) {
+                  setState(() => _selectedSection = map);
+                  final id = _entityId(map);
+                  if (id != null) _loadGrades(id);
+                },
+              ),
+    );
+  }
+
+  Widget _buildGradePicker(BuildContext context, AppLocalizations l10n) {
+    final ready = _entityId(_selectedSection) != null;
+    return _buildAcademicPickerTile(
+      context: context,
+      icon: Icons.grade_outlined,
+      placeholder: !ready
+          ? l10n.selectSectionFirst
+          : (_loadingGrades
+              ? l10n.academicDataLoading
+              : l10n.tapToSelectGrade),
+      selectedName:
+          _selectedGrade != null ? _entityName(_selectedGrade!) : null,
+      enabled: ready && !_loadingGrades && _grades.isNotEmpty,
+      onTap: !ready || _loadingGrades
+          ? null
+          : () => _openAcademicSheet(
+                title: l10n.grade,
+                items: _grades,
+                selectedId: _entityId(_selectedGrade),
+                onPick: (map) {
+                  setState(() => _selectedGrade = map);
+                },
+              ),
+    );
+  }
+
+  Future<void> _openAcademicSheet({
+    required String title,
+    required List<Map<String, dynamic>> items,
+    required String? selectedId,
+    required void Function(Map<String, dynamic>) onPick,
+  }) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.cairo(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.foreground,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(ctx).size.height * 0.5,
+                  ),
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: items.length,
+                    itemBuilder: (context, index) {
+                      final map = items[index];
+                      final id = map['id']?.toString() ?? '';
+                      final name = _entityName(map);
+                      return RadioListTile<String>(
+                        value: id,
+                        groupValue: selectedId,
+                        onChanged: (_) {
+                          onPick(map);
+                          Navigator.of(ctx).pop();
+                        },
+                        title: Text(
+                          name,
+                          style: GoogleFonts.cairo(fontSize: 14),
+                        ),
+                        selected: selectedId == id,
+                      );
+                    },
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    child: Text(
+                      AppLocalizations.of(context)!.cancel,
+                      style: GoogleFonts.cairo(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.purple,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         );
       },
-      child: _buildPickerShell(
-        child: Text(
-          _selectedSubcategory != null
-              ? _entityName(_selectedSubcategory!)
-              : l10n.tapToSelectSubcategory,
-          style: GoogleFonts.cairo(
-            fontSize: 13,
-            color: _selectedSubcategory != null
-                ? AppColors.foreground
-                : AppColors.mutedForeground,
+    );
+  }
+
+  Widget _buildAcademicPickerTile({
+    required BuildContext context,
+    required IconData icon,
+    required String placeholder,
+    required String? selectedName,
+    required bool enabled,
+    required VoidCallback? onTap,
+  }) {
+    final display = selectedName ?? placeholder;
+    final isPlaceholder = selectedName == null;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: enabled ? onTap : null,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+          decoration: BoxDecoration(
+            color: _fieldFill,
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.blackOverlay20,
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Icon(
+                icon,
+                size: 22,
+                color: enabled ? AppColors.purple : AppColors.mutedForeground,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  display,
+                  style: GoogleFonts.cairo(
+                    fontSize: 13,
+                    color: isPlaceholder
+                        ? AppColors.mutedForeground
+                        : AppColors.foreground,
+                  ),
+                ),
+              ),
+              if (enabled)
+                const Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  size: 22,
+                  color: AppColors.mutedForeground,
+                ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _buildPickerShell({
-    required Widget child,
-    Widget? subtitle,
-    VoidCallback? onTap,
-  }) {
-    final content = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        child,
-        if (subtitle != null) ...[
-          const SizedBox(height: 4),
-          subtitle,
-        ],
-      ],
-    );
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
+  Widget _buildSignUpButton(AppLocalizations l10n) {
+    return SizedBox(
+      width: double.infinity,
+      height: 54,
       child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
         decoration: BoxDecoration(
-          color: AppColors.pureWhite,
-          borderRadius: BorderRadius.circular(14),
+          gradient: const LinearGradient(
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+            colors: [
+              _headerNavy,
+              _buttonTealEnd,
+            ],
+          ),
+          borderRadius: BorderRadius.circular(28),
           boxShadow: [
             BoxShadow(
-              color: AppColors.blackOverlay20,
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+              color: _headerNavy.withValues(alpha: 0.35),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
             ),
           ],
-          border: Border.all(
-            color: Theme.of(context).colorScheme.secondary,
-            width: 1,
-          ),
         ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Icon(Icons.subdirectory_arrow_right_rounded,
-                size: 22, color: AppColors.purple),
-            const SizedBox(width: 10),
-            Expanded(child: content),
-            if (onTap != null)
-              const Icon(
-                Icons.keyboard_arrow_down_rounded,
-                size: 22,
-                color: AppColors.mutedForeground,
-              ),
-          ],
+        child: ElevatedButton(
+          onPressed: _isLoading ? null : _handleRegister,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.transparent,
+            shadowColor: Colors.transparent,
+            foregroundColor: AppColors.pureWhite,
+            disabledForegroundColor: AppColors.pureWhite,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(28),
+            ),
+            elevation: 0,
+          ),
+          child: _isLoading
+              ? const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    color: AppColors.pureWhite,
+                    strokeWidth: 2.5,
+                  ),
+                )
+              : Text(
+                  l10n.createAccount,
+                  style: GoogleFonts.cairo(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
         ),
       ),
     );
@@ -825,71 +973,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Text(
       text,
       style: GoogleFonts.cairo(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          color: AppColors.foreground),
-    );
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String hint,
-    required IconData icon,
-    TextInputType? keyboardType,
-  }) {
-    final l10n = AppLocalizations.of(context)!;
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.pureWhite,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-              color: AppColors.blackOverlay20,
-              blurRadius: 10,
-              offset: const Offset(0, 4)),
-        ],
-      ),
-      child: TextFormField(
-        controller: controller,
-        keyboardType: keyboardType,
-        style: GoogleFonts.cairo(fontSize: 15),
-        decoration: InputDecoration(
-          filled: true,
-          fillColor: AppColors.pureWhite,
-          hintText: hint,
-          hintStyle:
-              GoogleFonts.cairo(color: AppColors.mutedForeground, fontSize: 14),
-          prefixIcon: Icon(icon, color: AppColors.purple, size: 22),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide(
-              color: Theme.of(context).colorScheme.secondary,
-              width: 1,
-            ),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide(
-              color: Theme.of(context).colorScheme.secondary,
-              width: 1,
-            ),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide(
-              color: Theme.of(context).colorScheme.secondary,
-              width: 2,
-            ),
-          ),
-          contentPadding:
-              const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-        ),
-        validator: (value) {
-          if (value == null || value.isEmpty) {
-            return l10n.fieldRequired;
-          }
-          return null;
-        },
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: AppColors.foreground,
       ),
     );
   }

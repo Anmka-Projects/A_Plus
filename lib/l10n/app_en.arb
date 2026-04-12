@@ -159,6 +159,70 @@
   "@welcomeBack": {
     "description": "Welcome message in login"
   },
+  "welcomeLabel": "Welcome",
+  "@welcomeLabel": {
+    "description": "Short welcome prefix above user name on home"
+  },
+  "homeMotivationalLine": "Stay focused, your A+ is coming...",
+  "@homeMotivationalLine": {
+    "description": "Tagline under home header"
+  },
+  "homeCoursesSectionTitle": "Courses ..",
+  "@homeCoursesSectionTitle": {
+    "description": "Home medical tracks section title"
+  },
+  "homeDeptHeadsBooks": "Department Heads' Books",
+  "@homeDeptHeadsBooks": {
+    "description": "Home books row title"
+  },
+  "homeQuizzesAssignments": "Quizzes and assignments",
+  "@homeQuizzesAssignments": {
+    "description": "Home assignments row title"
+  },
+  "homeBooksAssignmentsSection": "Doctors books and assignments..",
+  "@homeBooksAssignmentsSection": {
+    "description": "Second home section heading"
+  },
+  "trackDoctor": "Doctor",
+  "@trackDoctor": { "description": "Medical track" },
+  "trackDentist": "Dentist",
+  "@trackDentist": { "description": "Medical track" },
+  "trackPhysiotherapist": "Physiotherapist",
+  "@trackPhysiotherapist": { "description": "Medical track" },
+  "trackPharmacist": "Pharmacist",
+  "@trackPharmacist": { "description": "Medical track" },
+  "trackNurse": "Nurse",
+  "@trackNurse": { "description": "Medical track" },
+  "trackScientist": "Scientist",
+  "@trackScientist": { "description": "Medical track" },
+  "bottomNavCart": "Cart",
+  "@bottomNavCart": {
+    "description": "Bottom nav cart tab"
+  },
+  "loginEnterCodeTitle": "ENTER CODE",
+  "@loginEnterCodeTitle": {
+    "description": "Login screen code field section title"
+  },
+  "loginLogIn": "Log in",
+  "@loginLogIn": {
+    "description": "Primary login button label"
+  },
+  "codeActivation": "Code activation",
+  "@codeActivation": {
+    "description": "Button to open registration / code activation"
+  },
+  "pleaseActivateCodeFirst": "Please activate code first",
+  "@pleaseActivateCodeFirst": {
+    "description": "Hint under login code field"
+  },
+  "contactUs": "Contact us",
+  "@contactUs": {
+    "description": "Login footer support link"
+  },
+  "chooseLanguage": "Language",
+  "@chooseLanguage": {
+    "description": "Login footer language picker title"
+  },
   "enterEmail": "Enter your email",
   "@enterEmail": {
     "description": "Email placeholder text"
@@ -184,13 +248,97 @@
     "description": "Apple"
   },
   
-  "register": "Create New Account",
+  "register": "Code verification",
   "@register": {
-    "description": "Register screen title"
+    "description": "Register screen header (student code verification flow)"
   },
   "joinUsMessage": "Join us and start your learning journey 🎓",
   "@joinUsMessage": {
     "description": "Welcome message in register"
+  },
+  "quadNameTitle": "Full name (four parts)",
+  "@quadNameTitle": {
+    "description": "Label for four-part Arabic name row"
+  },
+  "namePartFirst": "First",
+  "@namePartFirst": {
+    "description": "First name part label"
+  },
+  "namePartFather": "Father",
+  "@namePartFather": {
+    "description": "Father name part label"
+  },
+  "namePartGrandfather": "Grandfather",
+  "@namePartGrandfather": {
+    "description": "Grandfather name part label"
+  },
+  "namePartFamily": "Family",
+  "@namePartFamily": {
+    "description": "Family name part label"
+  },
+  "nationalId": "National ID",
+  "@nationalId": {
+    "description": "National ID field label"
+  },
+  "nationalIdHint": "Enter national ID number",
+  "@nationalIdHint": {
+    "description": "National ID placeholder"
+  },
+  "invalidNationalId": "Enter a valid national ID (digits only)",
+  "@invalidNationalId": {
+    "description": "National ID validation"
+  },
+  "faculty": "Faculty",
+  "@faculty": {
+    "description": "Faculty picker label"
+  },
+  "section": "Section",
+  "@section": {
+    "description": "Section picker label"
+  },
+  "grade": "Grade",
+  "@grade": {
+    "description": "Grade picker label"
+  },
+  "tapToSelectFaculty": "Tap to select faculty",
+  "@tapToSelectFaculty": {
+    "description": "Faculty picker placeholder"
+  },
+  "tapToSelectSection": "Tap to select section",
+  "@tapToSelectSection": {
+    "description": "Section picker placeholder"
+  },
+  "tapToSelectGrade": "Tap to select grade",
+  "@tapToSelectGrade": {
+    "description": "Grade picker placeholder"
+  },
+  "selectFacultyFirst": "Select a faculty first",
+  "@selectFacultyFirst": {
+    "description": "Section disabled until faculty"
+  },
+  "selectSectionFirst": "Select a section first",
+  "@selectSectionFirst": {
+    "description": "Grade disabled until section"
+  },
+  "selectFaculty": "Please select a faculty",
+  "@selectFaculty": {
+    "description": "Validation faculty"
+  },
+  "selectSection": "Please select a section",
+  "@selectSection": {
+    "description": "Validation section"
+  },
+  "selectGrade": "Please select a grade",
+  "@selectGrade": {
+    "description": "Validation grade"
+  },
+  "academicDataLoading": "Loading options…",
+  "@academicDataLoading": {
+    "description": "Loading faculties sections grades"
+  },
+  "academicDataUnavailable": "Could not load options. Try again later.",
+  "@academicDataUnavailable": {
+    "description": "Academic API failure"
   },
   "fullName": "Full Name",
   "@fullName": {
@@ -698,6 +846,10 @@
   "saveChanges": "Save Changes",
   "@saveChanges": {
     "description": "Save Changes"
+  },
+  "profileReadOnlyMessage": "This information is for viewing only and cannot be edited here.",
+  "@profileReadOnlyMessage": {
+    "description": "Notice on read-only profile screen"
   },
   "selectImageSource": "Select Image Source",
   "@selectImageSource": {

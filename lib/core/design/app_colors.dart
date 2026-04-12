@@ -1,102 +1,107 @@
 import 'package:flutter/material.dart';
 
-/// App Colors - Extracted from A Plus app logo
+/// App colors — A Plus brand (teal palette from splash / marketing).
 class AppColors {
   AppColors._();
 
-  // Core brand palette
-  static const Color brandBlue =
-      Color(0xFF2474E8); // Left stroke of "A" - primary blue
-  static const Color brandPurple =
-      Color(0xFF8B35D6); // Right stroke of "A" - purple accent
-  static const Color brandGreen =
-      Color(0xFF4DC85A); // Plus (+) sign - green highlight
-  static const Color brandDark = Color(0xFF3D4A5C); // "A Plus" wordmark text
-  static const Color pureWhite = Color(0xFFFFFFFF); // Background / surfaces
+  // --- Brand teal (from splash screen reference) ---
+  /// Primary brand teal (logo / key actions).
+  static const Color brandTeal = Color(0xFF139487);
+  /// Bright cyan top of splash gradient.
+  static const Color brandTealLight = Color(0xFF21D4C3);
+  /// Deep teal bottom of splash gradient.
+  static const Color brandTealDark = Color(0xFF083B3E);
+  /// Deep shadow tone used behind logo / dark accents.
+  static const Color brandTealShadow = Color(0xFF042D30);
+
+  /// Legacy duo used across screens for two-tone gradients and tints.
+  /// Maps to light + mid teal (replaces former blue / purple pair).
+  static const Color brandBlue = brandTealLight;
+  static const Color brandPurple = brandTeal;
+
+  static const Color pureWhite = Color(0xFFFFFFFF);
+  static const Color brandDark = brandTealShadow;
 
   // Base surfaces & text
-  static const Color background = pureWhite;
-  static const Color foreground = brandDark;
+  static const Color background = Color(0xFFF5FBFA);
+  static const Color foreground = brandTealShadow;
   static const Color card = pureWhite;
-  static const Color cardForeground = brandDark;
+  static const Color cardForeground = brandTealShadow;
 
-  // Primary colors (Purple)
-  static const Color primary = brandPurple;
+  // Primary / secondary (theme + components)
+  static const Color primary = brandTeal;
   static const Color primaryForeground = pureWhite;
-  static const Color primaryDark =
-      Color(0xFF5E1FA0); // Darker shade of brandPurple
-  static const Color primaryLight =
-      Color(0xFFAB65EE); // Lighter shade of brandPurple
+  static const Color primaryDark = Color(0xFF0E6B61);
+  static const Color primaryLight = Color(0xFF3EC4B6);
 
-  // Secondary colors (Blue)
-  static const Color secondary = brandBlue;
+  /// App bars, strong headers — deep teal on white icons/text.
+  static const Color secondary = brandTealDark;
   static const Color secondaryForeground = pureWhite;
-  static const Color secondaryLight = Color(0xFF5B9EF5); // Lighter blue
+  static const Color secondaryLight = Color(0xFF0F8A7D);
 
-  /// Legacy alias used across the app (`AppColors.purple`).
-  static const Color purple = brandPurple;
+  /// Legacy alias (`AppColors.purple`).
+  static const Color purple = brandTeal;
 
-  // Accent colors (Green - plus sign)
-  static const Color accent = brandGreen;
-  static const Color accentForeground = pureWhite;
-  static const Color accentDark = Color(0xFF2E9E3A); // Darker green
-  static const Color accentLight = Color(0xFF80DC88); // Lighter green
+  // Accent (highlights; still readable on white)
+  static const Color accent = brandTealLight;
+  static const Color accentForeground = brandTealShadow;
+  static const Color accentDark = Color(0xFF1BA99A);
+  static const Color accentLight = Color(0xFF5FD4C8);
 
-  // Muted colors
-  static const Color muted = Color(0xFFE4E7EC);
-  static const Color mutedForeground = Color(0xFF667085);
+  // Muted
+  static const Color muted = Color(0xFFE8F3F1);
+  static const Color mutedForeground = Color(0xFF5C7A76);
 
-  // Border & Input
-  static const Color border = Color(0xFFD0D5DD);
+  // Border & input
+  static const Color border = Color(0xFFC5DDD8);
   static const Color input = pureWhite;
-  static const Color ring = brandPurple;
+  static const Color ring = brandTeal;
 
-  // Surface variants
-  /// Dark theme scaffold background (pairs with [darkCard]).
-  static const Color dark = Color(0xFF0F172A);
-  static const Color darkCard = Color(0xFF111827);
+  // Dark theme surfaces (teal-tinted, not blue-gray)
+  static const Color dark = Color(0xFF052429);
+  static const Color darkCard = Color(0xFF083B3E);
   static const Color beige = pureWhite;
-  static const Color beigeDark = Color(0xFFF3F4F6);
+  static const Color beigeDark = Color(0xFFECF8F6);
 
-  // Gradient helpers (brand blue -> purple)
-  static const Color gradientStart = brandBlue;
-  static const Color gradientEnd = brandPurple;
+  // Gradients (splash + shared marketing headers)
+  static const Color gradientStart = brandTealLight;
+  static const Color gradientEnd = brandTealDark;
   static const List<Color> brandGradient = [
     gradientStart,
     gradientEnd,
   ];
 
-  /// Purple-only gradient (depth), for surfaces that should not mix in logo blue.
+  /// Same as [brandGradient]; vertical splash background.
+  static const List<Color> splashGradient = brandGradient;
+
   static const List<Color> primaryShadeGradient = [
     primaryDark,
     primaryLight,
   ];
 
-  // Semantic colors
+  // Semantic
   static const Color destructive = Color(0xFFE53E3E);
   static const Color destructiveForeground = pureWhite;
-  static const Color success = brandGreen; // reuse logo green
+  static const Color success = Color(0xFF0D9488);
   static const Color warning = Color(0xFFF59E0B);
-  static const Color info = brandBlue; // reuse logo blue
+  static const Color info = brandTealLight;
 
   // Bottom navigation
-  static const Color bottomNavBackground = Color(0xFF1A1A1A);
+  static const Color bottomNavBackground = brandTealShadow;
   static const Color bottomNavActive = pureWhite;
   static const Color bottomNavInactive = Color(0xFF9CA3AF);
 
-  // Overlay colors
+  // Overlays
   static const Color whiteOverlay10 = Color(0x1AFFFFFF);
   static const Color whiteOverlay20 = Color(0x33FFFFFF);
   static const Color whiteOverlay40 = Color(0x66FFFFFF);
   static const Color blackOverlay20 = Color(0x33000000);
 
-  // ---------------------------------------------------------------------------
-  // Legacy names still referenced across the codebase (must be const Colors).
-  // ---------------------------------------------------------------------------
-  static const Color berkeleyBlue = brandBlue;
+  // Legacy names (const, still referenced)
+  static const Color berkeleyBlue = brandTealLight;
   static const Color fireEngineRed = Color(0xFFCE2029);
   static const Color orange = Color(0xFFEA580C);
   static const Color orangeLight = Color(0xFFFFEDD5);
-  static const Color lavenderLight = Color(0xFFF5F3FF);
-  static const Color purpleLight = Color(0xFFEDE9FE);
+  static const Color lavenderLight = Color(0xFFECFDFB);
+  static const Color purpleLight = Color(0xFFE0F7F4);
 }

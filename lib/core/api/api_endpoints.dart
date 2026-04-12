@@ -50,6 +50,13 @@ class ApiEndpoints {
   // Authentication
   static String get login => '$baseUrl/auth/login';
   static String get register => '$baseUrl/auth/register';
+
+  /// Academic structure for registration (faculty → section → grade).
+  static String get registrationFaculties => '$baseUrl/registration/faculties';
+  static String registrationSections(String facultyId) =>
+      '$baseUrl/registration/faculties/$facultyId/sections';
+  static String registrationGrades(String sectionId) =>
+      '$baseUrl/registration/sections/$sectionId/grades';
   static String get logout => '$baseUrl/auth/logout';
   static String get forgotPassword => '$baseUrl/auth/forgot-password';
   static String get refreshToken => '$baseUrl/auth/refresh';

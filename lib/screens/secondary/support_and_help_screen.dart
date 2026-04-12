@@ -5,10 +5,18 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/design/app_colors.dart';
 import '../../core/design/app_radius.dart';
-import '../../core/design/app_text_styles.dart';
+import '../../l10n/app_localizations.dart';
 
 class SupportAndHelpScreen extends StatelessWidget {
   const SupportAndHelpScreen({super.key});
+
+  static final Uri _facebook = Uri.parse(
+    'https://www.facebook.com/share/18NQNR2qXb/?mibextid=wwXIfr',
+  );
+  static final Uri _instagram = Uri.parse(
+    'https://www.instagram.com/usifsamir_9?igsh=MWw4MTRxYmI5M29seg%3D%3D&utm_source=qr',
+  );
+  static final Uri _whatsapp = Uri.parse('https://wa.me/201028782933');
 
   Future<void> _launch(BuildContext context, Uri uri) async {
     final ok = await launchUrl(
@@ -21,7 +29,15 @@ class SupportAndHelpScreen extends StatelessWidget {
           backgroundColor: AppColors.destructive,
           content: Text(
             'Unable to open link',
-            style: GoogleFonts.cairo(),
+            style: GoogleFonts.cairo(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: AppColors.destructiveForeground,
+            ),
+          ),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
           ),
         ),
       );
@@ -35,58 +51,72 @@ class SupportAndHelpScreen extends StatelessWidget {
     required String subtitle,
     required VoidCallback onTap,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 14,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: AppColors.lavenderLight,
-                borderRadius: BorderRadius.circular(14),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.button),
+        child: Ink(
+          decoration: BoxDecoration(
+            color: AppColors.card,
+            borderRadius: BorderRadius.circular(AppRadius.button),
+            border: Border.all(color: AppColors.border),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.brandTeal.withValues(alpha: 0.06),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
               ),
-              child: Icon(icon, color: AppColors.purple),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: AppTextStyles.bodyMedium(color: AppColors.foreground)
-                        .copyWith(fontWeight: FontWeight.w700),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: AppColors.muted,
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: AppTextStyles.bodySmall(
-                      color: AppColors.mutedForeground,
-                    ),
+                  child: Icon(icon, color: AppColors.primary, size: 22),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: GoogleFonts.cairo(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.foreground,
+                          height: 1.2,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        style: GoogleFonts.cairo(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w400,
+                          color: AppColors.mutedForeground,
+                          height: 1.25,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                const Icon(
+                  Icons.chevron_left,
+                  color: AppColors.mutedForeground,
+                  size: 22,
+                ),
+              ],
             ),
-            const Icon(
-              Icons.chevron_left,
-              color: AppColors.mutedForeground,
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -94,40 +124,42 @@ class SupportAndHelpScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fb = Uri.parse(
-      'https://www.facebook.com/share/14TXZsfv8yZ/?mibextid=LQQJ4d',
-    );
-    final linkedin = Uri.parse(
-      'https://www.linkedin.com/company/rigtech-training-academy/',
-    );
-    final youtube =
-        Uri.parse('https://www.youtube.com/@RigTechtrainingAcademy');
-
-    final phone1 = Uri.parse('tel:+201007619238');
-    final whatsapp1 = Uri.parse('https://wa.me/201007619238');
-    final whatsapp2 = Uri.parse('https://wa.me/201111666780');
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      backgroundColor: AppColors.beige,
+      backgroundColor: AppColors.background,
       body: SafeArea(
         top: false,
         child: Column(
           children: [
             Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [AppColors.primary, AppColors.pureWhite],
+                  colors: AppColors.brandGradient,
                 ),
-                borderRadius: BorderRadius.only(
+                borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(AppRadius.largeCard),
                   bottomRight: Radius.circular(AppRadius.largeCard),
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.brandBlue.withValues(alpha: 0.3),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                  BoxShadow(
+                    color: AppColors.brandPurple.withValues(alpha: 0.12),
+                    blurRadius: 36,
+                    offset: const Offset(0, 18),
+                    spreadRadius: -6,
+                  ),
+                ],
               ),
               padding: EdgeInsets.only(
                 top: MediaQuery.of(context).padding.top + 16,
-                bottom: 24,
+                bottom: 32,
                 left: 16,
                 right: 16,
               ),
@@ -151,139 +183,47 @@ class SupportAndHelpScreen extends StatelessWidget {
                   ),
                   const SizedBox(width: 16),
                   Text(
-                    'Support & Help',
-                    style: AppTextStyles.h3(color: Colors.white),
+                    l10n.contactUs,
+                    style: GoogleFonts.cairo(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
                   ),
                 ],
               ),
             ),
             Expanded(
               child: Transform.translate(
-                offset: const Offset(0, -12),
+                offset: const Offset(0, -16),
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const SizedBox(height: 12),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(18),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(24),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.06),
-                              blurRadius: 18,
-                              offset: const Offset(0, 10),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(18),
-                              child: Image.asset(
-                                'assets/images/app_logo.png',
-                                width: 88,
-                                height: 88,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Container(
-                                  width: 88,
-                                  height: 88,
-                                  alignment: Alignment.center,
-                                  decoration: BoxDecoration(
-                                    color: AppColors.lavenderLight,
-                                    borderRadius: BorderRadius.circular(18),
-                                  ),
-                                  child: const Icon(
-                                    Icons.school_rounded,
-                                    color: AppColors.purple,
-                                    size: 42,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              'Rigtech Training Academy',
-                              style:
-                                  AppTextStyles.h4(color: AppColors.foreground),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              'Contact us or follow our platforms.',
-                              style: GoogleFonts.cairo(
-                                fontSize: 13,
-                                color: AppColors.mutedForeground,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Platforms',
-                          style: AppTextStyles.h4(color: AppColors.foreground),
-                        ),
+                      const SizedBox(height: 24),
+                      _tile(
+                        context: context,
+                        icon: Icons.chat_rounded,
+                        title: 'WhatsApp',
+                        subtitle: '01028782933',
+                        onTap: () => _launch(context, _whatsapp),
                       ),
                       const SizedBox(height: 12),
                       _tile(
                         context: context,
                         icon: Icons.facebook_rounded,
                         title: 'Facebook',
-                        subtitle:
-                            'https://www.facebook.com/share/14TXZsfv8yZ/?mibextid=LQQJ4d',
-                        onTap: () => _launch(context, fb),
-                      ),
-                      _tile(
-                        context: context,
-                        icon: Icons.work_rounded,
-                        title: 'LinkedIn',
-                        subtitle:
-                            'https://www.linkedin.com/company/rigtech-training-academy/',
-                        onTap: () => _launch(context, linkedin),
-                      ),
-                      _tile(
-                        context: context,
-                        icon: Icons.ondemand_video_rounded,
-                        title: 'YouTube',
-                        subtitle: 'www.youtube.com/@RigTechtrainingAcademy',
-                        onTap: () => _launch(context, youtube),
-                      ),
-                      const SizedBox(height: 6),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Contact',
-                          style: AppTextStyles.h4(color: AppColors.foreground),
-                        ),
+                        subtitle: 'facebook.com/share/18NQNR2qXb',
+                        onTap: () => _launch(context, _facebook),
                       ),
                       const SizedBox(height: 12),
                       _tile(
                         context: context,
-                        icon: Icons.call_rounded,
-                        title: '+20 100 761 9238',
-                        subtitle: 'Phone call',
-                        onTap: () => _launch(context, phone1),
-                      ),
-                      _tile(
-                        context: context,
-                        icon: Icons.chat_rounded,
-                        title: '+20 100 761 9238',
-                        subtitle: 'WhatsApp',
-                        onTap: () => _launch(context, whatsapp1),
-                      ),
-                      _tile(
-                        context: context,
-                        icon: Icons.chat_rounded,
-                        title: '+01111666780',
-                        subtitle: 'WhatsApp',
-                        onTap: () => _launch(context, whatsapp2),
+                        icon: Icons.camera_alt_rounded,
+                        title: 'Instagram',
+                        subtitle: '@usifsamir_9',
+                        onTap: () => _launch(context, _instagram),
                       ),
                       const SizedBox(height: 24),
                     ],

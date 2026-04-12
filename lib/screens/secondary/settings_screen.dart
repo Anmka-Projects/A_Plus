@@ -456,15 +456,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       //   },
                       // ),
 
-                      // Change Password setting
-                      _buildSettingItem(
-                        icon: Icons.lock,
-                        label: AppLocalizations.of(context)!.changePassword,
-                        onTap: () {
-                          context.push(RouteNames.changePassword);
-                        },
-                      ),
-
                       // Privacy setting
                       _buildSettingItem(
                         icon: Icons.shield,

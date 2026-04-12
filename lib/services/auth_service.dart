@@ -9,6 +9,7 @@ import '../core/api/api_client.dart';
 import '../core/api/api_endpoints.dart';
 import '../core/notification_service/notification_service.dart';
 import '../models/auth_response.dart';
+import 'device_id_service.dart';
 import 'token_storage_service.dart';
 
 /// [ApiClient] already puts the server `message` in [ApiException.message] for non-2xx
@@ -45,8 +46,10 @@ class AuthService {
     required String code,
   }) async {
     try {
+      final deviceId = await DeviceIdService.getOrCreateDeviceId();
       final Map<String, dynamic> requestBody = {
         'code': code.trim(),
+        'device_id': deviceId,
       };
 
       final response = await ApiClient.instance.post(
@@ -144,22 +147,39 @@ class AuthService {
     }
   }
 
-  /// Register user (name, unique code, phone, category / optional subcategory).
+  /// Register student: quad name, national ID, code, phone, faculty → section → grade, device binding.
   Future<AuthResponse> register({
-    required String name,
+    required String nameFirst,
+    required String nameFather,
+    required String nameGrandfather,
+    required String nameFamily,
+    required String nationalId,
     required String code,
     required String phone,
-    required String categoryId,
-    String? subcategoryId,
+    required String facultyId,
+    required String sectionId,
+    required String gradeId,
   }) async {
     try {
+      final f = nameFirst.trim();
+      final fa = nameFather.trim();
+      final g = nameGrandfather.trim();
+      final fam = nameFamily.trim();
+      final fullName = '$f $fa $g $fam'.trim();
+
       final body = <String, dynamic>{
-        'name': name.trim(),
+        'name': fullName,
+        'name_first': f,
+        'name_father': fa,
+        'name_grandfather': g,
+        'name_family': fam,
+        'national_id': nationalId.trim(),
         'code': code.trim(),
         'phone': phone.trim(),
-        'category_id': categoryId,
-        if (subcategoryId != null && subcategoryId.trim().isNotEmpty)
-          'subcategory_id': subcategoryId.trim(),
+        'faculty_id': facultyId,
+        'section_id': sectionId,
+        'grade_id': gradeId,
+        'device_id': await DeviceIdService.getOrCreateDeviceId(),
       };
 
       final response = await ApiClient.instance.post(
@@ -287,6 +307,7 @@ class AuthService {
         ApiEndpoints.refreshToken,
         body: {
           'refreshToken': refreshToken,
+          'device_id': await DeviceIdService.getOrCreateDeviceId(),
         },
         requireAuth: false, // Refresh doesn't need access token
       );

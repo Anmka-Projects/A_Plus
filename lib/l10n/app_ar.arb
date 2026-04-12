@@ -159,6 +159,70 @@
   "@welcomeBack": {
     "description": "رسالة الترحيب في تسجيل الدخول"
   },
+  "welcomeLabel": "مرحباً",
+  "@welcomeLabel": {
+    "description": "ترحيب قصير فوق الاسم في الرئيسية"
+  },
+  "homeMotivationalLine": "ركز درجة ال A+ في طريقها اليك",
+  "@homeMotivationalLine": {
+    "description": "شعار تحت هيدر الرئيسية"
+  },
+  "homeCoursesSectionTitle": "الكورسات ..",
+  "@homeCoursesSectionTitle": {
+    "description": "عنوان شبكة التخصصات"
+  },
+  "homeDeptHeadsBooks": "كتب رؤساء الأقسام",
+  "@homeDeptHeadsBooks": {
+    "description": "عنوان بطاقة الكتب"
+  },
+  "homeQuizzesAssignments": "الاختبارات والواجبات",
+  "@homeQuizzesAssignments": {
+    "description": "عنوان بطاقة الواجبات"
+  },
+  "homeBooksAssignmentsSection": "كتب الأطباء والواجبات..",
+  "@homeBooksAssignmentsSection": {
+    "description": "عنوان القسم الثاني"
+  },
+  "trackDoctor": "طبيب",
+  "@trackDoctor": { "description": "مسار طبي" },
+  "trackDentist": "طبيب أسنان",
+  "@trackDentist": { "description": "مسار طبي" },
+  "trackPhysiotherapist": "علاج طبيعي",
+  "@trackPhysiotherapist": { "description": "مسار طبي" },
+  "trackPharmacist": "صيدلي",
+  "@trackPharmacist": { "description": "مسار طبي" },
+  "trackNurse": "تمريض",
+  "@trackNurse": { "description": "مسار طبي" },
+  "trackScientist": "عالم",
+  "@trackScientist": { "description": "مسار طبي" },
+  "bottomNavCart": "السلة",
+  "@bottomNavCart": {
+    "description": "تبويب السلة"
+  },
+  "loginEnterCodeTitle": "أدخل الكود",
+  "@loginEnterCodeTitle": {
+    "description": "عنوان حقل الكود في تسجيل الدخول"
+  },
+  "loginLogIn": "تسجيل الدخول",
+  "@loginLogIn": {
+    "description": "زر تسجيل الدخول"
+  },
+  "codeActivation": "تفعيل الكود",
+  "@codeActivation": {
+    "description": "زر التسجيل وتفعيل الكود"
+  },
+  "pleaseActivateCodeFirst": "يرجى تفعيل الكود أولاً من شاشة التفعيل",
+  "@pleaseActivateCodeFirst": {
+    "description": "تلميح تحت حقل الكود"
+  },
+  "contactUs": "تواصل معنا",
+  "@contactUs": {
+    "description": "رابط الدعم في تسجيل الدخول"
+  },
+  "chooseLanguage": "اللغة",
+  "@chooseLanguage": {
+    "description": "عنوان اختيار اللغة"
+  },
   "enterEmail": "أدخل بريدك الإلكتروني",
   "@enterEmail": {
     "description": "نص placeholder البريد الإلكتروني"
@@ -184,13 +248,97 @@
     "description": "Apple"
   },
   
-  "register": "إنشاء حساب جديد",
+  "register": "تفعيل الحساب",
   "@register": {
     "description": "عنوان شاشة التسجيل"
   },
   "joinUsMessage": "انضم إلينا وابدأ رحلة التعلم 🎓",
   "@joinUsMessage": {
     "description": "رسالة الترحيب في التسجيل"
+  },
+  "quadNameTitle": "الاسم الرباعي",
+  "@quadNameTitle": {
+    "description": "عنوان حقول الاسم الرباعي"
+  },
+  "namePartFirst": "الاسم",
+  "@namePartFirst": {
+    "description": "الجزء الأول من الاسم"
+  },
+  "namePartFather": "الأب",
+  "@namePartFather": {
+    "description": "اسم الأب"
+  },
+  "namePartGrandfather": "الجد",
+  "@namePartGrandfather": {
+    "description": "اسم الجد"
+  },
+  "namePartFamily": "العائلة",
+  "@namePartFamily": {
+    "description": "اسم العائلة"
+  },
+  "nationalId": "الرقم القومي",
+  "@nationalId": {
+    "description": "حقل الرقم القومي"
+  },
+  "nationalIdHint": "أدخل الرقم القومي",
+  "@nationalIdHint": {
+    "description": "نص توضيحي للرقم القومي"
+  },
+  "invalidNationalId": "أدخل رقماً قومياً صحيحاً (أرقام فقط)",
+  "@invalidNationalId": {
+    "description": "التحقق من الرقم القومي"
+  },
+  "faculty": "الكلية",
+  "@faculty": {
+    "description": "اختيار الكلية"
+  },
+  "section": "الفرقة / القسم",
+  "@section": {
+    "description": "اختيار الفرقة أو القسم"
+  },
+  "grade": "السنة الدراسية",
+  "@grade": {
+    "description": "اختيار السنة الدراسية"
+  },
+  "tapToSelectFaculty": "اضغط لاختيار الكلية",
+  "@tapToSelectFaculty": {
+    "description": "نص اختيار الكلية"
+  },
+  "tapToSelectSection": "اضغط لاختيار الفرقة",
+  "@tapToSelectSection": {
+    "description": "نص اختيار الفرقة"
+  },
+  "tapToSelectGrade": "اضغط لاختيار السنة",
+  "@tapToSelectGrade": {
+    "description": "نص اختيار السنة"
+  },
+  "selectFacultyFirst": "اختر الكلية أولاً",
+  "@selectFacultyFirst": {
+    "description": "تعطيل الفرقة حتى تختار الكلية"
+  },
+  "selectSectionFirst": "اختر الفرقة أولاً",
+  "@selectSectionFirst": {
+    "description": "تعطيل السنة حتى تختار الفرقة"
+  },
+  "selectFaculty": "يرجى اختيار الكلية",
+  "@selectFaculty": {
+    "description": "تحقق الكلية"
+  },
+  "selectSection": "يرجى اختيار الفرقة",
+  "@selectSection": {
+    "description": "تحقق الفرقة"
+  },
+  "selectGrade": "يرجى اختيار السنة الدراسية",
+  "@selectGrade": {
+    "description": "تحقق السنة"
+  },
+  "academicDataLoading": "جاري تحميل الخيارات…",
+  "@academicDataLoading": {
+    "description": "تحميل بيانات الكليات"
+  },
+  "academicDataUnavailable": "تعذر تحميل الخيارات. حاول لاحقاً.",
+  "@academicDataUnavailable": {
+    "description": "فشل API الكليات"
   },
   "fullName": "الاسم الكامل",
   "@fullName": {
@@ -698,6 +846,10 @@
   "saveChanges": "حفظ التغييرات",
   "@saveChanges": {
     "description": "حفظ التغييرات"
+  },
+  "profileReadOnlyMessage": "هذه البيانات للعرض فقط",
+  "@profileReadOnlyMessage": {
+    "description": "تنبيه في شاشة الملف الشخصي للعرض فقط"
   },
   "selectImageSource": "اختر مصدر الصورة",
   "@selectImageSource": {

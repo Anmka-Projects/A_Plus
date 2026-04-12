@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../screens/startup/splash_screen.dart';
-import '../../screens/startup/onboarding_screen.dart';
+import '../../screens/startup/brand_intro_screen.dart';
 import '../../screens/auth/login_screen.dart';
 import '../../screens/auth/register_screen.dart';
 import '../../screens/auth/forgot_password_screen.dart';
@@ -60,17 +60,10 @@ class AppRouter {
         ),
       ),
       GoRoute(
-        path: RouteNames.onboarding1,
+        path: RouteNames.brandIntro,
         pageBuilder: (context, state) => _buildPageWithTransition(
           key: state.pageKey,
-          child: const OnboardingScreen(step: 1),
-        ),
-      ),
-      GoRoute(
-        path: RouteNames.onboarding2,
-        pageBuilder: (context, state) => _buildPageWithTransition(
-          key: state.pageKey,
-          child: const OnboardingScreen(step: 2),
+          child: const BrandIntroScreen(),
         ),
       ),
       GoRoute(
@@ -170,10 +163,30 @@ class AppRouter {
       ),
       GoRoute(
         path: RouteNames.allCourses,
-        pageBuilder: (context, state) => _buildPageWithTransition(
-          key: state.pageKey,
-          child: const AllCoursesScreen(),
-        ),
+        pageBuilder: (context, state) {
+          String? categoryId;
+          String? categorySlug;
+          String? screenTitle;
+          final extra = state.extra;
+          if (extra is Map) {
+            final m = Map<String, dynamic>.from(extra);
+            final id = m['categoryId']?.toString().trim();
+            categoryId = (id == null || id.isEmpty) ? null : id;
+            final slug = m['categorySlug']?.toString().trim();
+            categorySlug = (slug == null || slug.isEmpty) ? null : slug;
+            final title = m['screenTitle']?.toString().trim() ??
+                m['categoryName']?.toString().trim();
+            screenTitle = (title == null || title.isEmpty) ? null : title;
+          }
+          return _buildPageWithTransition(
+            key: state.pageKey,
+            child: AllCoursesScreen(
+              categoryId: categoryId,
+              categorySlug: categorySlug,
+              screenTitle: screenTitle,
+            ),
+          );
+        },
       ),
       GoRoute(
         path: RouteNames.teachers,

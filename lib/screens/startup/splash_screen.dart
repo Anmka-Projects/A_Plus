@@ -1,7 +1,6 @@
 import 'dart:async';
-import 'dart:math' as math;
-import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -9,10 +8,8 @@ import '../../core/design/app_colors.dart';
 import '../../core/design/app_text_styles.dart';
 import '../../core/navigation/route_names.dart';
 import '../../services/token_storage_service.dart';
-import '../../l10n/app_localizations.dart';
 
-/// Splash Screen - Premium & Elegant Design with Smart Idea
-/// Features: Animated book opening effect that reveals knowledge
+/// Splash — vertical teal gradient, [splashLogo.png] squircle, title, loader, person footer.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -21,34 +18,10 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen>
-    with TickerProviderStateMixin {
-  // Animation Controllers
-  late AnimationController _bookController;
-  late AnimationController _contentController;
-  late AnimationController _glowController;
-  late AnimationController _textController;
-  late AnimationController _loadingController;
-
-  // Animations
-  late Animation<double> _bookOpenAnimation;
-  late Animation<double> _logoScaleAnimation;
-  late Animation<double> _logoRotateAnimation;
-  late Animation<double> _textFadeAnimation;
-  late Animation<double> _textSlideAnimation;
-  late Animation<double> _glowAnimation;
-
-  // Smart idea: Educational tips that rotate
-  int _currentTipIndex = 0;
-  List<Map<String, dynamic>> get _educationalTips {
-    final l10n = AppLocalizations.of(context)!;
-    return [
-      {'icon': Icons.lightbulb_outline, 'text': l10n.science},
-      {'icon': Icons.trending_up, 'text': l10n.everyDayNewOpportunity},
-      {'icon': Icons.emoji_events_outlined, 'text': l10n.success},
-    ];
-  }
-
-  Timer? _tipTimer;
+    with SingleTickerProviderStateMixin {
+  late AnimationController _entryController;
+  late Animation<double> _fade;
+  late Animation<double> _slide;
 
   @override
   void initState() {
@@ -57,116 +30,28 @@ class _SplashScreenState extends State<SplashScreen>
       const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
         statusBarIconBrightness: Brightness.light,
+        systemNavigationBarColor: AppColors.brandTealDark,
+        systemNavigationBarIconBrightness: Brightness.light,
       ),
     );
 
-    _initAnimations();
-    _startAnimations();
-  }
-
-  void _initAnimations() {
-    // Book opening animation
-    _bookController = AnimationController(
+    _entryController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 900),
     );
-
-    _bookOpenAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+    _fade = CurvedAnimation(
+      parent: _entryController,
+      curve: Curves.easeOutCubic,
+    );
+    _slide = Tween<double>(begin: 24, end: 0).animate(
       CurvedAnimation(
-        parent: _bookController,
-        curve: Curves.easeOutBack,
+        parent: _entryController,
+        curve: Curves.easeOutCubic,
       ),
     );
+    _entryController.forward();
 
-    // Content animation
-    _contentController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    );
-
-    _logoScaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _contentController,
-        curve: const Interval(0.0, 0.6, curve: Curves.elasticOut),
-      ),
-    );
-
-    _logoRotateAnimation = Tween<double>(begin: -0.1, end: 0.0).animate(
-      CurvedAnimation(
-        parent: _contentController,
-        curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
-      ),
-    );
-
-    // Text animation
-    _textController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1000),
-    );
-
-    _textFadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _textController,
-        curve: Curves.easeOut,
-      ),
-    );
-
-    _textSlideAnimation = Tween<double>(begin: 30.0, end: 0.0).animate(
-      CurvedAnimation(
-        parent: _textController,
-        curve: Curves.easeOut,
-      ),
-    );
-
-    // Glow animation
-    _glowController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2000),
-    )..repeat(reverse: true);
-
-    _glowAnimation = Tween<double>(begin: 0.3, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _glowController,
-        curve: Curves.easeInOut,
-      ),
-    );
-
-    // Loading animation
-    _loadingController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 3000),
-    );
-  }
-
-  void _startAnimations() async {
-    // Start book animation
-    await Future.delayed(const Duration(milliseconds: 300));
-    _bookController.forward();
-
-    // Start content animation
-    await Future.delayed(const Duration(milliseconds: 800));
-    _contentController.forward();
-
-    // Start text animation
-    await Future.delayed(const Duration(milliseconds: 500));
-    _textController.forward();
-
-    // Start loading
-    _loadingController.forward();
-
-    // Start rotating tips
-    _tipTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
-      if (mounted) {
-        setState(() {
-          _currentTipIndex = (_currentTipIndex + 1) % _educationalTips.length;
-        });
-      }
-    });
-
-    // Navigate after animation
-    Timer(const Duration(milliseconds: 4000), () {
-      _checkFirstLaunch();
-    });
+    Timer(const Duration(milliseconds: 3200), _checkFirstLaunch);
   }
 
   Future<void> _checkFirstLaunch() async {
@@ -174,38 +59,28 @@ class _SplashScreenState extends State<SplashScreen>
     final hasLaunched = prefs.getBool('hasLaunched') ?? false;
 
     if (kDebugMode) {
-      print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      print('🚀 SPLASH SCREEN - CHECK FIRST LAUNCH');
-      print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      print('hasLaunched: $hasLaunched');
-      print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      debugPrint('Splash: hasLaunched=$hasLaunched');
     }
 
     if (!mounted) return;
 
     if (!hasLaunched) {
-      // First time launch, show onboarding
-      if (kDebugMode) {
-        print('🆕 First time launch, showing onboarding');
-      }
-      context.go(RouteNames.onboarding1);
+      context.go(RouteNames.brandIntro);
       return;
     }
 
-    // User has launched before: check if logged in and route by role
     final isLoggedIn = await TokenStorageService.instance.isLoggedIn();
+    if (!mounted) return;
     if (!isLoggedIn) {
-      if (kDebugMode) {
-        print('🔓 Not logged in, going to login');
-      }
       context.go(RouteNames.login);
       return;
     }
 
     final role = await TokenStorageService.instance.getUserRole();
+    if (!mounted) return;
     final roleLower = role?.toLowerCase() ?? 'student';
     if (kDebugMode) {
-      print('✅ User has launched before, role: $roleLower');
+      debugPrint('Splash: role=$roleLower');
     }
     if (roleLower == 'instructor' || roleLower == 'teacher') {
       context.go(RouteNames.instructorHome);
@@ -216,18 +91,13 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   void dispose() {
-    _bookController.dispose();
-    _contentController.dispose();
-    _glowController.dispose();
-    _textController.dispose();
-    _loadingController.dispose();
-    _tipTimer?.cancel();
+    _entryController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
+    final h = MediaQuery.sizeOf(context).height;
 
     return Scaffold(
       body: Container(
@@ -235,530 +105,172 @@ class _SplashScreenState extends State<SplashScreen>
         height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: AppColors.brandGradient,
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: AppColors.splashGradient,
           ),
         ),
-        child: Stack(
-          children: [
-            // Background Pattern
-            _buildBackgroundPattern(size),
-
-            // Floating Particles
-            ...List.generate(15, (i) => _buildFloatingParticle(i, size)),
-
-            // Main Content
-            SafeArea(
-              child: Column(
-                children: [
-                  const Spacer(flex: 2),
-
-                  // Logo Section with Book Animation
-                  _buildLogoSection(),
-
-                  const SizedBox(height: 40),
-
-                  // App Name & Tagline
-                  _buildAppName(),
-
-                  const Spacer(flex: 1),
-
-                  // Educational Tip - Smart Idea
-                  _buildEducationalTip(),
-
-                  const Spacer(flex: 2),
-
-                  // Loading + attribution anchored at bottom
-                  _buildLoadingSection(),
-
-                  const SizedBox(height: 20),
-
-                  _buildCeoAttribution(),
-
-                  const SizedBox(height: 16),
-
-                  _buildBottomBranding(),
-
-                  const SizedBox(height: 20),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBackgroundPattern(Size size) {
-    return Stack(
-      children: [
-        // Top right circle
-        Positioned(
-          top: -size.width * 0.3,
-          right: -size.width * 0.3,
-          child: AnimatedBuilder(
-            animation: _glowAnimation,
-            builder: (context, child) {
-              return Container(
-                width: size.width * 0.8,
-                height: size.width * 0.8,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      Colors.white.withOpacity(0.1 * _glowAnimation.value),
-                      Colors.white.withOpacity(0),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-        // Bottom left circle
-        Positioned(
-          bottom: -size.width * 0.2,
-          left: -size.width * 0.2,
-          child: AnimatedBuilder(
-            animation: _glowAnimation,
-            builder: (context, child) {
-              return Container(
-                width: size.width * 0.6,
-                height: size.width * 0.6,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      AppColors.secondary
-                          .withOpacity(0.15 * _glowAnimation.value),
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildFloatingParticle(int index, Size size) {
-    final random = math.Random(index);
-    final particleSize = random.nextDouble() * 6 + 3;
-    final startX = random.nextDouble() * size.width;
-    final startY = random.nextDouble() * size.height;
-
-    return AnimatedBuilder(
-      animation: _glowController,
-      builder: (context, child) {
-        final offset =
-            math.sin(_glowController.value * math.pi * 2 + index) * 20;
-        return Positioned(
-          left: startX + offset,
-          top: startY + offset * 0.5,
-          child: Container(
-            width: particleSize,
-            height: particleSize,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white.withOpacity(0.3 + _glowAnimation.value * 0.3),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.white.withOpacity(0.3),
-                  blurRadius: 10,
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildLogoSection() {
-    return AnimatedBuilder(
-      animation: Listenable.merge(
-          [_bookController, _contentController, _glowController]),
-      builder: (context, child) {
-        return Stack(
-          alignment: Alignment.center,
-          children: [
-            // Outer glow ring
-            Container(
-              width: 200 * _logoScaleAnimation.value,
-              height: 200 * _logoScaleAnimation.value,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.2 * _glowAnimation.value),
-                  width: 2,
-                ),
-              ),
-            ),
-            // Middle glow ring
-            Container(
-              width: 170 * _logoScaleAnimation.value,
-              height: 170 * _logoScaleAnimation.value,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.15 * _glowAnimation.value),
-                  width: 1,
-                ),
-              ),
-            ),
-            // Glow effect
-            Container(
-              width: 160 * _glowAnimation.value,
-              height: 160 * _glowAnimation.value,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.white.withOpacity(0.3 * _glowAnimation.value),
-                    blurRadius: 50,
-                    spreadRadius: 10,
-                  ),
-                ],
-              ),
-            ),
-            // Logo Container
-            Transform.scale(
-              scale: _logoScaleAnimation.value,
-              child: Transform.rotate(
-                angle: _logoRotateAnimation.value,
-                child: Container(
-                  width: 130,
-                  height: 130,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(35),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
-                        blurRadius: 30,
-                        offset: const Offset(0, 15),
-                      ),
-                    ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(35),
-                    child: Image.asset(
-                      'assets/images/app_logo.png',
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              AppColors.brandBlue,
-                              AppColors.brandPurple,
-                            ],
-                          ),
-                        ),
-                        child: const Icon(
-                          Icons.school_rounded,
-                          size: 60,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            // Book Pages Animation (Smart Idea)
-            if (_bookOpenAnimation.value > 0)
-              Transform.rotate(
-                angle: -math.pi / 6 * _bookOpenAnimation.value,
-                child: Transform.translate(
-                  offset: Offset(-30 * _bookOpenAnimation.value, -10),
-                  child: Container(
-                    width: 40,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.9),
-                      borderRadius: BorderRadius.circular(4),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 5,
-                        ),
-                      ],
-                    ),
-                    child: Icon(
-                      Icons.auto_stories_rounded,
-                      size: 20,
-                      color: AppColors.primary.withOpacity(0.7),
-                    ),
-                  ),
-                ),
-              ),
-            // Sparkle Badge
-            Positioned(
-              top: 0,
-              right: 60,
-              child: Transform.scale(
-                scale: _logoScaleAnimation.value,
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: AppColors.brandGradient,
-                    ),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .secondary
-                            .withOpacity(0.5),
-                        blurRadius: 15,
-                      ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.auto_awesome,
-                    size: 18,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildAppName() {
-    return AnimatedBuilder(
-      animation: _textController,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _textFadeAnimation.value,
-          child: Transform.translate(
-            offset: Offset(0, _textSlideAnimation.value),
-            child: child,
-          ),
-        );
-      },
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // Main Title with gradient
-          ShaderMask(
-            shaderCallback: (bounds) => const LinearGradient(
-              colors: [Colors.white, Color(0xFFE0D4FF)],
-            ).createShader(bounds),
-            child: Text(
-              'A Plus',
-              textAlign: TextAlign.center,
-              style: AppTextStyles.h1(color: Colors.white).copyWith(
-                fontSize: 32,
-                letterSpacing: 1,
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          // Tagline badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.white.withOpacity(0.2),
-                  Colors.white.withOpacity(0.1),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(30),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.3),
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.school_rounded,
-                  size: 18,
-                  color: Colors.white.withOpacity(0.9),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Where Energy Meets Expertise',
-                  style: AppTextStyles.bodyMedium(
-                    color: Colors.white.withOpacity(0.95),
-                  ).copyWith(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEducationalTip() {
-    final tip = _educationalTips[_currentTipIndex];
-
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 500),
-      transitionBuilder: (child, animation) {
-        return FadeTransition(
-          opacity: animation,
-          child: SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(0, 0.3),
-              end: Offset.zero,
-            ).animate(animation),
-            child: child,
-          ),
-        );
-      },
-      child: Container(
-        key: ValueKey(_currentTipIndex),
-        margin: const EdgeInsets.symmetric(horizontal: 40),
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: Colors.white.withOpacity(0.2),
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                tip['icon'] as IconData,
-                size: 20,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Flexible(
-              child: Text(
-                tip['text'] as String,
-                style: AppTextStyles.bodyMedium(
-                  color: Colors.white.withOpacity(0.9),
-                ).copyWith(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLoadingSection() {
-    return AnimatedBuilder(
-      animation: _loadingController,
-      builder: (context, child) {
-        return SizedBox(
-          width: 40,
-          height: 40,
-          child: CircularProgressIndicator(
-            value: _loadingController.value,
-            strokeWidth: 3,
-            strokeCap: StrokeCap.round,
-            backgroundColor: Colors.white.withOpacity(0.2),
-            valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildCeoAttribution() {
-    return AnimatedBuilder(
-      animation: _textController,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _textFadeAnimation.value * 0.85,
-          child: child,
-        );
-      },
-      child: Column(
-        children: [
-          Text(
-            'Dr. Yusuf Samir',
-            textAlign: TextAlign.center,
-            style: AppTextStyles.bodyMedium(
-              color: Colors.white.withOpacity(0.92),
-            ).copyWith(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'CEO & Founder',
-            textAlign: TextAlign.center,
-            style: AppTextStyles.labelMedium(
-              color: Colors.white.withOpacity(0.65),
-            ).copyWith(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBottomBranding() {
-    return AnimatedBuilder(
-      animation: _textController,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _textFadeAnimation.value * 0.7,
-          child: child,
-        );
-      },
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+        child: SafeArea(
+          child: Column(
             children: [
-              Icon(
-                Icons.verified_rounded,
-                size: 16,
-                color: Colors.white.withOpacity(0.6),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                AppLocalizations.of(context)!.certifiedAndSecure,
-                style: AppTextStyles.labelMedium(
-                  color: Colors.white.withOpacity(0.6),
+              SizedBox(height: h * 0.08),
+              AnimatedBuilder(
+                animation: _entryController,
+                builder: (context, child) {
+                  return Opacity(
+                    opacity: _fade.value,
+                    child: Transform.translate(
+                      offset: Offset(0, _slide.value),
+                      child: child,
+                    ),
+                  );
+                },
+                child: Column(
+                  children: [
+                    _buildLogoSquircle(),
+                    const SizedBox(height: 22),
+                    const Text(
+                      'A PLUS',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: AppTextStyles.radlushFamily,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 28,
+                        letterSpacing: 3.2,
+                        color: AppColors.pureWhite,
+                        height: 1.05,
+                      ),
+                    ),
+                  ],
                 ),
               ),
+              const Spacer(flex: 2),
+              const SizedBox(
+                width: 36,
+                height: 36,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  strokeCap: StrokeCap.round,
+                  color: AppColors.pureWhite,
+                  backgroundColor: Color(0x33FFFFFF),
+                ),
+              ),
+              const Spacer(flex: 3),
+              _buildPersonFooter(),
+              const SizedBox(height: 20),
             ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            'v1.0.0',
-            style: AppTextStyles.labelSmall(
-              color: Colors.white.withOpacity(0.4),
-            ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLogoSquircle() {
+    return Container(
+      width: 152,
+      height: 152,
+      decoration: BoxDecoration(
+        color: AppColors.pureWhite,
+        borderRadius: BorderRadius.circular(40),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.brandTealShadow.withValues(alpha: 0.45),
+            blurRadius: 32,
+            offset: const Offset(0, 16),
           ),
         ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(40),
+        child: Image.asset(
+          'assets/images/splashLogo.png',
+          fit: BoxFit.contain,
+          errorBuilder: (_, __, ___) => Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppColors.brandTealLight,
+                  AppColors.brandTeal,
+                ],
+              ),
+            ),
+            child: const Icon(
+              Icons.school_rounded,
+              size: 72,
+              color: AppColors.pureWhite,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPersonFooter() {
+    return AnimatedBuilder(
+      animation: _fade,
+      builder: (context, child) {
+        return Opacity(
+          opacity: 0.92 * _fade.value,
+          child: child,
+        );
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 28),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            ClipOval(
+              child: Image.asset(
+                'assets/images/personSplash.jfif',
+                width: 48,
+                height: 48,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(
+                  width: 48,
+                  height: 48,
+                  color: AppColors.whiteOverlay20,
+                  child: const Icon(
+                    Icons.person_rounded,
+                    color: AppColors.pureWhite,
+                    size: 28,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Flexible(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'DR. YOUSSEF SAMIR',
+                    style: TextStyle(
+                      fontFamily: AppTextStyles.radlushFamily,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13,
+                      letterSpacing: 0.6,
+                      color: AppColors.pureWhite,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'CEO & FOUNDER',
+                    style: TextStyle(
+                      fontFamily: AppTextStyles.radlushFamily,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 11,
+                      letterSpacing: 1.0,
+                      color: AppColors.pureWhite.withValues(alpha: 0.88),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

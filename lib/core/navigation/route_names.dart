@@ -4,8 +4,7 @@ class RouteNames {
 
   // Startup flow
   static const String splash = '/';
-  static const String onboarding1 = '/onboarding/1';
-  static const String onboarding2 = '/onboarding/2';
+  static const String brandIntro = '/brand-intro';
   static const String login = '/login';
   static const String register = '/register';
   static const String forgotPassword = '/forgot-password';

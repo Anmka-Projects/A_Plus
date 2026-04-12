@@ -65,7 +65,7 @@ flutter:
 
   assets:
     - assets/images/
-  #  - assets/icons/
+    - assets/icons/tracks/
   # Cairo font is loaded automatically via google_fonts package
   # No need to include font files manually
 

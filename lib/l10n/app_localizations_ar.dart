@@ -126,6 +126,64 @@ class AppLocalizationsAr extends AppLocalizations {
   String get welcomeBack => 'مرحباً بعودتك! 👋';
 
   @override
+  String get welcomeLabel => 'مرحباً';
+
+  @override
+  String get homeMotivationalLine => 'ركز درجة ال A+ في طريقها اليك';
+
+  @override
+  String get homeCoursesSectionTitle => 'الكورسات ..';
+
+  @override
+  String get homeDeptHeadsBooks => 'كتب رؤساء الأقسام';
+
+  @override
+  String get homeQuizzesAssignments => 'الاختبارات والواجبات';
+
+  @override
+  String get homeBooksAssignmentsSection => 'كتب الأطباء والواجبات..';
+
+  @override
+  String get trackDoctor => 'طبيب';
+
+  @override
+  String get trackDentist => 'طبيب أسنان';
+
+  @override
+  String get trackPhysiotherapist => 'علاج طبيعي';
+
+  @override
+  String get trackPharmacist => 'صيدلي';
+
+  @override
+  String get trackNurse => 'تمريض';
+
+  @override
+  String get trackScientist => 'عالم';
+
+  @override
+  String get bottomNavCart => 'السلة';
+
+  @override
+  String get loginEnterCodeTitle => 'أدخل الكود';
+
+  @override
+  String get loginLogIn => 'تسجيل الدخول';
+
+  @override
+  String get codeActivation => 'تفعيل الكود';
+
+  @override
+  String get pleaseActivateCodeFirst =>
+      'يرجى تفعيل الكود أولاً من شاشة التفعيل';
+
+  @override
+  String get contactUs => 'تواصل معنا';
+
+  @override
+  String get chooseLanguage => 'اللغة';
+
+  @override
   String get enterEmail => 'أدخل بريدك الإلكتروني';
 
   @override
@@ -144,10 +202,73 @@ class AppLocalizationsAr extends AppLocalizations {
   String get apple => 'Apple';
 
   @override
-  String get register => 'إنشاء حساب جديد';
+  String get register => 'تفعيل الحساب';
 
   @override
   String get joinUsMessage => 'انضم إلينا وابدأ رحلة التعلم 🎓';
+
+  @override
+  String get quadNameTitle => 'الاسم الرباعي';
+
+  @override
+  String get namePartFirst => 'الاسم';
+
+  @override
+  String get namePartFather => 'الأب';
+
+  @override
+  String get namePartGrandfather => 'الجد';
+
+  @override
+  String get namePartFamily => 'العائلة';
+
+  @override
+  String get nationalId => 'الرقم القومي';
+
+  @override
+  String get nationalIdHint => 'أدخل الرقم القومي';
+
+  @override
+  String get invalidNationalId => 'أدخل رقماً قومياً صحيحاً (أرقام فقط)';
+
+  @override
+  String get faculty => 'الكلية';
+
+  @override
+  String get section => 'الفرقة / القسم';
+
+  @override
+  String get grade => 'السنة الدراسية';
+
+  @override
+  String get tapToSelectFaculty => 'اضغط لاختيار الكلية';
+
+  @override
+  String get tapToSelectSection => 'اضغط لاختيار الفرقة';
+
+  @override
+  String get tapToSelectGrade => 'اضغط لاختيار السنة';
+
+  @override
+  String get selectFacultyFirst => 'اختر الكلية أولاً';
+
+  @override
+  String get selectSectionFirst => 'اختر الفرقة أولاً';
+
+  @override
+  String get selectFaculty => 'يرجى اختيار الكلية';
+
+  @override
+  String get selectSection => 'يرجى اختيار الفرقة';
+
+  @override
+  String get selectGrade => 'يرجى اختيار السنة الدراسية';
+
+  @override
+  String get academicDataLoading => 'جاري تحميل الخيارات…';
+
+  @override
+  String get academicDataUnavailable => 'تعذر تحميل الخيارات. حاول لاحقاً.';
 
   @override
   String get fullName => 'الاسم الكامل';
@@ -499,6 +620,9 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get saveChanges => 'حفظ التغييرات';
+
+  @override
+  String get profileReadOnlyMessage => 'هذه البيانات للعرض فقط';
 
   @override
   String get selectImageSource => 'اختر مصدر الصورة';

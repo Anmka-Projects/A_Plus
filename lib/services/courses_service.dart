@@ -57,12 +57,15 @@ class CoursesService {
     }).toList();
   }
 
-  /// Get all courses with filters
+  /// Get all courses with filters.
+  /// [categorySlug] is sent as `category_slug` (see docs/BACKEND_HOME_MEDICAL_CATEGORY_COURSES.md);
+  /// omitted when [categoryId] is set.
   Future<Map<String, dynamic>> getCourses({
     int page = 1,
     int perPage = 20,
     String? search,
     String? categoryId,
+    String? categorySlug,
     String? subcategoryId,
     String? instructorId,
     String price = 'all', // all, free, paid
@@ -89,6 +92,15 @@ class CoursesService {
         queryParams['category_id'] = categoryId.trim();
       }
 
+      final slugEffective = (categoryId != null && categoryId.trim().isNotEmpty)
+          ? null
+          : (categorySlug != null && categorySlug.trim().isNotEmpty
+              ? categorySlug.trim()
+              : null);
+      if (slugEffective != null) {
+        queryParams['category_slug'] = slugEffective;
+      }
+
       if (subcategoryId != null && subcategoryId.trim().isNotEmpty) {
         queryParams['subcategory_id'] = subcategoryId.trim();
       }
@@ -108,6 +120,8 @@ class CoursesService {
           'search=${search != null && search.trim().isNotEmpty ? Uri.encodeComponent(search.trim()) : ''}');
       queryParts.add(
           'category_id=${categoryId != null && categoryId.trim().isNotEmpty ? Uri.encodeComponent(categoryId.trim()) : ''}');
+      queryParts.add(
+          'category_slug=${slugEffective != null ? Uri.encodeComponent(slugEffective) : ''}');
 
       if (subcategoryId != null && subcategoryId.trim().isNotEmpty) {
         queryParts
@@ -159,23 +173,6 @@ class CoursesService {
               // Print first course details to check for images
               if (courses != null && courses.isNotEmpty) {
                 final firstCourse = courses[0] as Map<String, dynamic>?;
-                if (firstCourse != null) {
-                  print('  📸 First Course Image Fields:');
-                  print('    All Keys: ${firstCourse.keys.toList()}');
-                  print('    thumbnail: ${firstCourse['thumbnail']}');
-                  print('    image: ${firstCourse['image']}');
-                  print('    thumbnail_url: ${firstCourse['thumbnail_url']}');
-                  print('    image_url: ${firstCourse['image_url']}');
-                  print('    cover_image: ${firstCourse['cover_image']}');
-                  print('    cover: ${firstCourse['cover']}');
-                  print('    Full First Course: $firstCourse');
-                }
-              }
-            } else if (data is List) {
-              // If data is directly a list
-              print('  Courses Count (direct list): ${data.length}');
-              if (data.isNotEmpty) {
-                final firstCourse = data[0] as Map<String, dynamic>?;
                 if (firstCourse != null) {
                   print('  📸 First Course Image Fields:');
                   print('    All Keys: ${firstCourse.keys.toList()}');

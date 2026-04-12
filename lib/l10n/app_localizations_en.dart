@@ -126,6 +126,63 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcomeBack => 'Welcome back! 👋';
 
   @override
+  String get welcomeLabel => 'Welcome';
+
+  @override
+  String get homeMotivationalLine => 'Stay focused, your A+ is coming...';
+
+  @override
+  String get homeCoursesSectionTitle => 'Courses ..';
+
+  @override
+  String get homeDeptHeadsBooks => 'Department Heads\' Books';
+
+  @override
+  String get homeQuizzesAssignments => 'Quizzes and assignments';
+
+  @override
+  String get homeBooksAssignmentsSection => 'Doctors books and assignments..';
+
+  @override
+  String get trackDoctor => 'Doctor';
+
+  @override
+  String get trackDentist => 'Dentist';
+
+  @override
+  String get trackPhysiotherapist => 'Physiotherapist';
+
+  @override
+  String get trackPharmacist => 'Pharmacist';
+
+  @override
+  String get trackNurse => 'Nurse';
+
+  @override
+  String get trackScientist => 'Scientist';
+
+  @override
+  String get bottomNavCart => 'Cart';
+
+  @override
+  String get loginEnterCodeTitle => 'ENTER CODE';
+
+  @override
+  String get loginLogIn => 'Log in';
+
+  @override
+  String get codeActivation => 'Code activation';
+
+  @override
+  String get pleaseActivateCodeFirst => 'Please activate code first';
+
+  @override
+  String get contactUs => 'Contact us';
+
+  @override
+  String get chooseLanguage => 'Language';
+
+  @override
   String get enterEmail => 'Enter your email';
 
   @override
@@ -144,10 +201,74 @@ class AppLocalizationsEn extends AppLocalizations {
   String get apple => 'Apple';
 
   @override
-  String get register => 'Create New Account';
+  String get register => 'Code verification';
 
   @override
   String get joinUsMessage => 'Join us and start your learning journey 🎓';
+
+  @override
+  String get quadNameTitle => 'Full name (four parts)';
+
+  @override
+  String get namePartFirst => 'First';
+
+  @override
+  String get namePartFather => 'Father';
+
+  @override
+  String get namePartGrandfather => 'Grandfather';
+
+  @override
+  String get namePartFamily => 'Family';
+
+  @override
+  String get nationalId => 'National ID';
+
+  @override
+  String get nationalIdHint => 'Enter national ID number';
+
+  @override
+  String get invalidNationalId => 'Enter a valid national ID (digits only)';
+
+  @override
+  String get faculty => 'Faculty';
+
+  @override
+  String get section => 'Section';
+
+  @override
+  String get grade => 'Grade';
+
+  @override
+  String get tapToSelectFaculty => 'Tap to select faculty';
+
+  @override
+  String get tapToSelectSection => 'Tap to select section';
+
+  @override
+  String get tapToSelectGrade => 'Tap to select grade';
+
+  @override
+  String get selectFacultyFirst => 'Select a faculty first';
+
+  @override
+  String get selectSectionFirst => 'Select a section first';
+
+  @override
+  String get selectFaculty => 'Please select a faculty';
+
+  @override
+  String get selectSection => 'Please select a section';
+
+  @override
+  String get selectGrade => 'Please select a grade';
+
+  @override
+  String get academicDataLoading => 'Loading options…';
+
+  @override
+  String get academicDataUnavailable =>
+      'Could not load options. Try again later.';
 
   @override
   String get fullName => 'Full Name';
@@ -500,6 +621,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get saveChanges => 'Save Changes';
+
+  @override
+  String get profileReadOnlyMessage =>
+      'This information is for viewing only and cannot be edited here.';
 
   @override
   String get selectImageSource => 'Select Image Source';

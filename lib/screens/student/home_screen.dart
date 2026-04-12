@@ -1,22 +1,26 @@
+// Legacy home widgets (banner, teachers slider, etc.) kept for reference; main home uses the new layout.
+// ignore_for_file: unused_element
+
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import '../../core/design/app_colors.dart';
-import '../../core/design/app_radius.dart';
 import '../../core/navigation/route_names.dart';
+import '../../core/config/theme_provider.dart';
 import '../../core/api/api_endpoints.dart';
 import '../../widgets/bottom_nav.dart';
 import '../../services/home_service.dart';
 import '../../services/courses_service.dart';
 import '../../services/profile_service.dart';
-import '../../services/notifications_service.dart';
 import '../../services/teachers_service.dart';
 import '../../l10n/app_localizations.dart';
 import '../../data/sample_teachers.dart';
+import '../../models/medical_track.dart';
 
 /// Home Screen - Enhanced with 3D Banner & Modern Design
 class HomeScreen extends StatefulWidget {
@@ -27,7 +31,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
-  final _searchController = TextEditingController();
+  static const Color _homeTitleTeal = Color(0xFF006677);
+
   late AnimationController _bannerController;
   late Animation<double> _bannerAnimation;
 
@@ -36,7 +41,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   String? _errorMessage;
   Map<String, dynamic>? _homeData;
   Map<String, dynamic>? _userProfile;
-  int _notificationsCount = 0;
   /// Enrollment rows from [CoursesService.getEnrollments] (each may include `course`).
   List<Map<String, dynamic>> _enrolledCourses = [];
   List<Map<String, dynamic>> _teachers = [];
@@ -87,6 +91,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Future<void> _loadHomeData() async {
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -115,25 +120,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           }
           print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         }
+        if (!mounted) return;
         setState(() => _userProfile = profile);
       } catch (e) {
         // User might not be logged in, continue
         if (kDebugMode) {
           print('❌ Error loading profile in home screen: $e');
         }
-      }
-
-      // Load notifications count if logged in
-      try {
-        final notifications =
-            await NotificationsService.instance.getNotifications(
-          unreadOnly: true,
-          perPage: 1,
-        );
-        setState(() =>
-            _notificationsCount = notifications['meta']?['unread_count'] ?? 0);
-      } catch (e) {
-        // User might not be logged in, continue
       }
 
       // Load teachers from API
@@ -167,6 +160,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         enrolled = [];
       }
 
+      if (!mounted) return;
       setState(() {
         _homeData = homeData;
         _enrolledCourses = enrolled;
@@ -176,6 +170,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       });
     } catch (e) {
       // Show error message instead of fallback data
+      if (!mounted) return;
       setState(() {
         _errorMessage = e.toString().replaceFirst('Exception: ', '');
         _isLoading = false;
@@ -186,7 +181,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   @override
   void dispose() {
-    _searchController.dispose();
     _bannerController.dispose();
     super.dispose();
   }
@@ -200,15 +194,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       return Map<String, dynamic>.from(row);
     }
     return null;
-  }
-
-  List<Map<String, dynamic>> get _allCourses {
-    final courses = <Map<String, dynamic>>[];
-    for (final e in _enrolledCourses) {
-      final c = _courseMapFromEnrollmentRow(e);
-      if (c != null) courses.add(c);
-    }
-    return courses;
   }
 
   List<Map<String, dynamic>> _parseEnrollmentsData(dynamic data) {
@@ -296,7 +281,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      backgroundColor: AppColors.pureWhite,
+      backgroundColor: const Color(0xFFF2F6F7),
+      extendBodyBehindAppBar: false,
+      appBar: _HomeAppBar(
+        statusBarHeight: statusBarHeight,
+        l10n: l10n,
+        userProfile: _userProfile,
+        onLanguageTap: () => _showHomeLanguagePicker(l10n),
+        onSettingsTap: () => context.push(RouteNames.settings),
+      ),
       body: Stack(
         children: [
           Container(
@@ -308,474 +301,411 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
             child: Column(
               children: [
-                // Enhanced Header
-                _buildHeader(statusBarHeight),
-                const SizedBox(height: 15),
-
-                // Content
                 Expanded(
-                  child: Transform.translate(
-                    offset: const Offset(0, -10),
-                    child: _errorMessage != null
-                        ? _buildErrorView()
-                        : SingleChildScrollView(
-                            physics: const BouncingScrollPhysics(),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // 3D Banner
-                                if (_isLoading)
-                                  _build3DBannerSkeleton()
-                                else
-                                  _build3DBanner(),
-
-                                const SizedBox(height: 24),
-
-                                // Quick Stats Row
-                                if (_isLoading)
-                                  _buildQuickStatsSkeleton()
-                                else
-                                  _buildQuickStats(),
-
-                                const SizedBox(height: 24),
-
-                                // Teachers slider
-                                _buildSectionHeader(l10n.teachers, () {
-                                  context.push(
-                                    RouteNames.teachers,
-                                    extra: _teachers,
-                                  );
-                                }),
-                                const SizedBox(height: 16),
-                                if (_isLoading && _teachers.isEmpty)
-                                  _buildTeachersSliderSkeleton()
-                                else
-                                  _buildTeachersSlider(l10n),
-
+                  child: _errorMessage != null
+                      ? _buildErrorView()
+                      : SingleChildScrollView(
+                          physics: const BouncingScrollPhysics(),
+                          padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (_isLoading) ...[
+                                _buildHomeMainSkeleton(),
+                              ] else ...[
+                                _buildCoursesTrackSection(l10n),
                                 const SizedBox(height: 28),
-
-                                // Enrolled courses only (replaces featured, categories, recommended)
-                                if (_isLoading) ...[
-                                  _buildSectionHeader(l10n.myCourses, () {}),
-                                  const SizedBox(height: 16),
-                                  _buildEnrolledCoursesSkeleton(),
-                                  const SizedBox(height: 28),
-                                ] else ...[
-                                  _buildSectionHeader(
-                                    l10n.myCourses,
-                                    () => context.push(RouteNames.enrolled),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  if (_enrolledCourses.isEmpty)
-                                    _buildEnrolledCoursesEmpty()
-                                  else
-                                    _buildEnrolledCoursesHome(),
-                                  const SizedBox(height: 28),
-                                ],
-
-                                const SizedBox(height: 140),
+                                _buildBooksAssignmentsSection(l10n),
                               ],
-                            ),
+                              const SizedBox(height: 140),
+                            ],
                           ),
-                  ),
+                        ),
                 ),
               ],
             ),
           ),
 
-          // Bottom Navigation
           const BottomNav(activeTab: 'home'),
         ],
       ),
     );
   }
 
-  Widget _buildHeader(double statusBarHeight) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: AppColors.brandGradient,
-        ),
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(AppRadius.largeCard),
-          bottomRight: Radius.circular(AppRadius.largeCard),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.brandBlue.withOpacity(0.32),
-            blurRadius: 22,
-            offset: const Offset(0, 10),
-          ),
-          BoxShadow(
-            color: AppColors.brandPurple.withOpacity(0.14),
-            blurRadius: 42,
-            offset: const Offset(0, 22),
-            spreadRadius: -6,
-          ),
-        ],
+  void _showHomeLanguagePicker(AppLocalizations l10n) {
+    showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      child: Stack(
-        children: [
-          // Decorative educational icons - transparent
-          Positioned(
-            top: statusBarHeight + 60,
-            right: 20,
-            child: Icon(
-              Icons.menu_book_rounded,
-              size: 40,
-              color: Colors.white.withOpacity(0.08),
-            ),
-          ),
-          Positioned(
-            top: statusBarHeight + 30,
-            left: 40,
-            child: Icon(
-              Icons.lightbulb_outline_rounded,
-              size: 30,
-              color: Colors.white.withOpacity(0.08),
-            ),
-          ),
-          Positioned(
-            bottom: 80,
-            right: 60,
-            child: Icon(
-              Icons.science_outlined,
-              size: 35,
-              color: Colors.white.withOpacity(0.06),
-            ),
-          ),
-          Positioned(
-            bottom: 100,
-            left: 20,
-            child: Icon(
-              Icons.calculate_outlined,
-              size: 28,
-              color: Colors.white.withOpacity(0.06),
-            ),
-          ),
-
-          Padding(
-            padding: EdgeInsets.only(
-              top: statusBarHeight + 16,
-              left: 20,
-              right: 20,
-              bottom: 56,
-            ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Top Row - Student Avatar, User & Notifications
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Student Avatar and welcome
-                    Expanded(
-                      child: Row(
-                        children: [
-                          // Student Avatar instead of logo
-                          Container(
-                            width: 52,
-                            height: 52,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: Colors.white.withOpacity(0.4),
-                                width: 2,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.white.withOpacity(0.35),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 2),
-                                  spreadRadius: -2,
-                                ),
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.22),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 5),
-                                ),
-                              ],
-                            ),
-                            child: ClipOval(
-                              child: _userProfile?['avatar'] != null
-                                  ? Image.network(
-                                      ApiEndpoints.getImageUrl(
-                                        _userProfile!['avatar']?.toString(),
-                                      ),
-                                      fit: BoxFit.cover,
-                                      loadingBuilder:
-                                          (context, child, loadingProgress) {
-                                        if (loadingProgress == null)
-                                          return child;
-                                        return Container(
-                                          color: Colors.white,
-                                          child: const Center(
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                              color: AppColors.purple,
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                      errorBuilder:
-                                          (context, error, stackTrace) {
-                                        if (kDebugMode) {
-                                          print(
-                                              '❌ Error loading avatar image: $error');
-                                          print(
-                                              '   Avatar URL: ${ApiEndpoints.getImageUrl(_userProfile!['avatar']?.toString())}');
-                                          print('   Stack trace: $stackTrace');
-                                        }
-                                        return Image.asset(
-                                          'assets/images/student-avatar.png',
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (_, __, ___) =>
-                                              Container(
-                                            color: Colors.white,
-                                            child: const Icon(
-                                              Icons.person,
-                                              color: AppColors.purple,
-                                              size: 28,
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                    )
-                                  : Image.asset(
-                                      'assets/images/student-avatar.png',
-                                      fit: BoxFit.cover,
-                                      errorBuilder:
-                                          (context, error, stackTrace) =>
-                                              Container(
-                                        color: Colors.white,
-                                        child: const Icon(
-                                          Icons.person,
-                                          color: AppColors.purple,
-                                          size: 28,
-                                        ),
-                                      ),
-                                    ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  AppLocalizations.of(context)!.welcome(
-                                      _userProfile?['name']?.toString() ??
-                                          AppLocalizations.of(context)!
-                                              .visitor),
-                                  style: GoogleFonts.cairo(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                Row(
-                                  children: [
-                                    Flexible(
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 8, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white.withOpacity(0.2),
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                        ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            const Icon(Icons.star,
-                                                color: Colors.amber, size: 14),
-                                            const SizedBox(width: 4),
-                                            Flexible(
-                                              child: Text(
-                                                AppLocalizations.of(context)!
-                                                    .excellentStudent,
-                                                style: GoogleFonts.cairo(
-                                                  fontSize: 11,
-                                                  color: Colors.white
-                                                      .withOpacity(0.9),
-                                                ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    l10n.chooseLanguage,
+                    style: GoogleFonts.cairo(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.foreground,
                     ),
-                    // Actions
-                    Row(
-                      children: [
-                        // Settings
-                        _buildHeaderButton(
-                          icon: Icons.settings_outlined,
-                          onTap: () => context.push(RouteNames.settings),
-                        ),
-                        const SizedBox(width: 8),
-                        // Notifications with badge
-                        _buildHeaderButton(
-                          icon: Icons.notifications_none_rounded,
-                          badge: _notificationsCount > 0
-                              ? _notificationsCount.toString()
-                              : null,
-                          onTap: () => context.push(RouteNames.notifications),
-                        ),
-                      ],
-                    ),
-                  ],
+                  ),
                 ),
-                const SizedBox(height: 24),
-
-                // Enhanced Oval Search Bar
-                _buildSearchBar(),
+                ListTile(
+                  title: Text('العربية', style: GoogleFonts.cairo()),
+                  onTap: () {
+                    ThemeProvider.instance.setLanguage(const Locale('ar'));
+                    Navigator.of(ctx).pop();
+                  },
+                ),
+                ListTile(
+                  title: Text('English', style: GoogleFonts.cairo()),
+                  onTap: () {
+                    ThemeProvider.instance.setLanguage(const Locale('en'));
+                    Navigator.of(ctx).pop();
+                  },
+                ),
               ],
             ),
           ),
+        );
+      },
+    );
+  }
+
+  Widget _buildHomeMainSkeleton() {
+    return Skeletonizer(
+      enabled: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(width: 28, height: 28, color: Colors.white),
+              const SizedBox(width: 8),
+              Container(
+                width: 140,
+                height: 18,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          GridView.count(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisCount: 3,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childAspectRatio: 0.82,
+            children: List.generate(
+              6,
+              (_) => Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Container(
+            height: 88,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            height: 88,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildHeaderButton(
-      {required IconData icon, String? badge, required VoidCallback onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.15),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.white.withOpacity(0.2)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.12),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+  Widget _buildCoursesTrackSection(AppLocalizations l10n) {
+    const trackSvgs = <String>[
+      'assets/icons/tracks/doctor.svg',
+      'assets/icons/tracks/dentist.svg',
+      'assets/icons/tracks/physiotherapist.svg',
+      'assets/icons/tracks/pharmacist.svg',
+      'assets/icons/tracks/nurse.svg',
+      'assets/icons/tracks/scientist.svg',
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(
+              Icons.monitor_heart_outlined,
+              size: 26,
+              color: _homeTitleTeal,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                l10n.homeCoursesSectionTitle,
+                style: GoogleFonts.cairo(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  color: _homeTitleTeal,
+                ),
+              ),
             ),
           ],
         ),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            Icon(icon, color: Colors.white, size: 22),
-            if (badge != null)
-              Positioned(
-                top: 6,
-                right: 6,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFEF4444),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Text(
-                    badge,
-                    style: GoogleFonts.cairo(
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
+        const SizedBox(height: 16),
+        GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: 3,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: 0.88,
+          children: List.generate(MedicalTrack.values.length, (i) {
+            final track = MedicalTrack.values[i];
+            final label = _trackLabel(l10n, track);
+            return _buildTrackTile(
+              svgAsset: trackSvgs[i],
+              label: label,
+              onTap: () => context.push(
+                RouteNames.allCourses,
+                extra: <String, dynamic>{
+                  'categorySlug': track.slug,
+                  'screenTitle': label,
+                },
+              ),
+            );
+          }),
+        ),
+      ],
+    );
+  }
+
+  String _trackLabel(AppLocalizations l10n, MedicalTrack track) {
+    switch (track) {
+      case MedicalTrack.doctor:
+        return l10n.trackDoctor;
+      case MedicalTrack.dentist:
+        return l10n.trackDentist;
+      case MedicalTrack.physiotherapist:
+        return l10n.trackPhysiotherapist;
+      case MedicalTrack.pharmacist:
+        return l10n.trackPharmacist;
+      case MedicalTrack.nurse:
+        return l10n.trackNurse;
+      case MedicalTrack.scientist:
+        return l10n.trackScientist;
+    }
+  }
+
+  Widget _buildTrackTile({
+    required String svgAsset,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    const iconBg = Color(0xFFF0F7F8);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: _homeCardShadows,
+          ),
+          padding: const EdgeInsets.fromLTRB(8, 12, 8, 10),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: iconBg,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                alignment: Alignment.center,
+                child: SvgPicture.asset(
+                  svgAsset,
+                  width: 40,
+                  height: 40,
+                  fit: BoxFit.contain,
+                  placeholderBuilder: (_) => Icon(
+                    Icons.medical_services_outlined,
+                    size: 28,
+                    color: _homeTitleTeal.withValues(alpha: 0.85),
                   ),
                 ),
               ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSearchBar() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(30), // Oval shape
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.brandBlue.withOpacity(0.14),
-            blurRadius: 28,
-            offset: const Offset(0, 12),
-            spreadRadius: -6,
-          ),
-          BoxShadow(
-            color: Colors.black.withOpacity(0.09),
-            blurRadius: 18,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: TextField(
-        controller: _searchController,
-        style: GoogleFonts.cairo(
-          fontSize: 15,
-          color: AppColors.foreground,
-        ),
-        decoration: InputDecoration(
-          hintText: AppLocalizations.of(context)!.searchPlaceholder,
-          hintStyle: GoogleFonts.cairo(
-            fontSize: 14,
-            color: AppColors.mutedForeground,
-          ),
-          prefixIcon: const Padding(
-            padding: EdgeInsets.only(right: 20, left: 12),
-            child:
-                Icon(Icons.search_rounded, color: AppColors.purple, size: 24),
-          ),
-          suffixIcon: Container(
-            margin: const EdgeInsets.all(6),
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [AppColors.berkeleyBlue, AppColors.pureWhite],
+              const SizedBox(height: 8),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.cairo(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.mutedForeground,
+                  height: 1.2,
+                ),
               ),
-              borderRadius: BorderRadius.circular(20), // Oval suffix
-            ),
-            child:
-                const Icon(Icons.tune_rounded, color: Colors.white, size: 18),
+            ],
           ),
-          border: InputBorder.none,
-          enabledBorder: InputBorder.none,
-          focusedBorder: InputBorder.none,
-          filled: false,
-          contentPadding:
-              const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
         ),
-        onTap: () {
-          // Show search overlay
-          _showSearchOverlay(context);
-        },
-        readOnly: true,
       ),
     );
   }
 
-  void _showSearchOverlay(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => _SearchOverlay(
-        allCourses: _allCourses,
-        onCourseSelected: (course) {
-          Navigator.pop(context);
-          _handleCourseClick(course);
-        },
+  Widget _buildBooksAssignmentsSection(AppLocalizations l10n) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          l10n.homeBooksAssignmentsSection,
+          style: GoogleFonts.cairo(
+            fontSize: 17,
+            fontWeight: FontWeight.w800,
+            color: _homeTitleTeal,
+          ),
+        ),
+        const SizedBox(height: 14),
+        _buildHomeWideCard(
+          icon: Icons.library_books_rounded,
+          iconColors: const [
+            Color(0xFF5B8DEF),
+            Color(0xFFE85D75),
+            Color(0xFF4ECDC4),
+          ],
+          title: l10n.homeDeptHeadsBooks,
+          onTap: () => context.push(RouteNames.downloads),
+        ),
+        const SizedBox(height: 12),
+        _buildHomeWideCard(
+          icon: Icons.fact_check_outlined,
+          iconColors: const [Color(0xFF006677)],
+          title: l10n.homeQuizzesAssignments,
+          onTap: () => context.push(RouteNames.myExams),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHomeWideCard({
+    required IconData icon,
+    required List<Color> iconColors,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: _homeCardShadows,
+          ),
+          child: Row(
+            children: [
+              if (iconColors.length >= 3)
+                SizedBox(
+                  width: 52,
+                  height: 44,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Positioned(
+                        left: 0,
+                        top: 4,
+                        child: Container(
+                          width: 22,
+                          height: 30,
+                          decoration: BoxDecoration(
+                            color: iconColors[0],
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        left: 12,
+                        top: 0,
+                        child: Container(
+                          width: 22,
+                          height: 30,
+                          decoration: BoxDecoration(
+                            color: iconColors[1],
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        left: 24,
+                        top: 6,
+                        child: Container(
+                          width: 22,
+                          height: 30,
+                          decoration: BoxDecoration(
+                            color: iconColors[2],
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                Container(
+                  width: 52,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: iconColors.first.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(icon, color: iconColors.first, size: 28),
+                ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Text(
+                  title,
+                  style: GoogleFonts.cairo(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: _homeTitleTeal,
+                    height: 1.25,
+                  ),
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.mutedForeground,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -2069,258 +1999,263 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 }
 
-// Search Overlay Widget
-class _SearchOverlay extends StatefulWidget {
-  final List<Map<String, dynamic>> allCourses;
-  final Function(Map<String, dynamic>) onCourseSelected;
+/// Home-only app bar: teal gradient, profile (read-only), language action, tagline.
+class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
+  final double statusBarHeight;
+  final AppLocalizations l10n;
+  final Map<String, dynamic>? userProfile;
+  final VoidCallback onLanguageTap;
+  final VoidCallback onSettingsTap;
 
-  const _SearchOverlay({
-    required this.allCourses,
-    required this.onCourseSelected,
+  const _HomeAppBar({
+    required this.statusBarHeight,
+    required this.l10n,
+    required this.userProfile,
+    required this.onLanguageTap,
+    required this.onSettingsTap,
   });
 
-  @override
-  State<_SearchOverlay> createState() => _SearchOverlayState();
-}
-
-class _SearchOverlayState extends State<_SearchOverlay> {
-  final _searchController = TextEditingController();
-  String _query = '';
-
-  List<Map<String, dynamic>> get _filteredCourses {
-    if (_query.isEmpty) return widget.allCourses;
-    return widget.allCourses.where((course) {
-      final title = course['title']?.toString() ?? '';
-      final instructor = course['instructor'] is Map
-          ? (course['instructor'] as Map)['name']?.toString() ?? ''
-          : course['instructor']?.toString() ?? '';
-      final category = course['category'] is Map
-          ? (course['category'] as Map)['name']?.toString() ?? ''
-          : course['category']?.toString() ?? '';
-
-      return title.contains(_query) ||
-          instructor.contains(_query) ||
-          category.contains(_query);
-    }).toList();
-  }
+  static const double _contentHeight = 138;
+  static const Color _gradientTop = Color(0xFF23C5C0);
+  static const Color _gradientBottom = Color(0xFF0A6D6E);
 
   @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
+  Size get preferredSize => Size.fromHeight(statusBarHeight + _contentHeight);
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.85,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      child: Column(
-        children: [
-          // Handle
-          Container(
-            margin: const EdgeInsets.only(top: 12),
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
+    final displayName = userProfile?['name']?.toString().trim().isNotEmpty == true
+        ? userProfile!['name'].toString()
+        : l10n.visitor;
 
-          // Search field
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Container(
-              decoration: BoxDecoration(
-                color: AppColors.beige,
-                borderRadius: BorderRadius.circular(30),
-              ),
-              child: TextField(
-                controller: _searchController,
-                autofocus: true,
-                style: GoogleFonts.cairo(fontSize: 15),
-                decoration: InputDecoration(
-                  hintText: AppLocalizations.of(context)!.searchPlaceholder,
-                  hintStyle: GoogleFonts.cairo(
-                    fontSize: 14,
-                    color: AppColors.mutedForeground,
-                  ),
-                  prefixIcon: const Padding(
-                    padding: EdgeInsets.only(right: 16, left: 12),
-                    child: Icon(Icons.search_rounded, color: AppColors.purple),
-                  ),
-                  border: InputBorder.none,
-                  contentPadding:
-                      const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-                ),
-                onChanged: (value) => setState(() => _query = value),
-              ),
-            ),
+    return Material(
+      elevation: 0,
+      color: Colors.transparent,
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [_gradientTop, _gradientBottom],
           ),
-
-          // Results
-          Expanded(
-            child: _filteredCourses.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.search_off,
-                            size: 64, color: Colors.grey[300]),
-                        const SizedBox(height: 16),
-                        Text(
-                          AppLocalizations.of(context)!.noResultsFound,
-                          style: GoogleFonts.cairo(
-                            fontSize: 16,
-                            color: AppColors.mutedForeground,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    itemCount: _filteredCourses.length,
-                    itemBuilder: (context, index) {
-                      final course = _filteredCourses[index];
-                      return GestureDetector(
-                        onTap: () => widget.onCourseSelected(course),
-                        child: Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: AppColors.beige,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Row(
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
-                                child: (course['thumbnail'] != null ||
-                                        course['image'] != null)
+          boxShadow: [
+            BoxShadow(
+              color: _gradientBottom.withValues(alpha: 0.35),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: EdgeInsets.only(
+            top: statusBarHeight + 6,
+            left: 20,
+            right: 16,
+            bottom: 22,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.5),
+                                  width: 2,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.2),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: ClipOval(
+                                child: userProfile?['avatar'] != null
                                     ? Image.network(
-                                        course['thumbnail']?.toString() ?? '',
-                                        width: 60,
-                                        height: 60,
+                                        ApiEndpoints.getImageUrl(
+                                          userProfile!['avatar']?.toString(),
+                                        ),
                                         fit: BoxFit.cover,
-                                        errorBuilder: (_, __, ___) => course[
-                                                    'image'] !=
-                                                null
-                                            ? Image.asset(
-                                                course['image']?.toString() ??
-                                                    '',
-                                                width: 60,
-                                                height: 60,
-                                                fit: BoxFit.cover,
-                                                errorBuilder: (_, __, ___) =>
-                                                    Container(
-                                                  width: 60,
-                                                  height: 60,
-                                                  color: AppColors.purple
-                                                      .withOpacity(0.1),
-                                                  child: const Icon(Icons.image,
-                                                      color: AppColors.purple),
-                                                ),
-                                              )
-                                            : Container(
-                                                width: 60,
-                                                height: 60,
-                                                color: AppColors.purple
-                                                    .withOpacity(0.1),
-                                                child: const Icon(Icons.image,
-                                                    color: AppColors.purple),
+                                        loadingBuilder:
+                                            (context, child, loadingProgress) {
+                                          if (loadingProgress == null) {
+                                            return child;
+                                          }
+                                          return Container(
+                                            color: Colors.white,
+                                            child: const Center(
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                color: AppColors.purple,
                                               ),
-                                      )
-                                    : course['image'] != null
-                                        ? Image.asset(
-                                            course['image']?.toString() ?? '',
-                                            width: 60,
-                                            height: 60,
+                                            ),
+                                          );
+                                        },
+                                        errorBuilder:
+                                            (context, error, stackTrace) {
+                                          return Image.asset(
+                                            'assets/images/student-avatar.png',
                                             fit: BoxFit.cover,
                                             errorBuilder: (_, __, ___) =>
                                                 Container(
-                                              width: 60,
-                                              height: 60,
-                                              color: AppColors.purple
-                                                  .withOpacity(0.1),
-                                              child: const Icon(Icons.image,
-                                                  color: AppColors.purple),
+                                              color: Colors.white,
+                                              child: const Icon(
+                                                Icons.person,
+                                                color: AppColors.purple,
+                                                size: 26,
+                                              ),
                                             ),
-                                          )
-                                        : Container(
-                                            width: 60,
-                                            height: 60,
-                                            color: AppColors.purple
-                                                .withOpacity(0.1),
-                                            child: const Icon(Icons.image,
-                                                color: AppColors.purple),
+                                          );
+                                        },
+                                      )
+                                    : Image.asset(
+                                        'assets/images/student-avatar.png',
+                                        fit: BoxFit.cover,
+                                        errorBuilder:
+                                            (context, error, stackTrace) =>
+                                                Container(
+                                          color: Colors.white,
+                                          child: const Icon(
+                                            Icons.person,
+                                            color: AppColors.purple,
+                                            size: 26,
                                           ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      course['title']?.toString() ?? '',
-                                      style: GoogleFonts.cairo(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 14,
+                                        ),
                                       ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      course['instructor'] is Map
-                                          ? (course['instructor']
-                                                      as Map)['name']
-                                                  ?.toString() ??
-                                              ''
-                                          : course['instructor']?.toString() ??
-                                              '',
-                                      style: GoogleFonts.cairo(
-                                        fontSize: 12,
-                                        color: AppColors.mutedForeground,
-                                      ),
-                                    ),
-                                  ],
-                                ),
                               ),
-                              if (course['isFree'] == true)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 10, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: Colors.green[100],
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    AppLocalizations.of(context)!.free,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    l10n.welcomeLabel,
                                     style: GoogleFonts.cairo(
-                                      fontSize: 11,
-                                      color: Colors.green[700],
-                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color:
+                                          Colors.white.withValues(alpha: 0.9),
+                                      height: 1.1,
                                     ),
                                   ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    displayName,
+                                    style: GoogleFonts.cairo(
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                      height: 1.15,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: onSettingsTap,
+                          borderRadius: BorderRadius.circular(12),
+                          child: Tooltip(
+                            message: l10n.settings,
+                            child: Container(
+                              width: 42,
+                              height: 42,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.35),
                                 ),
-                            ],
+                              ),
+                              child: Icon(
+                                Icons.settings_rounded,
+                                color: Colors.white.withValues(alpha: 0.95),
+                                size: 22,
+                              ),
+                            ),
                           ),
                         ),
-                      );
-                    },
+                      ),
+                      const SizedBox(width: 8),
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: onLanguageTap,
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            width: 42,
+                            height: 42,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.35),
+                              ),
+                            ),
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                Icon(
+                                  Icons.language_rounded,
+                                  color: Colors.white.withValues(alpha: 0.95),
+                                  size: 22,
+                                ),
+                                Positioned(
+                                  right: 7,
+                                  bottom: 8,
+                                  child: Text(
+                                    'A',
+                                    style: GoogleFonts.cairo(
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-          ),
-        ],
+                  const SizedBox(height: 10),
+                  Text(
+                    l10n.homeMotivationalLine,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.cairo(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                      height: 1.35,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
       ),
     );
   }
 }
-
-
-// 1- وفيها زرار عرض المزيد تدخلك علي صفحه كل المحاضرين  اعمل سلايدر المحاضرون
-// 2- لو ضغط علي اي معلم يفتح صفحه سينجل للمدرس تعرض الصوره واسمو بشكل رايق ونبذه عنو وتحتها كورساتو 

@@ -3,12 +3,13 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../core/config/theme_provider.dart';
 import '../../core/design/app_colors.dart';
 import '../../core/navigation/route_names.dart';
 import '../../services/auth_service.dart';
 import '../../l10n/app_localizations.dart';
 
-/// Login Screen - Clean Design like Account Page
+/// Login — code entry, header with gradient + logo, support & language footer.
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -17,141 +18,120 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _formKey = GlobalKey<FormState>();
+  /// Mockup palette
+  static const Color _darkTeal = Color(0xFF006677);
+  static const Color _cyan = Color(0xFF23C5C0);
+  static const Color _gradientTealDeep = Color(0xFF0A6D6E);
+  static const Color _fieldFill = Color(0xFFD9D9D9);
+  static const Color _fieldBorder = Color(0xFFB0B0B0);
+  static const Color _hintRed = Color(0xFFC0392B);
+
   final _codeController = TextEditingController();
   bool _isLoading = false;
-  // bool _googleLoading = false;
-  // bool _appleLoading = false;
 
   Future<void> _handleLogin() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() => _isLoading = true);
-
-      try {
-        final authResponse = await AuthService.instance.login(
-          code: _codeController.text.trim(),
-        );
-
-        if (!mounted) return;
-
-        // Save launch flag
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('hasLaunched', true);
-
-        // Navigate by role: instructor → instructor flow, else → student flow
-        if (mounted) {
-          final role = authResponse.user.role.toLowerCase();
-          if (role == 'instructor' || role == 'teacher') {
-            context.go(RouteNames.instructorHome);
-          } else {
-            context.go(RouteNames.home);
-          }
-        }
-      } catch (e) {
-        if (!mounted) return;
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              e.toString().replaceFirst('Exception: ', ''),
-              style: GoogleFonts.cairo(),
-            ),
-            backgroundColor: AppColors.destructive,
-            duration: const Duration(seconds: 3),
+    final l10n = AppLocalizations.of(context)!;
+    final code = _codeController.text.trim();
+    if (code.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            l10n.pleaseActivateCodeFirst,
+            style: GoogleFonts.cairo(),
           ),
-        );
-      } finally {
-        if (mounted) {
-          setState(() => _isLoading = false);
+          backgroundColor: _hintRed,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final authResponse = await AuthService.instance.login(
+        code: code,
+      );
+
+      if (!mounted) return;
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('hasLaunched', true);
+
+      if (mounted) {
+        final role = authResponse.user.role.toLowerCase();
+        if (role == 'instructor' || role == 'teacher') {
+          context.go(RouteNames.instructorHome);
+        } else {
+          context.go(RouteNames.home);
         }
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            e.toString().replaceFirst('Exception: ', ''),
+            style: GoogleFonts.cairo(),
+          ),
+          backgroundColor: AppColors.destructive,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
       }
     }
   }
 
-  // Google and Apple auth - commented out
-  // Future<void> _handleGoogleLogin() async {
-  //   if (_googleLoading || _appleLoading) return;
-  //   setState(() {
-  //     _googleLoading = true;
-  //     _appleLoading = false;
-  //   });
-
-  //   try {
-  //     final authResponse = await AuthService.instance.signInWithGoogle();
-
-  //     if (!mounted) return;
-
-  //     final prefs = await SharedPreferences.getInstance();
-  //     await prefs.setBool('hasLaunched', true);
-
-  //     if (mounted) {
-  //       final role = authResponse.user.role.toLowerCase();
-  //       if (role == 'instructor' || role == 'teacher') {
-  //         context.go(RouteNames.instructorHome);
-  //       } else {
-  //         context.go(RouteNames.home);
-  //       }
-  //     }
-  //   } catch (e) {
-  //     if (!mounted) return;
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(
-  //         content: Text(
-  //           e.toString().replaceFirst('Exception: ', ''),
-  //           style: GoogleFonts.cairo(),
-  //         ),
-  //         backgroundColor: Colors.red,
-  //         duration: const Duration(seconds: 3),
-  //       ),
-  //     );
-  //   } finally {
-  //     if (mounted) {
-  //       setState(() => _googleLoading = false);
-  //     }
-  //   }
-  // }
-
-  // Future<void> _handleAppleLogin() async {
-  //   if (_appleLoading || _googleLoading) return;
-  //   setState(() {
-  //     _appleLoading = true;
-  //     _googleLoading = false;
-  //   });
-
-  //   try {
-  //     final authResponse = await AuthService.instance.signInWithApple();
-
-  //     if (!mounted) return;
-
-  //     final prefs = await SharedPreferences.getInstance();
-  //     await prefs.setBool('hasLaunched', true);
-
-  //     if (mounted) {
-  //       final role = authResponse.user.role.toLowerCase();
-  //       if (role == 'instructor' || role == 'teacher') {
-  //         context.go(RouteNames.instructorHome);
-  //       } else {
-  //         context.go(RouteNames.home);
-  //       }
-  //     }
-  //   } catch (e) {
-  //     if (!mounted) return;
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(
-  //         content: Text(
-  //           e.toString().replaceFirst('Exception: ', ''),
-  //           style: GoogleFonts.cairo(),
-  //         ),
-  //         backgroundColor: Colors.red,
-  //         duration: const Duration(seconds: 3),
-  //       ),
-  //     );
-  //   } finally {
-  //     if (mounted) {
-  //       setState(() => _appleLoading = false);
-  //     }
-  //   }
-  // }
+  void _showLanguagePicker() {
+    final l10n = AppLocalizations.of(context)!;
+    showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    l10n.chooseLanguage,
+                    style: GoogleFonts.cairo(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.foreground,
+                    ),
+                  ),
+                ),
+                ListTile(
+                  title: Text('العربية', style: GoogleFonts.cairo()),
+                  onTap: () {
+                    ThemeProvider.instance.setLanguage(const Locale('ar'));
+                    Navigator.of(ctx).pop();
+                  },
+                ),
+                ListTile(
+                  title: Text('English', style: GoogleFonts.cairo()),
+                  onTap: () {
+                    ThemeProvider.instance.setLanguage(const Locale('en'));
+                    Navigator.of(ctx).pop();
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 
   @override
   void dispose() {
@@ -168,181 +148,120 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
 
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
-      backgroundColor: AppColors.beige,
+      backgroundColor: AppColors.pureWhite,
       body: Column(
         children: [
-          // Header - uses brand primary/secondary
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: AppColors.brandGradient,
-              ),
-            ),
-            child: SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 60),
-                child: Column(
-                  children: [
-                    // Back Button
-                    Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () => context.go(RouteNames.onboarding1),
-                          child: Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: AppColors.whiteOverlay20,
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            child: const Icon(
-                              Icons.arrow_back_ios_new_rounded,
-                              color: AppColors.pureWhite,
-                              size: 18,
-                            ),
-                          ),
-                        ),
-                        const Spacer(),
-                        Text(
-                          AppLocalizations.of(context)!.login,
-                          style: GoogleFonts.cairo(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.pureWhite,
-                          ),
-                        ),
-                        const Spacer(),
-                        const SizedBox(width: 44),
-                      ],
-                    ),
-                    const SizedBox(height: 30),
-                    // Logo
-                    Container(
-                      width: 90,
-                      height: 90,
-                      decoration: BoxDecoration(
-                        color: AppColors.pureWhite,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: AppColors.whiteOverlay40,
-                          width: 3,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.blackOverlay20,
-                            blurRadius: 20,
-                            offset: const Offset(0, 10),
-                          ),
-                        ],
-                      ),
-                      child: ClipOval(
-                        child: Image.asset(
-                          'assets/images/app_logo.png',
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => const Icon(
-                            Icons.school_rounded,
-                            size: 45,
-                            color: AppColors.purple,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      AppLocalizations.of(context)!.welcomeBack,
-                      style: GoogleFonts.cairo(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.pureWhite,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          // Form Container
           Expanded(
-            child: Transform.translate(
-              offset: const Offset(0, -30),
-              child: Container(
-                decoration: const BoxDecoration(
-                  color: AppColors.beige,
-                  borderRadius: BorderRadius.vertical(
-                    top: Radius.circular(32),
-                  ),
-                ),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(24, 40, 24, 24),
-                  child: Form(
-                    key: _formKey,
+            flex: 42,
+            child: _buildHeader(context),
+          ),
+          Expanded(
+            flex: 58,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(28, 28, 28, 16),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // Student / learner code
-                        _buildLabel(AppLocalizations.of(context)!.studentCode),
-                        const SizedBox(height: 8),
-                        _buildTextField(
-                          controller: _codeController,
-                          hint: AppLocalizations.of(context)!.enterStudentCode,
-                          icon: Icons.badge_outlined,
-                          keyboardType: TextInputType.text,
+                        Text(
+                          l10n.loginEnterCodeTitle,
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.cairo(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1.4,
+                            color: _darkTeal,
+                          ),
                         ),
                         const SizedBox(height: 20),
-
-                        const SizedBox(height: 24),
-
-                        // Login Button
-                        SizedBox(
-                          width: double.infinity,
-                          height: 54,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                begin: Alignment.centerLeft,
-                                end: Alignment.centerRight,
-                                colors: AppColors.brandGradient,
-                              ),
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color:
-                                      AppColors.brandPurple.withOpacity(0.25),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 6),
-                                ),
-                              ],
+                        TextField(
+                            controller: _codeController,
+                            keyboardType: TextInputType.text,
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.cairo(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.foreground,
                             ),
-                            child: ElevatedButton(
+                            decoration: InputDecoration(
+                              hintText: l10n.enterStudentCode,
+                              hintStyle: GoogleFonts.cairo(
+                                color: AppColors.mutedForeground,
+                                fontSize: 15,
+                              ),
+                              filled: true,
+                              fillColor: _fieldFill,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 16,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(32),
+                                borderSide: const BorderSide(
+                                  color: _fieldBorder,
+                                  width: 1,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(32),
+                                borderSide: const BorderSide(
+                                  color: _fieldBorder,
+                                  width: 1,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(32),
+                                borderSide: const BorderSide(
+                                  color: _darkTeal,
+                                  width: 2,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            l10n.pleaseActivateCodeFirst,
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.cairo(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: _hintRed,
+                              height: 1.3,
+                            ),
+                          ),
+                          const SizedBox(height: 28),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 50,
+                            child: FilledButton(
                               onPressed: _isLoading ? null : _handleLogin,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.transparent,
-                                shadowColor: Colors.transparent,
-                                foregroundColor: AppColors.primaryForeground,
-                                disabledForegroundColor:
-                                    AppColors.primaryForeground,
-                                disabledBackgroundColor: Colors.transparent,
+                              style: FilledButton.styleFrom(
+                                backgroundColor: _darkTeal,
+                                foregroundColor: AppColors.pureWhite,
+                                disabledBackgroundColor:
+                                    _darkTeal.withValues(alpha: 0.5),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
+                                  borderRadius: BorderRadius.circular(14),
                                 ),
                                 elevation: 0,
                               ),
                               child: _isLoading
                                   ? const SizedBox(
-                                      width: 24,
-                                      height: 24,
+                                      width: 22,
+                                      height: 22,
                                       child: CircularProgressIndicator(
-                                        color: AppColors.primaryForeground,
+                                        color: AppColors.pureWhite,
                                         strokeWidth: 2.5,
                                       ),
                                     )
                                   : Text(
-                                      AppLocalizations.of(context)!.login,
+                                      l10n.loginLogIn,
                                       style: GoogleFonts.cairo(
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,
@@ -350,102 +269,40 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 24),
-
-                        // Apple and Google auth widget - commented out
-                        // // Divider
-                        // Row(
-                        //   children: [
-                        //     Expanded(child: Divider(color: Colors.grey[300])),
-                        //     Padding(
-                        //       padding:
-                        //           const EdgeInsets.symmetric(horizontal: 16),
-                        //       child: Text(
-                        //         AppLocalizations.of(context)!.or,
-                        //         style: GoogleFonts.cairo(
-                        //             color: AppColors.mutedForeground),
-                        //       ),
-                        //     ),
-                        //     Expanded(child: Divider(color: Colors.grey[300])),
-                        //   ],
-                        // ),
-                        // const SizedBox(height: 24),
-
-                        // // Social Buttons
-                        // Row(
-                        //   children: [
-                        //     Expanded(
-                        //         child: _buildSocialButton(
-                        //       icon: Icons.g_mobiledata_rounded,
-                        //       label: AppLocalizations.of(context)!.google,
-                        //       onPressed: (_isLoading || _appleLoading)
-                        //           ? null
-                        //           : _handleGoogleLogin,
-                        //       isLoading: _googleLoading,
-                        //     )),
-                        //     const SizedBox(width: 12),
-                        //     Expanded(
-                        //         child: _buildSocialButton(
-                        //       icon: Icons.apple_rounded,
-                        //       label: AppLocalizations.of(context)!.apple,
-                        //       onPressed: (_isLoading || _googleLoading)
-                        //           ? null
-                        //           : _handleAppleLogin,
-                        //       isLoading: _appleLoading,
-                        //     )),
-                        //   ],
-                        // ),
-
-                        const SizedBox(height: 32),
-
-                        // Register Link
-                        Center(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                AppLocalizations.of(context)!.noAccount,
+                          const SizedBox(height: 14),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 56,
+                            child: FilledButton(
+                              onPressed: _isLoading
+                                  ? null
+                                  : () => context.go(RouteNames.register),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: _darkTeal,
+                                foregroundColor: AppColors.pureWhite,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                elevation: 0,
+                              ),
+                              child: Text(
+                                l10n.codeActivation,
                                 style: GoogleFonts.cairo(
-                                  fontSize: 14,
-                                  color: AppColors.mutedForeground,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              TextButton(
-                                onPressed: () =>
-                                    context.go(RouteNames.register),
-                                style: TextButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                ),
-                                child: ShaderMask(
-                                  blendMode: BlendMode.srcIn,
-                                  shaderCallback: (bounds) =>
-                                      const LinearGradient(
-                                        begin: Alignment.centerLeft,
-                                        end: Alignment.centerRight,
-                                        colors: AppColors.brandGradient,
-                                      ).createShader(bounds),
-                                  child: Text(
-                                    AppLocalizations.of(context)!.registerNow,
-                                    style: GoogleFonts.cairo(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
                   ),
                 ),
-              ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(32, 8, 32, 24),
+                  child: _buildFooter(l10n),
+                ),
+              ],
             ),
           ),
         ],
@@ -453,139 +310,166 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildLabel(String text) {
-    return Text(
-      text,
-      style: GoogleFonts.cairo(
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-        color: AppColors.foreground,
-      ),
+  Widget _buildHeader(BuildContext context) {
+    return Stack(
+      fit: StackFit.expand,
+      clipBehavior: Clip.hardEdge,
+      children: [
+        Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                _cyan,
+                _gradientTealDeep,
+              ],
+            ),
+          ),
+        ),
+        Positioned(
+          top: -35,
+          right: -45,
+          child: CircleAvatar(
+            radius: 75,
+            backgroundColor: _darkTeal.withValues(alpha: 0.32),
+          ),
+        ),
+        Positioned(
+          top: 50,
+          left: -55,
+          child: CircleAvatar(
+            radius: 58,
+            backgroundColor: _darkTeal.withValues(alpha: 0.26),
+          ),
+        ),
+        Positioned(
+          bottom: 8,
+          right: 28,
+          child: CircleAvatar(
+            radius: 42,
+            backgroundColor: _darkTeal.withValues(alpha: 0.22),
+          ),
+        ),
+        SafeArea(
+          bottom: false,
+          child: Stack(
+            children: [
+              Positioned(
+                top: 4,
+                left: 8,
+                child: IconButton(
+                  onPressed: () => context.go(RouteNames.splash),
+                  style: IconButton.styleFrom(
+                    backgroundColor: AppColors.whiteOverlay20,
+                    foregroundColor: AppColors.pureWhite,
+                  ),
+                  icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+                ),
+              ),
+              Positioned.fill(
+                child: Column(
+                  children: [
+                    const Spacer(flex: 2),
+                    _buildLogoSquircle(),
+                    const Spacer(flex: 3),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String hint,
-    required IconData icon,
-    TextInputType? keyboardType,
-  }) {
+  Widget _buildLogoSquircle() {
     return Container(
+      width: 132,
+      height: 132,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppColors.brandBlue.withOpacity(0.06),
-            AppColors.brandPurple.withOpacity(0.06),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(14),
+        color: AppColors.pureWhite,
+        borderRadius: BorderRadius.circular(34),
         boxShadow: [
           BoxShadow(
-            color: AppColors.blackOverlay20,
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 26,
+            offset: const Offset(0, 12),
           ),
         ],
       ),
-      child: TextFormField(
-        controller: controller,
-        keyboardType: keyboardType,
-        style: GoogleFonts.cairo(fontSize: 15),
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle:
-              GoogleFonts.cairo(color: AppColors.mutedForeground, fontSize: 14),
-          prefixIcon: Icon(icon, color: AppColors.purple, size: 22),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide(
-              color: Theme.of(context).colorScheme.secondary,
-              width: 1,
-            ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(34),
+        child: Image.asset(
+          'assets/images/app_logo.png',
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => const Icon(
+            Icons.school_rounded,
+            size: 58,
+            color: _darkTeal,
           ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide(
-              color: Theme.of(context).colorScheme.secondary,
-              width: 1,
-            ),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide(
-              color: Theme.of(context).colorScheme.secondary,
-              width: 2,
-            ),
-          ),
-          contentPadding:
-              const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
         ),
-        validator: (value) {
-          if (value == null || value.isEmpty) {
-            return AppLocalizations.of(context)!.fieldRequired;
-          }
-          // Accept any input (email or phone) - validation will be done by backend
-          return null;
-        },
       ),
     );
   }
 
-  // /* Apple and Google auth widget - commented out
-  // Widget _buildSocialButton({
-  //   required IconData icon,
-  //   required String label,
-  //   VoidCallback? onPressed,
-  //   bool isLoading = false,
-  // }) {
-  //   final isDisabled = onPressed == null || isLoading;
-  //   return Opacity(
-  //     opacity: isDisabled ? 0.6 : 1,
-  //     child: InkWell(
-  //       onTap: isDisabled ? null : onPressed,
-  //       borderRadius: BorderRadius.circular(14),
-  //       child: Container(
-  //         height: 50,
-  //         decoration: BoxDecoration(
-  //           color: Colors.white,
-  //           borderRadius: BorderRadius.circular(14),
-  //           boxShadow: [
-  //             BoxShadow(
-  //               color: Colors.black.withOpacity(0.04),
-  //               blurRadius: 10,
-  //               offset: const Offset(0, 4),
-  //             ),
-  //           ],
-  //         ),
-  //         child: Row(
-  //           mainAxisAlignment: MainAxisAlignment.center,
-  //           children: [
-  //             if (isLoading)
-  //               const SizedBox(
-  //                 width: 20,
-  //                 height: 20,
-  //                 child: CircularProgressIndicator(
-  //                   strokeWidth: 2,
-  //                   color: AppColors.purple,
-  //                 ),
-  //               )
-  //             else
-  //               Icon(icon, size: 24, color: AppColors.foreground),
-  //             const SizedBox(width: 8),
-  //             Text(
-  //               label,
-  //               style: GoogleFonts.cairo(
-  //                 fontSize: 14,
-  //                 fontWeight: FontWeight.w600,
-  //                 color: AppColors.foreground,
-  //               ),
-  //             ),
-  //           ],
-  //         ),
-  //       ),
-  //     ),
-  //   );
-  // }
+  Widget _buildFooter(AppLocalizations l10n) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        InkWell(
+          onTap: () => context.push(RouteNames.supportAndHelp),
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.support_agent_rounded,
+                  size: 28,
+                  color: _darkTeal,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  l10n.contactUs,
+                  style: GoogleFonts.cairo(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: _darkTeal,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        InkWell(
+          onTap: _showLanguagePicker,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.translate_rounded,
+                  size: 28,
+                  color: _darkTeal,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  l10n.chooseLanguage,
+                  style: GoogleFonts.cairo(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: _darkTeal,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }

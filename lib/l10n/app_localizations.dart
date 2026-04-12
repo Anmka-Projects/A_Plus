@@ -326,6 +326,120 @@ abstract class AppLocalizations {
   /// **'Welcome back! 👋'**
   String get welcomeBack;
 
+  /// Short welcome prefix above user name on home
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome'**
+  String get welcomeLabel;
+
+  /// Tagline under home header
+  ///
+  /// In en, this message translates to:
+  /// **'Stay focused, your A+ is coming...'**
+  String get homeMotivationalLine;
+
+  /// Home medical tracks section title
+  ///
+  /// In en, this message translates to:
+  /// **'Courses ..'**
+  String get homeCoursesSectionTitle;
+
+  /// Home books row title
+  ///
+  /// In en, this message translates to:
+  /// **'Department Heads\' Books'**
+  String get homeDeptHeadsBooks;
+
+  /// Home assignments row title
+  ///
+  /// In en, this message translates to:
+  /// **'Quizzes and assignments'**
+  String get homeQuizzesAssignments;
+
+  /// Second home section heading
+  ///
+  /// In en, this message translates to:
+  /// **'Doctors books and assignments..'**
+  String get homeBooksAssignmentsSection;
+
+  /// Medical track
+  ///
+  /// In en, this message translates to:
+  /// **'Doctor'**
+  String get trackDoctor;
+
+  /// Medical track
+  ///
+  /// In en, this message translates to:
+  /// **'Dentist'**
+  String get trackDentist;
+
+  /// Medical track
+  ///
+  /// In en, this message translates to:
+  /// **'Physiotherapist'**
+  String get trackPhysiotherapist;
+
+  /// Medical track
+  ///
+  /// In en, this message translates to:
+  /// **'Pharmacist'**
+  String get trackPharmacist;
+
+  /// Medical track
+  ///
+  /// In en, this message translates to:
+  /// **'Nurse'**
+  String get trackNurse;
+
+  /// Medical track
+  ///
+  /// In en, this message translates to:
+  /// **'Scientist'**
+  String get trackScientist;
+
+  /// Bottom nav cart tab
+  ///
+  /// In en, this message translates to:
+  /// **'Cart'**
+  String get bottomNavCart;
+
+  /// Login screen code field section title
+  ///
+  /// In en, this message translates to:
+  /// **'ENTER CODE'**
+  String get loginEnterCodeTitle;
+
+  /// Primary login button label
+  ///
+  /// In en, this message translates to:
+  /// **'Log in'**
+  String get loginLogIn;
+
+  /// Button to open registration / code activation
+  ///
+  /// In en, this message translates to:
+  /// **'Code activation'**
+  String get codeActivation;
+
+  /// Hint under login code field
+  ///
+  /// In en, this message translates to:
+  /// **'Please activate code first'**
+  String get pleaseActivateCodeFirst;
+
+  /// Login footer support link
+  ///
+  /// In en, this message translates to:
+  /// **'Contact us'**
+  String get contactUs;
+
+  /// Login footer language picker title
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get chooseLanguage;
+
   /// Email placeholder text
   ///
   /// In en, this message translates to:
@@ -362,10 +476,10 @@ abstract class AppLocalizations {
   /// **'Apple'**
   String get apple;
 
-  /// Register screen title
+  /// Register screen header (student code verification flow)
   ///
   /// In en, this message translates to:
-  /// **'Create New Account'**
+  /// **'Code verification'**
   String get register;
 
   /// Welcome message in register
@@ -373,6 +487,132 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Join us and start your learning journey 🎓'**
   String get joinUsMessage;
+
+  /// Label for four-part Arabic name row
+  ///
+  /// In en, this message translates to:
+  /// **'Full name (four parts)'**
+  String get quadNameTitle;
+
+  /// First name part label
+  ///
+  /// In en, this message translates to:
+  /// **'First'**
+  String get namePartFirst;
+
+  /// Father name part label
+  ///
+  /// In en, this message translates to:
+  /// **'Father'**
+  String get namePartFather;
+
+  /// Grandfather name part label
+  ///
+  /// In en, this message translates to:
+  /// **'Grandfather'**
+  String get namePartGrandfather;
+
+  /// Family name part label
+  ///
+  /// In en, this message translates to:
+  /// **'Family'**
+  String get namePartFamily;
+
+  /// National ID field label
+  ///
+  /// In en, this message translates to:
+  /// **'National ID'**
+  String get nationalId;
+
+  /// National ID placeholder
+  ///
+  /// In en, this message translates to:
+  /// **'Enter national ID number'**
+  String get nationalIdHint;
+
+  /// National ID validation
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid national ID (digits only)'**
+  String get invalidNationalId;
+
+  /// Faculty picker label
+  ///
+  /// In en, this message translates to:
+  /// **'Faculty'**
+  String get faculty;
+
+  /// Section picker label
+  ///
+  /// In en, this message translates to:
+  /// **'Section'**
+  String get section;
+
+  /// Grade picker label
+  ///
+  /// In en, this message translates to:
+  /// **'Grade'**
+  String get grade;
+
+  /// Faculty picker placeholder
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to select faculty'**
+  String get tapToSelectFaculty;
+
+  /// Section picker placeholder
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to select section'**
+  String get tapToSelectSection;
+
+  /// Grade picker placeholder
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to select grade'**
+  String get tapToSelectGrade;
+
+  /// Section disabled until faculty
+  ///
+  /// In en, this message translates to:
+  /// **'Select a faculty first'**
+  String get selectFacultyFirst;
+
+  /// Grade disabled until section
+  ///
+  /// In en, this message translates to:
+  /// **'Select a section first'**
+  String get selectSectionFirst;
+
+  /// Validation faculty
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a faculty'**
+  String get selectFaculty;
+
+  /// Validation section
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a section'**
+  String get selectSection;
+
+  /// Validation grade
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a grade'**
+  String get selectGrade;
+
+  /// Loading faculties sections grades
+  ///
+  /// In en, this message translates to:
+  /// **'Loading options…'**
+  String get academicDataLoading;
+
+  /// Academic API failure
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load options. Try again later.'**
+  String get academicDataUnavailable;
 
   /// Full name field
   ///
@@ -1027,6 +1267,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save Changes'**
   String get saveChanges;
+
+  /// Notice on read-only profile screen
+  ///
+  /// In en, this message translates to:
+  /// **'This information is for viewing only and cannot be edited here.'**
+  String get profileReadOnlyMessage;
 
   /// Select Image Source
   ///

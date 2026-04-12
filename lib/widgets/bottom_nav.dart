@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -6,7 +5,7 @@ import '../core/design/app_colors.dart';
 import '../core/navigation/route_names.dart';
 import '../core/localization/localization_helper.dart';
 
-/// Bottom Navigation Bar - Liquid Glass Effect
+/// Bottom navigation — teal gradient bar (home, notifications, cart, profile).
 class BottomNav extends StatelessWidget {
   final String activeTab;
 
@@ -23,85 +22,66 @@ class BottomNav extends StatelessWidget {
       right: 0,
       child: Container(
         padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).padding.bottom + 16,
-          left: 24,
-          right: 24,
-          top: 16,
+          bottom: MediaQuery.of(context).padding.bottom + 12,
+          left: 20,
+          right: 20,
+          top: 12,
         ),
         child: Center(
           child: Container(
-            constraints: const BoxConstraints(maxWidth: 400),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(28),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Colors.white.withOpacity(0.85),
-                        Colors.white.withOpacity(0.75),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(28),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.5),
-                      width: 1.5,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
-                        blurRadius: 24,
-                        offset: const Offset(0, 8),
-                        spreadRadius: 0,
-                      ),
-                      BoxShadow(
-                        color: AppColors.berkeleyBlue.withOpacity(0.12),
-                        blurRadius: 40,
-                        offset: const Offset(0, 4),
-                        spreadRadius: -10,
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _NavItem(
-                        icon: Icons.home_rounded,
-                        label: context.l10n.home,
-                        id: 'home',
-                        activeTab: activeTab,
-                        onTap: () => context.go(RouteNames.home),
-                      ),
-                      _NavItem(
-                        icon: Icons.explore_rounded,
-                        label: context.l10n.allCourses,
-                        id: 'allCourses',
-                        activeTab: activeTab,
-                        onTap: () => context.go(RouteNames.allCourses),
-                      ),
-                      _NavItem(
-                        icon: Icons.menu_book_rounded,
-                        label: context.l10n.myCourses,
-                        id: 'enrolled',
-                        activeTab: activeTab,
-                        onTap: () => context.go(RouteNames.enrolled),
-                      ),
-                      _NavItem(
-                        icon: Icons.person_rounded,
-                        label: context.l10n.profile,
-                        id: 'dashboard',
-                        activeTab: activeTab,
-                        onTap: () => context.go(RouteNames.dashboard),
-                      ),
-                    ],
-                  ),
-                ),
+            constraints: const BoxConstraints(maxWidth: 430),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: AppColors.brandGradient,
               ),
+              borderRadius: BorderRadius.circular(26),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.brandTealDark.withValues(alpha: 0.35),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _NavItem(
+                  icon: Icons.home_outlined,
+                  activeIcon: Icons.home_rounded,
+                  label: context.l10n.home,
+                  id: 'home',
+                  activeTab: activeTab,
+                  onTap: () => context.go(RouteNames.home),
+                ),
+                _NavItem(
+                  icon: Icons.notifications_none_rounded,
+                  activeIcon: Icons.notifications_rounded,
+                  label: context.l10n.notifications,
+                  id: 'notifications',
+                  activeTab: activeTab,
+                  onTap: () => context.go(RouteNames.notifications),
+                ),
+                _NavItem(
+                  icon: Icons.shopping_cart_outlined,
+                  activeIcon: Icons.shopping_cart_rounded,
+                  label: context.l10n.bottomNavCart,
+                  id: 'cart',
+                  activeTab: activeTab,
+                  onTap: () => context.go(RouteNames.allCourses),
+                ),
+                _NavItem(
+                  icon: Icons.person_outline_rounded,
+                  activeIcon: Icons.person_rounded,
+                  label: context.l10n.profile,
+                  id: 'dashboard',
+                  activeTab: activeTab,
+                  onTap: () => context.go(RouteNames.dashboard),
+                ),
+              ],
             ),
           ),
         ),
@@ -112,6 +92,7 @@ class BottomNav extends StatelessWidget {
 
 class _NavItem extends StatelessWidget {
   final IconData icon;
+  final IconData activeIcon;
   final String label;
   final String id;
   final String activeTab;
@@ -119,6 +100,7 @@ class _NavItem extends StatelessWidget {
 
   const _NavItem({
     required this.icon,
+    required this.activeIcon,
     required this.label,
     required this.id,
     required this.activeTab,
@@ -128,59 +110,41 @@ class _NavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isActive = activeTab == id;
+    final color = Colors.white.withValues(alpha: isActive ? 1.0 : 0.72);
 
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeOutCubic,
-        padding: EdgeInsets.symmetric(
-          horizontal: isActive ? 10 : 6,
-          vertical: 8,
-        ),
-        decoration: BoxDecoration(
-          gradient: isActive
-              ? LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    AppColors.brandBlue.withOpacity(0.16),
-                    AppColors.brandPurple.withOpacity(0.12),
-                  ],
-                )
-              : null,
+    return Expanded(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
           borderRadius: BorderRadius.circular(16),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              child: Icon(
-                icon,
-                size: isActive ? 26 : 24,
-                color: isActive
-                    ? AppColors.brandPurple
-                    : AppColors.mutedForeground,
-              ),
+          splashColor: Colors.white24,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  isActive ? activeIcon : icon,
+                  size: 26,
+                  color: color,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.cairo(
+                    fontSize: 10,
+                    fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                    color: color,
+                    height: 1.15,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.cairo(
-                fontSize: isActive ? 10 : 9,
-                fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-                color: isActive
-                    ? AppColors.brandPurple
-                    : AppColors.mutedForeground,
-                height: 1.2,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

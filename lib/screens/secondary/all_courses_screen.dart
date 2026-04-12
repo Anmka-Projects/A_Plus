@@ -11,9 +11,21 @@ import '../../core/navigation/route_names.dart';
 import '../../widgets/bottom_nav.dart';
 import '../../services/courses_service.dart';
 
-/// All Courses Screen — full catalog with search
+/// All Courses Screen — full catalog with search.
+///
+/// Optional [categoryId] / [categorySlug] / [screenTitle] come from `GoRouterState.extra`
+/// (see [RouteNames.allCourses]).
 class AllCoursesScreen extends StatefulWidget {
-  const AllCoursesScreen({super.key});
+  final String? categoryId;
+  final String? categorySlug;
+  final String? screenTitle;
+
+  const AllCoursesScreen({
+    super.key,
+    this.categoryId,
+    this.categorySlug,
+    this.screenTitle,
+  });
 
   @override
   State<AllCoursesScreen> createState() => _AllCoursesScreenState();
@@ -29,6 +41,17 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
 
   List<Map<String, dynamic>> _courses = [];
   int _totalCourses = 0;
+
+  String? get _effectiveCategoryId {
+    final s = widget.categoryId?.trim();
+    return (s == null || s.isEmpty) ? null : s;
+  }
+
+  String? get _effectiveCategorySlug {
+    if (_effectiveCategoryId != null) return null;
+    final s = widget.categorySlug?.trim();
+    return (s == null || s.isEmpty) ? null : s;
+  }
 
   @override
   void initState() {
@@ -82,7 +105,8 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
         page: 1,
         perPage: 50,
         search: _searchQuery.isNotEmpty ? _searchQuery : null,
-        categoryId: null,
+        categoryId: _effectiveCategoryId,
+        categorySlug: _effectiveCategorySlug,
         price: price,
         sort: apiSort,
         level: 'all', // Can be extended later
@@ -94,6 +118,8 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
         print('  price: $price');
         print('  sort: $apiSort');
         print('  search: $_searchQuery');
+        print('  categoryId: $_effectiveCategoryId');
+        print('  categorySlug: $_effectiveCategorySlug');
         print('  total: ${response['meta']?['total'] ?? 0}');
       }
 
@@ -197,7 +223,7 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
             ],
           ),
           // Bottom Navigation
-          const BottomNav(activeTab: 'allCourses'),
+          const BottomNav(activeTab: ''),
         ],
       ),
     );
@@ -260,7 +286,9 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      context.l10n.allCourses,
+                      widget.screenTitle?.trim().isNotEmpty == true
+                          ? widget.screenTitle!.trim()
+                          : context.l10n.allCourses,
                       style: GoogleFonts.cairo(
                         fontSize: 22,
                         fontWeight: FontWeight.w700,
