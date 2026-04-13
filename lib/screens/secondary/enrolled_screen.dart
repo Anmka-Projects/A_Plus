@@ -24,6 +24,49 @@ class _EnrolledScreenState extends State<EnrolledScreen> {
   List<Map<String, dynamic>> _enrolledCourses = [];
   Map<String, dynamic>? _meta;
 
+  Map<String, dynamic>? _asMap(dynamic value) {
+    if (value is Map<String, dynamic>) return value;
+    if (value is Map) return Map<String, dynamic>.from(value);
+    return null;
+  }
+
+  List<Map<String, dynamic>> _extractEnrollmentRows(dynamic data) {
+    if (data is List) {
+      return data
+          .map(_asMap)
+          .whereType<Map<String, dynamic>>()
+          .toList();
+    }
+    final dataMap = _asMap(data);
+    if (dataMap == null) return <Map<String, dynamic>>[];
+    for (final key in ['enrollments', 'items', 'results', 'courses', 'data']) {
+      final nested = dataMap[key];
+      if (nested is List) {
+        return nested
+            .map(_asMap)
+            .whereType<Map<String, dynamic>>()
+            .toList();
+      }
+    }
+    return <Map<String, dynamic>>[];
+  }
+
+  Map<String, dynamic> _normalizeEnrollment(Map<String, dynamic> row) {
+    final course = _asMap(row['course']);
+    if (course != null) return row;
+    // Some backends return course object directly in list.
+    if (row.containsKey('title') || row.containsKey('thumbnail')) {
+      return {
+        'course': row,
+        'progress': row['progress'] ?? 0,
+        'completed_lessons': row['completed_lessons'] ?? 0,
+        'total_lessons': row['total_lessons'] ?? row['lessons_count'] ?? 0,
+        'enrolled_at': row['enrolled_at'] ?? row['created_at'],
+      };
+    }
+    return row;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -106,49 +149,10 @@ class _EnrolledScreenState extends State<EnrolledScreen> {
       }
 
       setState(() {
-        if (response['data'] != null) {
-          if (response['data'] is List) {
-            final dataList = response['data'] as List;
-            _enrolledCourses = dataList
-                .whereType<Map<String, dynamic>>()
-                .map((item) => Map<String, dynamic>.from(item as Map))
-                .toList();
-
-            if (kDebugMode) {
-              print('✅ Loaded ${_enrolledCourses.length} enrolled courses');
-            }
-          } else if (response['data'] is Map<String, dynamic>) {
-            // Try to extract from Map structure
-            final dataMap = response['data'] as Map<String, dynamic>;
-            if (dataMap['courses'] != null && dataMap['courses'] is List) {
-              _enrolledCourses = List<Map<String, dynamic>>.from(
-                dataMap['courses']!,
-              );
-              if (kDebugMode) {
-                print(
-                    '✅ Loaded ${_enrolledCourses.length} courses from Map structure');
-              }
-            } else {
-              _enrolledCourses = [];
-              if (kDebugMode) {
-                print('⚠️ Data is Map but no courses found');
-              }
-            }
-          } else {
-            _enrolledCourses = [];
-            if (kDebugMode) {
-              print(
-                  '⚠️ Data is not List or Map: ${response['data']?.runtimeType}');
-            }
-          }
-        } else {
-          _enrolledCourses = [];
-          if (kDebugMode) {
-            print('⚠️ Response data is null');
-          }
-        }
-
-        _meta = response['meta'] as Map<String, dynamic>?;
+        final rows = _extractEnrollmentRows(response['data']);
+        _enrolledCourses = rows.map(_normalizeEnrollment).toList();
+        final dataMap = _asMap(response['data']);
+        _meta = _asMap(response['meta']) ?? _asMap(dataMap?['meta']);
         _isLoading = false;
       });
     } catch (e) {

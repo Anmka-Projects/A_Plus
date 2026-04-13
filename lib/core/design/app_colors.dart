@@ -7,10 +7,13 @@ class AppColors {
   // --- Brand teal (from splash screen reference) ---
   /// Primary brand teal (logo / key actions).
   static const Color brandTeal = Color(0xFF139487);
+
   /// Bright cyan top of splash gradient.
   static const Color brandTealLight = Color(0xFF21D4C3);
+
   /// Deep teal bottom of splash gradient.
   static const Color brandTealDark = Color(0xFF083B3E);
+
   /// Deep shadow tone used behind logo / dark accents.
   static const Color brandTealShadow = Color(0xFF042D30);
 

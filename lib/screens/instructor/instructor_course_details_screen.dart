@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -8,6 +11,7 @@ import '../../core/design/app_radius.dart';
 import '../../core/api/api_endpoints.dart';
 
 import '../../services/teacher_dashboard_service.dart';
+import '../../services/upload_service.dart';
 import '../../core/navigation/route_names.dart';
 
 /// Instructor – Course details (uses GET /api/admin/courses/:id).
@@ -32,6 +36,7 @@ class _InstructorCourseDetailsScreenState
   List<Map<String, dynamic>> _students = [];
   List<Map<String, dynamic>> _sections = [];
   late TabController _tabController;
+  String? _uploadingLessonId;
 
   @override
   void initState() {
@@ -1284,6 +1289,26 @@ class _InstructorCourseDetailsScreenState
                             : <String, dynamic>{};
                         final t =
                             m['title']?.toString() ?? (isAr ? 'درس' : 'Lesson');
+                        final lessonId = m['id']?.toString() ?? '';
+                        final lessonType =
+                            (m['type']?.toString() ?? '').toLowerCase();
+                        final fileUrl = (m['fileUrl'] ?? m['file_url'] ?? '')
+                            .toString()
+                            .toLowerCase();
+                        final contentPdf = (m['content_pdf'] ??
+                                m['contentPdf'] ??
+                                m['pdf_url'] ??
+                                m['pdfUrl'] ??
+                                m['pdf'])
+                            .toString()
+                            .toLowerCase();
+                        final isPdfLesson = lessonType == 'file' ||
+                            lessonType == 'document' ||
+                            lessonType == 'attachment' ||
+                            lessonType.contains('pdf') ||
+                            fileUrl.contains('.pdf') ||
+                            contentPdf.contains('.pdf') ||
+                            t.toLowerCase().contains('pdf');
                         final isFree = m['isFree'] == true ||
                             m['is_free'] == true ||
                             m['free'] == true;
@@ -1308,6 +1333,31 @@ class _InstructorCourseDetailsScreenState
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
+                              if (isPdfLesson)
+                                IconButton(
+                                  tooltip: isAr ? 'رفع PDF' : 'Upload PDF',
+                                  onPressed: _uploadingLessonId == lessonId
+                                      ? null
+                                      : () => _uploadPdfForLesson(
+                                            courseId: courseId,
+                                            sectionId:
+                                                section['id']?.toString() ?? '',
+                                            lessonId: lessonId,
+                                          ),
+                                  icon: _uploadingLessonId == lessonId
+                                      ? const SizedBox(
+                                          width: 16,
+                                          height: 16,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : const Icon(
+                                          Icons.upload_file_rounded,
+                                          size: 18,
+                                          color: AppColors.purple,
+                                        ),
+                                ),
                               if (isFree)
                                 Container(
                                   margin: const EdgeInsets.only(left: 4),
@@ -1425,6 +1475,77 @@ class _InstructorCourseDetailsScreenState
           behavior: SnackBarBehavior.floating,
         ),
       );
+    }
+  }
+
+  Future<void> _uploadPdfForLesson({
+    required String courseId,
+    required String sectionId,
+    required String lessonId,
+  }) async {
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
+    if (courseId.isEmpty || sectionId.isEmpty || lessonId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            isAr
+                ? 'تعذر رفع الملف: بيانات الدرس غير مكتملة'
+                : 'Cannot upload: lesson identifiers are missing',
+            style: GoogleFonts.cairo(),
+          ),
+          backgroundColor: AppColors.destructive,
+        ),
+      );
+      return;
+    }
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+      );
+      if (result == null || result.files.isEmpty) return;
+
+      final path = result.files.single.path;
+      if (path == null || path.isEmpty) return;
+      final file = File(path);
+      if (!await file.exists()) return;
+
+      if (!mounted) return;
+      setState(() => _uploadingLessonId = lessonId);
+
+      final fileUrl = await UploadService.instance.uploadPdf(file);
+      await TeacherDashboardService.instance.updateCurriculumLesson(
+        courseId,
+        sectionId,
+        lessonId,
+        type: 'file',
+        fileUrl: fileUrl,
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            isAr ? 'تم رفع ملف PDF بنجاح' : 'PDF uploaded successfully',
+            style: GoogleFonts.cairo(),
+          ),
+          backgroundColor: AppColors.success,
+        ),
+      );
+      await _loadCourse();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            e.toString().replaceFirst('Exception: ', ''),
+            style: GoogleFonts.cairo(),
+          ),
+          backgroundColor: AppColors.destructive,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _uploadingLessonId = null);
     }
   }
 

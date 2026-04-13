@@ -83,6 +83,7 @@ class TeacherDashboardService {
     required String instructorId,
     String? description,
     String? thumbnail,
+    String? fileUrl,
     double? price,
     double? discountPrice,
     String level = 'beginner',
@@ -105,6 +106,9 @@ class TeacherDashboardService {
       }
       if (thumbnail != null && thumbnail.isNotEmpty) {
         body['thumbnail'] = thumbnail;
+      }
+      if (fileUrl != null && fileUrl.isNotEmpty) {
+        body['fileUrl'] = fileUrl;
       }
       if (price != null) body['price'] = price;
       if (discountPrice != null) body['discountPrice'] = discountPrice;

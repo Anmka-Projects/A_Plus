@@ -25,6 +25,14 @@ class ApiClient {
 
   static final ApiClient instance = ApiClient._();
 
+  String _normalizeBearerToken(String rawToken) {
+    final trimmed = rawToken.trim();
+    if (trimmed.toLowerCase().startsWith('bearer ')) {
+      return trimmed.substring(7).trim();
+    }
+    return trimmed;
+  }
+
   /// Log API request (optionally via dart:developer for filterable logs)
   void _logRequest(String method, String url, Map<String, String>? headers,
       Map<String, dynamic>? body,
@@ -40,8 +48,9 @@ class ApiClient {
       sb.writeln('Headers:');
       headers.forEach((key, value) {
         if (key.toLowerCase() == 'authorization') {
+          final masked = value.length > 20 ? "${value.substring(0, 20)}..." : value;
           sb.writeln(
-              '  $key: Bearer ${value.length > 20 ? "${value.substring(0, 20)}..." : value}');
+              '  $key: $masked');
         } else {
           sb.writeln('  $key: $value');
         }
@@ -123,11 +132,12 @@ class ApiClient {
       }
 
       if (token != null && token.isNotEmpty) {
-        headers['Authorization'] = 'Bearer $token';
+        final normalizedToken = _normalizeBearerToken(token);
+        headers['Authorization'] = 'Bearer $normalizedToken';
         if (kDebugMode) {
           print('  ✅ Authorization header added from cache');
           print(
-              '  token preview: ${token.length > 20 ? "${token.substring(0, 20)}..." : token}');
+              '  token preview: ${normalizedToken.length > 20 ? "${normalizedToken.substring(0, 20)}..." : normalizedToken}');
         }
       } else {
         if (kDebugMode) {
@@ -194,6 +204,7 @@ class ApiClient {
       if (logTag != null) {
         _logResponse('GET', url, 0, null, e.toString(), logTag: logTag);
       }
+      if (e is ApiException) rethrow;
       throw ApiException('Network error: ${e.toString()}');
     }
   }
@@ -228,6 +239,7 @@ class ApiClient {
       return responseData;
     } catch (e) {
       _logResponse('POST', url, 0, null, e.toString(), logTag: logTag);
+      if (e is ApiException) rethrow;
       throw ApiException('Network error: ${e.toString()}');
     }
   }
@@ -262,6 +274,7 @@ class ApiClient {
       return responseData;
     } catch (e) {
       _logResponse('PUT', url, 0, null, e.toString(), logTag: logTag);
+      if (e is ApiException) rethrow;
       throw ApiException('Network error: ${e.toString()}');
     }
   }
@@ -296,6 +309,7 @@ class ApiClient {
       return responseData;
     } catch (e) {
       _logResponse('PATCH', url, 0, null, e.toString(), logTag: logTag);
+      if (e is ApiException) rethrow;
       throw ApiException('Network error: ${e.toString()}');
     }
   }
@@ -328,6 +342,7 @@ class ApiClient {
       return responseData;
     } catch (e) {
       _logResponse('DELETE', url, 0, null, e.toString(), logTag: logTag);
+      if (e is ApiException) rethrow;
       throw ApiException('Network error: ${e.toString()}');
     }
   }
@@ -350,10 +365,11 @@ class ApiClient {
       if (requireAuth) {
         final token = await TokenStorageService.instance.getAccessToken();
         if (token != null && token.isNotEmpty) {
-          request.headers['Authorization'] = 'Bearer $token';
+          final normalizedToken = _normalizeBearerToken(token);
+          request.headers['Authorization'] = 'Bearer $normalizedToken';
           if (kDebugMode) {
             print(
-                '🔑 Avatar Upload - Token added: ${token.length > 20 ? "${token.substring(0, 20)}..." : token}');
+                '🔑 Avatar Upload - Token added: ${normalizedToken.length > 20 ? "${normalizedToken.substring(0, 20)}..." : normalizedToken}');
           }
         } else {
           if (kDebugMode) {
@@ -416,6 +432,7 @@ class ApiClient {
       if (kDebugMode) {
         print('❌ Avatar Upload Error: $e');
       }
+      if (e is ApiException) rethrow;
       throw ApiException('Network error: ${e.toString()}');
     }
   }

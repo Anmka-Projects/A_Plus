@@ -7,8 +7,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../core/design/app_colors.dart';
+import '../../core/api/api_endpoints.dart';
 import '../../services/token_storage_service.dart';
 
 /// PDF Viewer Screen - Display PDF files using flutter_pdfview
@@ -42,151 +42,117 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     _loadPdf();
   }
 
+  List<String> _pdfUrlCandidates(String rawUrl) {
+    final input = rawUrl.trim();
+    if (input.isEmpty) return const [];
+    final candidates = <String>[];
+
+    // Ensure absolute URL when backend sends relative media path.
+    if (input.startsWith('http://') || input.startsWith('https://')) {
+      candidates.add(input);
+    } else {
+      candidates.add(ApiEndpoints.getImageUrl(input));
+    }
+
+    // Some backends store files at /uploads, while app paths use /api/uploads.
+    final normalized = candidates.first;
+    if (normalized.contains('/api/uploads/')) {
+      candidates.add(normalized.replaceFirst('/api/uploads/', '/uploads/'));
+    }
+
+    // Remove duplicates while preserving order.
+    return candidates.toSet().toList();
+  }
+
   Future<void> _loadPdf() async {
     try {
       // Get authorization token for PDF access
       final token = await TokenStorageService.instance.getAccessToken();
 
-      String pdfUrl = widget.pdfUrl;
+      final pdfUrls = _pdfUrlCandidates(widget.pdfUrl);
+      if (pdfUrls.isEmpty) {
+        throw Exception('PDF URL is empty');
+      }
+      final pdfUrl = pdfUrls.first;
 
       if (kDebugMode) {
         print('📄 Loading PDF: $pdfUrl');
         print('🔑 Token exists: ${token != null && token.isNotEmpty}');
       }
 
-      // Build PDF URL with token as query parameter (for fallback)
-      String pdfUrlWithToken = pdfUrl;
-      if (token != null && token.isNotEmpty) {
-        final uri = Uri.parse(pdfUrl);
-        pdfUrlWithToken = uri.replace(queryParameters: {
-          ...uri.queryParameters,
-          'token': token,
-        }).toString();
-      }
-
       // Try to download PDF with Authorization header first
       File? pdfFile;
       if (token != null && token.isNotEmpty) {
-        // Method 1: Try with Authorization header
-        try {
-          if (kDebugMode) {
-            print(
-                '📥 Downloading PDF via Flutter HTTP request with Authorization header...');
-          }
-
-          final headers = <String, String>{
-            'Authorization': 'Bearer $token',
-          };
-
-          final response = await http
-              .get(
-                Uri.parse(pdfUrl),
-                headers: headers,
-              )
-              .timeout(const Duration(seconds: 30));
-
-          if (response.statusCode == 200) {
-            if (kDebugMode) {
-              print(
-                  '✅ PDF downloaded successfully via HTTP (${response.bodyBytes.length} bytes)');
-            }
-
-            // Check if response is actually a PDF
-            final contentType = response.headers['content-type'] ?? '';
-            if (contentType.contains('pdf') ||
-                response.bodyBytes.length > 100 &&
-                    String.fromCharCodes(response.bodyBytes.take(4)) ==
-                        '%PDF') {
-              pdfFile = await _savePdfToFile(response.bodyBytes);
-            } else {
-              if (kDebugMode) {
-                print('⚠️ Response is not a PDF file');
-              }
-            }
-          } else {
-            if (kDebugMode) {
-              print(
-                  '❌ HTTP request failed with status: ${response.statusCode}');
-              if (response.statusCode == 404) {
-                print('⚠️ PDF file not found with Authorization header');
-                print('   Will try with token as query parameter...');
-              }
-            }
-          }
-        } catch (e) {
-          if (kDebugMode) {
-            print(
-                '⚠️ Failed to download PDF via HTTP with Authorization header: $e');
-            print('   Will try with token as query parameter...');
-          }
-        }
-
-        // Method 2: If Authorization header failed, try with token as query parameter
-        if (pdfFile == null) {
+        for (final candidate in pdfUrls) {
+          // Method 1: Try with Authorization header
           try {
             if (kDebugMode) {
-              print(
-                  '📥 Trying PDF download via Flutter HTTP request with token as query parameter...');
+              print('📥 Trying PDF (auth header): $candidate');
             }
-
-            final response = await http
-                .get(
-                  Uri.parse(pdfUrlWithToken),
-                )
-                .timeout(const Duration(seconds: 30));
-
+            final response = await http.get(
+              Uri.parse(candidate),
+              headers: {'Authorization': 'Bearer $token'},
+            ).timeout(const Duration(seconds: 30));
             if (response.statusCode == 200) {
-              if (kDebugMode) {
-                print(
-                    '✅ PDF downloaded successfully via HTTP with token param (${response.bodyBytes.length} bytes)');
-              }
-
-              // Check if response is actually a PDF
               final contentType = response.headers['content-type'] ?? '';
               if (contentType.contains('pdf') ||
                   response.bodyBytes.length > 100 &&
                       String.fromCharCodes(response.bodyBytes.take(4)) ==
                           '%PDF') {
                 pdfFile = await _savePdfToFile(response.bodyBytes);
+                break;
               }
-            } else {
+            }
+          } catch (_) {}
+
+          // Method 2: token query parameter
+          if (pdfFile == null) {
+            try {
+              final uri = Uri.parse(candidate);
+              final withToken = uri.replace(queryParameters: {
+                ...uri.queryParameters,
+                'token': token,
+              }).toString();
               if (kDebugMode) {
-                print(
-                    '❌ HTTP request with token param failed with status: ${response.statusCode}');
+                print('📥 Trying PDF (token query): $withToken');
               }
-            }
-          } catch (e) {
-            if (kDebugMode) {
-              print('⚠️ Failed to download PDF via HTTP with token param: $e');
-            }
+              final response = await http
+                  .get(Uri.parse(withToken))
+                  .timeout(const Duration(seconds: 30));
+              if (response.statusCode == 200) {
+                final contentType = response.headers['content-type'] ?? '';
+                if (contentType.contains('pdf') ||
+                    response.bodyBytes.length > 100 &&
+                        String.fromCharCodes(response.bodyBytes.take(4)) ==
+                            '%PDF') {
+                  pdfFile = await _savePdfToFile(response.bodyBytes);
+                  break;
+                }
+              }
+            } catch (_) {}
           }
         }
       } else {
         // Try without authentication
-        try {
-          if (kDebugMode) {
-            print('📥 Trying PDF download without authentication...');
-          }
-
-          final response = await http
-              .get(
-                Uri.parse(pdfUrl),
-              )
-              .timeout(const Duration(seconds: 30));
-
-          if (response.statusCode == 200) {
-            final contentType = response.headers['content-type'] ?? '';
-            if (contentType.contains('pdf') ||
-                response.bodyBytes.length > 100 &&
-                    String.fromCharCodes(response.bodyBytes.take(4)) ==
-                        '%PDF') {
-              pdfFile = await _savePdfToFile(response.bodyBytes);
+        for (final candidate in pdfUrls) {
+          try {
+            if (kDebugMode) {
+              print('📥 Trying PDF without auth: $candidate');
             }
-          }
-        } catch (e) {
-          if (kDebugMode) {
-            print('⚠️ Failed to download PDF without authentication: $e');
-          }
+            final response = await http
+                .get(Uri.parse(candidate))
+                .timeout(const Duration(seconds: 30));
+            if (response.statusCode == 200) {
+              final contentType = response.headers['content-type'] ?? '';
+              if (contentType.contains('pdf') ||
+                  response.bodyBytes.length > 100 &&
+                      String.fromCharCodes(response.bodyBytes.take(4)) ==
+                          '%PDF') {
+                pdfFile = await _savePdfToFile(response.bodyBytes);
+                break;
+              }
+            }
+          } catch (_) {}
         }
       }
 

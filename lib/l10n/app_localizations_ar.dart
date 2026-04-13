@@ -593,7 +593,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get total => 'الإجمالي';
 
   @override
-  String get editProfile => 'تعديل الملف الشخصي';
+  String get editProfile => 'بيانات الطالب';
 
   @override
   String get errorLoadingProfile => 'حدث خطأ أثناء تحميل الملف الشخصي';

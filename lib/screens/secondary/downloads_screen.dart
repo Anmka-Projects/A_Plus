@@ -1,8 +1,12 @@
+import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:flutter_pdfview/flutter_pdfview.dart';
 import '../../core/design/app_colors.dart';
 import '../../core/localization/localization_helper.dart';
 import '../../services/video_download_service.dart';
@@ -25,6 +29,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
   double _storageLimitMB = 500;
   double _storagePercentage = 0;
   final VideoDownloadService _downloadService = VideoDownloadService();
+  List<_LocalPdfFile> _localPdfFiles = [];
 
   @override
   void initState() {
@@ -34,7 +39,8 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
 
   Future<void> _initializeAndLoad() async {
     await _downloadService.initialize();
-    _loadDownloads();
+    await _loadDownloads();
+    await _loadLocalPdfFiles();
   }
 
   Future<void> _loadDownloads() async {
@@ -77,6 +83,109 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
         _storagePercentage = 0;
         _isLoading = false;
       });
+    }
+  }
+
+  Future<Directory> _pdfStorageDirectory() async {
+    final appDir = await getApplicationDocumentsDirectory();
+    final dir = Directory('${appDir.path}${Platform.pathSeparator}pdf_downloads');
+    if (!await dir.exists()) {
+      await dir.create(recursive: true);
+    }
+    return dir;
+  }
+
+  Future<void> _loadLocalPdfFiles() async {
+    try {
+      final dir = await _pdfStorageDirectory();
+      final entities = await dir.list().toList();
+      final pdfs = <_LocalPdfFile>[];
+      for (final entity in entities) {
+        if (entity is! File) continue;
+        if (!entity.path.toLowerCase().endsWith('.pdf')) continue;
+        final stat = await entity.stat();
+        pdfs.add(
+          _LocalPdfFile(
+            path: entity.path,
+            name: entity.uri.pathSegments.last,
+            sizeBytes: stat.size,
+          ),
+        );
+      }
+      pdfs.sort((a, b) => b.name.compareTo(a.name));
+      if (!mounted) return;
+      setState(() => _localPdfFiles = pdfs);
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Error loading local pdf files: $e');
+      }
+    }
+  }
+
+  Future<void> _pickPdfFromDevice() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+      );
+      if (result == null || result.files.isEmpty) return;
+      final picked = result.files.single;
+      final sourcePath = picked.path;
+      if (sourcePath == null || sourcePath.isEmpty) return;
+      final sourceFile = File(sourcePath);
+      if (!await sourceFile.exists()) return;
+
+      final dir = await _pdfStorageDirectory();
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final safeName = picked.name.replaceAll(' ', '_');
+      final targetPath =
+          '${dir.path}${Platform.pathSeparator}${timestamp}_$safeName';
+      await sourceFile.copy(targetPath);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'تمت إضافة ملف PDF إلى التحميلات',
+            style: GoogleFonts.cairo(),
+          ),
+          backgroundColor: AppColors.success,
+        ),
+      );
+      await _loadLocalPdfFiles();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            e.toString().replaceFirst('Exception: ', ''),
+            style: GoogleFonts.cairo(),
+          ),
+          backgroundColor: AppColors.destructive,
+        ),
+      );
+    }
+  }
+
+  Future<void> _deleteLocalPdf(_LocalPdfFile file) async {
+    try {
+      final f = File(file.path);
+      if (await f.exists()) {
+        await f.delete();
+      }
+      if (!mounted) return;
+      await _loadLocalPdfFiles();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            e.toString().replaceFirst('Exception: ', ''),
+            style: GoogleFonts.cairo(),
+          ),
+          backgroundColor: AppColors.destructive,
+        ),
+      );
     }
   }
 
@@ -156,6 +265,23 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                           ),
                         ),
                       ),
+                      IconButton(
+                        tooltip: 'رفع PDF',
+                        onPressed: _pickPdfFromDevice,
+                        icon: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: AppColors.whiteOverlay20,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.upload_file_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 14),
@@ -227,6 +353,10 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                                     child: _buildVideoCard(context, video),
                                   );
                                 }),
+                              if (_localPdfFiles.isNotEmpty) ...[
+                                const SizedBox(height: 8),
+                                ..._localPdfFiles.map(_buildPdfCard),
+                              ],
 
                               const SizedBox(height: 32),
                             ],
@@ -705,6 +835,116 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildPdfCard(_LocalPdfFile file) {
+    final sizeMb = file.sizeBytes / (1024 * 1024);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.brandTeal.withValues(alpha: 0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: Colors.red.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.picture_as_pdf_rounded,
+              color: Colors.red,
+              size: 28,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  file.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.cairo(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.foreground,
+                  ),
+                ),
+                Text(
+                  _formatSize(sizeMb),
+                  style: GoogleFonts.cairo(
+                    fontSize: 12,
+                    color: AppColors.mutedForeground,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => _LocalPdfViewerScreen(
+                    filePath: file.path,
+                    title: file.name,
+                  ),
+                ),
+              );
+            },
+            icon: const Icon(Icons.visibility_rounded, color: AppColors.purple),
+          ),
+          IconButton(
+            onPressed: () => _deleteLocalPdf(file),
+            icon: const Icon(Icons.delete_outline_rounded,
+                color: AppColors.destructive),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LocalPdfFile {
+  final String path;
+  final String name;
+  final int sizeBytes;
+
+  const _LocalPdfFile({
+    required this.path,
+    required this.name,
+    required this.sizeBytes,
+  });
+}
+
+class _LocalPdfViewerScreen extends StatelessWidget {
+  final String filePath;
+  final String title;
+
+  const _LocalPdfViewerScreen({
+    required this.filePath,
+    required this.title,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(title)),
+      body: PDFView(filePath: filePath),
     );
   }
 }

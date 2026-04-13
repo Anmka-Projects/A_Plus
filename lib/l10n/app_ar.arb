@@ -806,9 +806,9 @@
     "description": "الإجمالي"
   },
   
-  "editProfile": "تعديل الملف الشخصي",
+  "editProfile": "بيانات الطالب",
   "@editProfile": {
-    "description": "تعديل الملف الشخصي"
+    "description": "بيانات الطالب"
   },
   "errorLoadingProfile": "حدث خطأ أثناء تحميل الملف الشخصي",
   "@errorLoadingProfile": {

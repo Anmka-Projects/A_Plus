@@ -74,9 +74,129 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     return code;
   }
 
+  String _extractReadable(dynamic raw) {
+    if (raw == null) return '';
+    if (raw is String) return raw.trim();
+    if (raw is num || raw is bool) return raw.toString().trim();
+    if (raw is Map<String, dynamic>) {
+      final preferred = [
+        'name',
+        'name_ar',
+        'title',
+        'title_ar',
+        'label',
+      ];
+      for (final key in preferred) {
+        final v = raw[key]?.toString().trim() ?? '';
+        if (v.isNotEmpty) return v;
+      }
+      return '';
+    }
+    return '';
+  }
+
+  String _valueFromProfile(List<String> keys) {
+    for (final key in keys) {
+      final root = _extractReadable(_profile?[key]);
+      if (root.isNotEmpty) return root;
+    }
+    final user = _profile?['user'];
+    if (user is Map<String, dynamic>) {
+      for (final key in keys) {
+        final nested = _extractReadable(user[key]);
+        if (nested.isNotEmpty) return nested;
+      }
+    }
+    return '';
+  }
+
+  String _facultyName() {
+    final direct = _valueFromProfile([
+      'registrationFacultyName',
+      'categoryName',
+      // Backend currently returns readable faculty name in these keys.
+      'faculty_id',
+      'category_id',
+      'faculty_name',
+      'faculty',
+      'facultyName',
+      'faculty_label',
+      'college',
+      'college_name',
+      // Keep UUID-like ids as last fallback only.
+      'registrationFacultyId',
+      'categoryId',
+    ]);
+    if (direct.isNotEmpty) return direct;
+    final faculty = _profile?['faculty'];
+    if (faculty is Map<String, dynamic>) {
+      final name = faculty['name']?.toString().trim() ?? '';
+      if (name.isNotEmpty) return name;
+      final nameAr = faculty['name_ar']?.toString().trim() ?? '';
+      if (nameAr.isNotEmpty) return nameAr;
+    }
+    return _categoryNameFallback();
+  }
+
+  String _sectionName() {
+    final direct = _valueFromProfile([
+      'registrationSectionName',
+      'subcategoryName',
+      // Backend currently returns readable section name in these keys.
+      'section_id',
+      'subcategory_id',
+      'section_name',
+      'section',
+      'sectionName',
+      'section_label',
+      'grade',
+      'grade_name',
+      'grade_id',
+      // Keep UUID-like ids as last fallback only.
+      'registrationSectionId',
+      'subcategoryId',
+    ]);
+    if (direct.isNotEmpty) return direct;
+    final section = _profile?['section'];
+    if (section is Map<String, dynamic>) {
+      final name = section['name']?.toString().trim() ?? '';
+      if (name.isNotEmpty) return name;
+      final nameAr = section['name_ar']?.toString().trim() ?? '';
+      if (nameAr.isNotEmpty) return nameAr;
+    }
+    return _subcategoryNameFallback();
+  }
+
+  String _categoryNameFallback() {
+    final direct = _valueFromProfile(['category_name', 'categoryName']);
+    if (direct.isNotEmpty) return direct;
+    final category = _profile?['category'];
+    if (category is Map<String, dynamic>) {
+      final name = category['name']?.toString().trim() ?? '';
+      if (name.isNotEmpty) return name;
+      final nameAr = category['name_ar']?.toString().trim() ?? '';
+      if (nameAr.isNotEmpty) return nameAr;
+    }
+    return '';
+  }
+
+  String _subcategoryNameFallback() {
+    final direct = _valueFromProfile(['subcategory_name', 'subcategoryName']);
+    if (direct.isNotEmpty) return direct;
+    final subcategory = _profile?['subcategory'];
+    if (subcategory is Map<String, dynamic>) {
+      final name = subcategory['name']?.toString().trim() ?? '';
+      if (name.isNotEmpty) return name;
+      final nameAr = subcategory['name_ar']?.toString().trim() ?? '';
+      if (nameAr.isNotEmpty) return nameAr;
+    }
+    return '';
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
     return Scaffold(
       backgroundColor: AppColors.beige,
@@ -142,16 +262,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ),
                   const SizedBox(height: 16),
                   _readOnlyField(
-                    label: l10n.bio,
-                    value: _str('bio'),
-                    icon: Icons.description_rounded,
-                    maxLines: null,
+                    label: isArabic ? 'الكلية' : l10n.faculty,
+                    value: _facultyName(),
+                    icon: Icons.school_rounded,
                   ),
                   const SizedBox(height: 16),
                   _readOnlyField(
-                    label: l10n.country,
-                    value: _str('country'),
-                    icon: Icons.public_rounded,
+                    label: isArabic ? 'الفرقة' : l10n.section,
+                    value: _sectionName(),
+                    icon: Icons.groups_rounded,
                   ),
                   const SizedBox(height: 16),
                   _readOnlyField(

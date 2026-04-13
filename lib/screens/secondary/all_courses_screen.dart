@@ -11,7 +11,7 @@ import '../../core/navigation/route_names.dart';
 import '../../widgets/bottom_nav.dart';
 import '../../services/courses_service.dart';
 
-/// All Courses Screen — full catalog with search.
+/// My Enrolled Courses Screen with search.
 ///
 /// Optional [categoryId] / [categorySlug] / [screenTitle] come from `GoRouterState.extra`
 /// (see [RouteNames.allCourses]).
@@ -33,24 +33,16 @@ class AllCoursesScreen extends StatefulWidget {
 
 class _AllCoursesScreenState extends State<AllCoursesScreen> {
   bool _isLoading = true;
-  final String _selectedPrice = 'all'; // all, free, paid
-  final String _sortBy = 'newest'; // newest, rating, popular
   final _searchController = TextEditingController();
   String _searchQuery = '';
   Timer? _searchDebounce;
 
   List<Map<String, dynamic>> _courses = [];
   int _totalCourses = 0;
-
-  String? get _effectiveCategoryId {
-    final s = widget.categoryId?.trim();
-    return (s == null || s.isEmpty) ? null : s;
-  }
-
-  String? get _effectiveCategorySlug {
-    if (_effectiveCategoryId != null) return null;
-    final s = widget.categorySlug?.trim();
-    return (s == null || s.isEmpty) ? null : s;
+  bool get _hasCategoryFilter {
+    final id = widget.categoryId?.trim();
+    final slug = widget.categorySlug?.trim();
+    return (id != null && id.isNotEmpty) || (slug != null && slug.isNotEmpty);
   }
 
   @override
@@ -83,73 +75,83 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
   Future<void> _loadCourses() async {
     try {
       setState(() => _isLoading = true);
-
-      String price = _selectedPrice;
-
-      // Map sort options to API format
-      String apiSort = 'newest';
-      if (_sortBy == 'rating') {
-        apiSort = 'rating';
-      } else if (_sortBy == 'popular') {
-        apiSort = 'popular';
-      } else if (_sortBy == 'price_low') {
-        apiSort = 'price_low';
-      } else if (_sortBy == 'price_high') {
-        apiSort = 'price_high';
-      }
-
-      Map<String, dynamic> response;
-
-      // Always use getCourses to support all filters including search
-      response = await CoursesService.instance.getCourses(
-        page: 1,
-        perPage: 50,
-        search: _searchQuery.isNotEmpty ? _searchQuery : null,
-        categoryId: _effectiveCategoryId,
-        categorySlug: _effectiveCategorySlug,
-        price: price,
-        sort: apiSort,
-        level: 'all', // Can be extended later
-        duration: 'all', // Can be extended later
-      );
-
-      if (kDebugMode) {
-        print('✅ Courses loaded with filters:');
-        print('  price: $price');
-        print('  sort: $apiSort');
-        print('  search: $_searchQuery');
-        print('  categoryId: $_effectiveCategoryId');
-        print('  categorySlug: $_effectiveCategorySlug');
-        print('  total: ${response['meta']?['total'] ?? 0}');
-      }
-
       List<Map<String, dynamic>> coursesList = [];
-      if (response['data'] != null) {
+      int totalCoursesValue = 0;
+
+      if (_hasCategoryFilter) {
+        final response = await CoursesService.instance.getCourses(
+          page: 1,
+          perPage: 50,
+          search: _searchQuery.trim().isEmpty ? null : _searchQuery.trim(),
+          categoryId: widget.categoryId,
+          categorySlug: widget.categorySlug,
+          price: 'all',
+          sort: 'newest',
+          level: 'all',
+          duration: 'all',
+        );
+
         if (response['data'] is List) {
-          coursesList = List<Map<String, dynamic>>.from(
-            response['data'] as List,
-          );
-        } else if (response['data'] is Map) {
+          coursesList = (response['data'] as List)
+              .whereType<Map>()
+              .map((e) => Map<String, dynamic>.from(e))
+              .toList();
+        } else if (response['data'] is Map<String, dynamic>) {
           final dataMap = response['data'] as Map<String, dynamic>;
-          if (dataMap['courses'] != null && dataMap['courses'] is List) {
-            coursesList = List<Map<String, dynamic>>.from(
-              dataMap['courses'] as List,
-            );
+          if (dataMap['courses'] is List) {
+            coursesList = (dataMap['courses'] as List)
+                .whereType<Map>()
+                .map((e) => Map<String, dynamic>.from(e))
+                .toList();
           }
         }
-      }
+        totalCoursesValue = response['meta']?['total'] is num
+            ? (response['meta']!['total'] as num).toInt()
+            : coursesList.length;
+      } else {
+        final response = await CoursesService.instance.getEnrollments(
+          status: 'all',
+          page: 1,
+          perPage: 100,
+        );
 
-      // Safely parse total courses
-      int totalCoursesValue = coursesList.length;
-      if (response['meta']?['total'] != null) {
-        final total = response['meta']!['total'];
-        if (total is int) {
-          totalCoursesValue = total;
-        } else if (total is num) {
-          totalCoursesValue = total.toInt();
-        } else if (total is String) {
-          totalCoursesValue = int.tryParse(total) ?? coursesList.length;
+        final data = response['data'];
+        List<Map<String, dynamic>> enrollments = <Map<String, dynamic>>[];
+        if (data is List) {
+          enrollments = data
+              .whereType<Map>()
+              .map((e) => Map<String, dynamic>.from(e))
+              .toList();
+        } else if (data is Map<String, dynamic>) {
+          final source = data['enrollments'] ?? data['courses'] ?? data['data'];
+          if (source is List) {
+            enrollments = source
+                .whereType<Map>()
+                .map((e) => Map<String, dynamic>.from(e))
+                .toList();
+          }
         }
+
+        coursesList = enrollments
+            .map((enrollment) => enrollment['course'])
+            .whereType<Map>()
+            .map((course) => Map<String, dynamic>.from(course))
+            .toList();
+
+        if (_searchQuery.trim().isNotEmpty) {
+          final q = _searchQuery.trim().toLowerCase();
+          coursesList = coursesList.where((course) {
+            final title = course['title']?.toString().toLowerCase() ?? '';
+            final instructor = course['instructor'] is Map
+                ? (course['instructor'] as Map)['name']
+                        ?.toString()
+                        .toLowerCase() ??
+                    ''
+                : course['instructor']?.toString().toLowerCase() ?? '';
+            return title.contains(q) || instructor.contains(q);
+          }).toList();
+        }
+        totalCoursesValue = coursesList.length;
       }
 
       setState(() {
@@ -288,7 +290,9 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
                     Text(
                       widget.screenTitle?.trim().isNotEmpty == true
                           ? widget.screenTitle!.trim()
-                          : context.l10n.allCourses,
+                          : (_hasCategoryFilter
+                              ? context.l10n.allCourses
+                              : context.l10n.myCourses),
                       style: GoogleFonts.cairo(
                         fontSize: 22,
                         fontWeight: FontWeight.w700,
@@ -296,7 +300,9 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
                       ),
                     ),
                     Text(
-                      context.l10n.coursesAvailable(_totalCourses),
+                      _hasCategoryFilter
+                          ? context.l10n.coursesAvailable(_totalCourses)
+                          : context.l10n.enrolledCoursesCount(_totalCourses),
                       style: GoogleFonts.cairo(
                         fontSize: 13,
                         color: Colors.white.withOpacity(0.7),
@@ -554,8 +560,7 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
                         ),
                         child: ShaderMask(
                           blendMode: BlendMode.srcIn,
-                          shaderCallback: (bounds) =>
-                              const LinearGradient(
+                          shaderCallback: (bounds) => const LinearGradient(
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                             colors: AppColors.brandGradient,

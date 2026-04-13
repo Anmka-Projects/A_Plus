@@ -9,7 +9,7 @@ import '../../core/design/app_text_styles.dart';
 import '../../core/navigation/route_names.dart';
 import '../../services/token_storage_service.dart';
 
-/// Splash — vertical teal gradient, [splashLogo.png] squircle, title, loader, person footer.
+/// Splash — vertical teal gradient, transparent app logo, title, loader, person footer.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -133,12 +133,19 @@ class _SplashScreenState extends State<SplashScreen>
                       'A PLUS',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontFamily: AppTextStyles.radlushFamily,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 28,
-                        letterSpacing: 3.2,
+                        fontFamily: 'Indigo',
+                        fontWeight: FontWeight.w400,
+                        fontSize: 34,
+                        letterSpacing: 2.0,
                         color: AppColors.pureWhite,
                         height: 1.05,
+                        shadows: [
+                          Shadow(
+                            color: AppColors.whiteOverlay20,
+                            offset: Offset(0, 1),
+                            blurRadius: 2,
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -166,41 +173,27 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Widget _buildLogoSquircle() {
-    return Container(
-      width: 152,
-      height: 152,
-      decoration: BoxDecoration(
-        color: AppColors.pureWhite,
-        borderRadius: BorderRadius.circular(40),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.brandTealShadow.withValues(alpha: 0.45),
-            blurRadius: 32,
-            offset: const Offset(0, 16),
+    return SizedBox(
+      width: 190,
+      height: 190,
+      child: Image.asset(
+        'assets/images/app_logo.png',
+        fit: BoxFit.contain,
+        errorBuilder: (_, __, ___) => Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.brandTealLight,
+                AppColors.brandTeal,
+              ],
+            ),
           ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(40),
-        child: Image.asset(
-          'assets/images/splashLogo.png',
-          fit: BoxFit.contain,
-          errorBuilder: (_, __, ___) => Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppColors.brandTealLight,
-                  AppColors.brandTeal,
-                ],
-              ),
-            ),
-            child: const Icon(
-              Icons.school_rounded,
-              size: 72,
-              color: AppColors.pureWhite,
-            ),
+          child: const Icon(
+            Icons.school_rounded,
+            size: 72,
+            color: AppColors.pureWhite,
           ),
         ),
       ),

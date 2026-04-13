@@ -221,6 +221,84 @@ class _InstructorSessionDetailsScreenState
     if (mounted) setState(() => _lessons.removeAt(index));
   }
 
+  Future<void> _uploadPdfForLesson(int index) async {
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
+    if (index < 0 || index >= _lessons.length) return;
+
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+      );
+      if (result == null || result.files.isEmpty || !mounted) return;
+      final file = result.files.single;
+      final path = file.path;
+      if (path == null || path.isEmpty) return;
+      final localFile = File(path);
+      if (!await localFile.exists()) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            isAr ? 'جاري رفع ملف PDF...' : 'Uploading PDF file...',
+            style: GoogleFonts.cairo(),
+          ),
+        ),
+      );
+
+      final uploadedUrl = await UploadService.instance.uploadPdf(localFile);
+      if (!mounted) return;
+
+      final lesson = Map<String, dynamic>.from(_lessons[index]);
+      final sectionId = widget.section['id']?.toString();
+      final lessonId = lesson['id']?.toString();
+
+      if (sectionId != null &&
+          sectionId.isNotEmpty &&
+          lessonId != null &&
+          lessonId.isNotEmpty) {
+        await TeacherDashboardService.instance.updateCurriculumLesson(
+          widget.courseId,
+          sectionId,
+          lessonId,
+          fileUrl: uploadedUrl,
+          type: 'file',
+        );
+      }
+
+      setState(() {
+        _lessons[index] = {
+          ...lesson,
+          'type': 'file',
+          'fileUrl': uploadedUrl,
+        };
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            isAr ? 'تم رفع ملف PDF بنجاح' : 'PDF uploaded successfully',
+            style: GoogleFonts.cairo(),
+          ),
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            e.toString().replaceFirst('Exception: ', ''),
+            style: GoogleFonts.cairo(),
+          ),
+          backgroundColor: AppColors.destructive,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
   Future<Map<String, dynamic>?> _showLessonFormDialog(
     Map<String, dynamic>? existing,
   ) async {
@@ -669,7 +747,9 @@ class _InstructorSessionDetailsScreenState
                         Icon(
                           type == 'video'
                               ? Icons.play_circle_rounded
-                              : Icons.article_rounded,
+                              : type == 'file'
+                                  ? Icons.picture_as_pdf_rounded
+                                  : Icons.article_rounded,
                           size: 24,
                           color: AppColors.purple,
                         ),
@@ -717,6 +797,16 @@ class _InstructorSessionDetailsScreenState
                               ),
                             ),
                           ),
+                        IconButton(
+                          icon: Icon(
+                            Icons.upload_file_rounded,
+                            size: 20,
+                            color: AppColors.purple,
+                          ),
+                          onPressed: type == 'file'
+                              ? () => _uploadPdfForLesson(i)
+                              : null,
+                        ),
                         IconButton(
                           icon: Icon(
                             Icons.edit_rounded,

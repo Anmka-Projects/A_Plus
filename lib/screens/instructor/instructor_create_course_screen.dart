@@ -1,4 +1,5 @@
-// import 'dart:io';
+import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -10,7 +11,7 @@ import '../../core/navigation/route_names.dart';
 import '../../services/courses_service.dart';
 import '../../services/profile_service.dart';
 import '../../services/teacher_dashboard_service.dart';
-// import '../../services/upload_service.dart';
+import '../../services/upload_service.dart';
 import '../../widgets/instructor_bottom_nav.dart';
 
 /// Instructor – Create new course. Uses POST /api/admin/courses (TEACHER_CREATE_COURSE_API).
@@ -28,6 +29,7 @@ class _InstructorCreateCourseScreenState
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _thumbnailController = TextEditingController();
+  final _coursePdfController = TextEditingController();
   final _priceController = TextEditingController(text: '0');
   final _discountPriceController = TextEditingController();
   final _durationController = TextEditingController(text: '0');
@@ -35,6 +37,7 @@ class _InstructorCreateCourseScreenState
   List<Map<String, dynamic>> _categories = [];
   bool _isLoadingCategories = true;
   bool _isSubmitting = false;
+  bool _isUploadingPdf = false;
   String? _errorMessage;
   String? _selectedCategoryId;
   String _level = 'beginner';
@@ -53,6 +56,7 @@ class _InstructorCreateCourseScreenState
     _titleController.dispose();
     _descriptionController.dispose();
     _thumbnailController.dispose();
+    _coursePdfController.dispose();
     _priceController.dispose();
     _discountPriceController.dispose();
     _durationController.dispose();
@@ -228,6 +232,9 @@ class _InstructorCreateCourseScreenState
         thumbnail: _thumbnailController.text.trim().isEmpty
             ? null
             : _thumbnailController.text.trim(),
+        fileUrl: _coursePdfController.text.trim().isEmpty
+            ? null
+            : _coursePdfController.text.trim(),
         price: price > 0 ? price : null,
         discountPrice:
             discountPrice != null && discountPrice > 0 ? discountPrice : null,
@@ -258,6 +265,40 @@ class _InstructorCreateCourseScreenState
           _errorMessage = e.toString().replaceFirst('Exception: ', '');
         });
       }
+    }
+  }
+
+  Future<void> _pickAndUploadCoursePdf() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+      );
+      if (result == null || result.files.isEmpty) return;
+      final file = result.files.single;
+      final path = file.path;
+      if (path == null || path.isEmpty) return;
+      final localFile = File(path);
+      if (!await localFile.exists()) return;
+
+      if (!mounted) return;
+      setState(() => _isUploadingPdf = true);
+
+      final uploadedUrl = await UploadService.instance.uploadPdf(localFile);
+      if (!mounted) return;
+      setState(() {
+        _coursePdfController.text = uploadedUrl;
+        _isUploadingPdf = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isUploadingPdf = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: AppColors.destructive,
+        ),
+      );
     }
   }
 
@@ -398,6 +439,68 @@ class _InstructorCreateCourseScreenState
                                     vertical: 14,
                                   ),
                                 ),
+                              ),
+                              const SizedBox(height: 16),
+                              _buildLabel(
+                                  isAr ? 'ملف PDF للدورة' : 'Course PDF file'),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: TextFormField(
+                                      controller: _coursePdfController,
+                                      readOnly: true,
+                                      decoration: InputDecoration(
+                                        hintText: isAr
+                                            ? 'لم يتم اختيار ملف'
+                                            : 'No file selected',
+                                        filled: true,
+                                        fillColor: Colors.white,
+                                        border: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 14,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  ElevatedButton.icon(
+                                    onPressed: _isUploadingPdf
+                                        ? null
+                                        : _pickAndUploadCoursePdf,
+                                    icon: _isUploadingPdf
+                                        ? const SizedBox(
+                                            width: 16,
+                                            height: 16,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: Colors.white,
+                                            ),
+                                          )
+                                        : const Icon(Icons.upload_file_rounded),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.primaryLight,
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 14,
+                                      ),
+                                    ),
+                                    label: Text(
+                                      _isUploadingPdf
+                                          ? (isAr ? 'رفع...' : 'Uploading...')
+                                          : (isAr ? 'رفع' : 'Upload'),
+                                      style: GoogleFonts.cairo(
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                               const SizedBox(height: 16),
                               _buildLabel(isAr ? 'الفئة *' : 'Category *'),

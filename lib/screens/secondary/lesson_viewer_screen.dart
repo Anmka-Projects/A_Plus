@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:pod_player/pod_player.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import '../../core/api/api_endpoints.dart';
 import '../../core/design/app_colors.dart';
 import '../../core/navigation/route_names.dart';
 import '../../services/courses_service.dart';
@@ -33,6 +34,34 @@ class _LessonViewerScreenState extends State<LessonViewerScreen> {
   bool _useWebViewFallback = false;
   Map<String, dynamic>? _lessonContent;
   File? _tempVideoFile;
+  bool _isDownloadingPdf = false;
+
+  List<String> _pdfUrlCandidates(String rawUrl) {
+    final input = rawUrl.trim();
+    if (input.isEmpty) return const [];
+
+    final candidates = <String>[];
+    if (input.startsWith('http://') || input.startsWith('https://')) {
+      candidates.add(input);
+    } else {
+      candidates.add(ApiEndpoints.getImageUrl(input));
+    }
+
+    final normalized = candidates.first;
+    if (normalized.contains('/api/uploads/')) {
+      candidates.add(normalized.replaceFirst('/api/uploads/', '/uploads/'));
+    }
+
+    return candidates.toSet().toList();
+  }
+
+  bool _looksLikePdf(http.Response response) {
+    final contentType = response.headers['content-type'] ?? '';
+    final bytes = response.bodyBytes;
+    final hasPdfHeader = bytes.length > 4 &&
+        String.fromCharCodes(bytes.take(4)).toUpperCase() == '%PDF';
+    return contentType.toLowerCase().contains('pdf') || hasPdfHeader;
+  }
 
   @override
   void initState() {
@@ -42,6 +71,118 @@ class _LessonViewerScreenState extends State<LessonViewerScreen> {
       // This ensures we can use video data from the API response
       _initializeVideo();
     });
+  }
+
+  Future<void> _downloadPdfFromLessonViewer(String url, String title) async {
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
+    if (url.trim().isEmpty) {
+      return;
+    }
+    try {
+      if (!mounted) return;
+      setState(() => _isDownloadingPdf = true);
+
+      final token = await TokenStorageService.instance.getAccessToken();
+      final normalizedToken = (token != null && token.isNotEmpty)
+          ? (token.toLowerCase().startsWith('bearer ')
+              ? token.substring(7).trim()
+              : token.trim())
+          : null;
+      final candidates = _pdfUrlCandidates(url);
+      if (candidates.isEmpty) {
+        throw Exception(isAr ? 'رابط الملف غير صالح' : 'Invalid file URL');
+      }
+
+      http.Response? successResponse;
+      String? lastError;
+
+      for (final candidate in candidates) {
+        try {
+          if (normalizedToken != null && normalizedToken.isNotEmpty) {
+            final authResponse = await http.get(
+              Uri.parse(candidate),
+              headers: {
+                'Accept': 'application/pdf',
+                'Authorization': 'Bearer $normalizedToken',
+              },
+            ).timeout(const Duration(seconds: 30));
+            if (authResponse.statusCode == 200 && _looksLikePdf(authResponse)) {
+              successResponse = authResponse;
+              break;
+            }
+            lastError = 'status ${authResponse.statusCode}';
+          }
+
+          if (successResponse == null) {
+            final uri = Uri.parse(candidate);
+            final withToken = (normalizedToken != null &&
+                    normalizedToken.isNotEmpty)
+                ? uri.replace(queryParameters: {
+                    ...uri.queryParameters,
+                    'token': normalizedToken,
+                  }).toString()
+                : candidate;
+            final queryResponse = await http
+                .get(
+                  Uri.parse(withToken),
+                  headers: const {'Accept': 'application/pdf'},
+                )
+                .timeout(const Duration(seconds: 30));
+            if (queryResponse.statusCode == 200 && _looksLikePdf(queryResponse)) {
+              successResponse = queryResponse;
+              break;
+            }
+            lastError = 'status ${queryResponse.statusCode}';
+          }
+        } catch (e) {
+          lastError = e.toString();
+        }
+      }
+
+      if (successResponse == null) {
+        throw Exception(
+          isAr
+              ? 'فشل تنزيل الملف${lastError != null ? " ($lastError)" : ""}'
+              : 'Failed to download file${lastError != null ? " ($lastError)" : ""}',
+        );
+      }
+
+      final downloadsDir = await getApplicationDocumentsDirectory();
+      final pdfDir = Directory(
+          '${downloadsDir.path}${Platform.pathSeparator}pdf_downloads');
+      if (!await pdfDir.exists()) {
+        await pdfDir.create(recursive: true);
+      }
+      final safeTitle = title
+          .replaceAll(RegExp(r'[^\w\s\-]'), '')
+          .replaceAll(' ', '_')
+          .trim();
+      final fileName =
+          '${DateTime.now().millisecondsSinceEpoch}_${safeTitle.isEmpty ? 'lesson_pdf' : safeTitle}.pdf';
+      final file = File('${pdfDir.path}${Platform.pathSeparator}$fileName');
+      await file.writeAsBytes(successResponse.bodyBytes, flush: true);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            isAr ? 'تم تنزيل ملف PDF إلى التحميلات' : 'PDF downloaded to downloads',
+            style: GoogleFonts.cairo(),
+          ),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: AppColors.destructive,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isDownloadingPdf = false);
+    }
   }
 
   Future<void> _loadLessonContent() async {
@@ -1328,6 +1469,33 @@ class _LessonViewerScreenState extends State<LessonViewerScreen> {
                 size: 18,
               ),
             ),
+            if (isPdf) ...[
+              const SizedBox(width: 8),
+              InkWell(
+                onTap: _isDownloadingPdf
+                    ? null
+                    : () => _downloadPdfFromLessonViewer(url, title),
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.success.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: _isDownloadingPdf
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(
+                          Icons.download_rounded,
+                          color: AppColors.success,
+                          size: 18,
+                        ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
