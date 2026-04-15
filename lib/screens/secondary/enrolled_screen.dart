@@ -458,9 +458,6 @@ class _EnrolledScreenState extends State<EnrolledScreen> {
         ? _parseInt(enrollment['total_lessons'])
         : _parseInt(course['lessons_count']);
     final courseTitle = course['title']?.toString() ?? '';
-    final instructor = course['instructor'] is Map
-        ? (course['instructor'] as Map)['name']?.toString() ?? ''
-        : course['instructor']?.toString() ?? '';
     final rating = _parseDouble(course['rating'], 0.0);
     final durationHours = _parseNum(course['duration_hours']);
     final thumbnail = course['thumbnail']?.toString();
@@ -639,26 +636,8 @@ class _EnrolledScreenState extends State<EnrolledScreen> {
                   ),
                   const SizedBox(height: 8),
 
-                  // Instructor & Rating
                   Row(
                     children: [
-                      Icon(Icons.person_outline_rounded,
-                          size: 14, color: Colors.grey[400]),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          instructor.isNotEmpty
-                              ? instructor
-                              : context.l10n.instructor,
-                          style: GoogleFonts.cairo(
-                            fontSize: 12,
-                            color: AppColors.mutedForeground,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const Spacer(),
                       const Icon(Icons.star_rounded,
                           size: 14, color: Colors.amber),
                       const SizedBox(width: 2),

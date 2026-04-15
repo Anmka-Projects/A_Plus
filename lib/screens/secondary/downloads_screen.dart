@@ -25,9 +25,6 @@ class DownloadsScreen extends StatefulWidget {
 class _DownloadsScreenState extends State<DownloadsScreen> {
   bool _isLoading = true;
   List<DownloadedVideoModel> _downloadedVideos = [];
-  double _storageUsedMB = 0;
-  double _storageLimitMB = 500;
-  double _storagePercentage = 0;
   final VideoDownloadService _downloadService = VideoDownloadService();
   List<_LocalPdfFile> _localPdfFiles = [];
 
@@ -50,25 +47,14 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
       // تحميل الفيديوهات المحملة محلياً
       final videos = await _downloadService.getDownloadedVideosWithManager();
 
-      // حساب إجمالي المساحة المستخدمة
-      double totalSize = 0;
-      for (var video in videos) {
-        totalSize += video.fileSizeMb;
-      }
-
       if (kDebugMode) {
         print('✅ Downloaded videos loaded:');
         print('  videos count: ${videos.length}');
-        print('  total size: ${totalSize.toStringAsFixed(2)} MB');
       }
 
       if (!mounted) return;
       setState(() {
         _downloadedVideos = videos;
-        _storageUsedMB = totalSize;
-        _storageLimitMB = 500; // يمكن جلبها من API لاحقاً
-        _storagePercentage =
-            (_storageLimitMB > 0) ? (totalSize / _storageLimitMB * 100) : 0;
         _isLoading = false;
       });
     } catch (e) {
@@ -78,9 +64,6 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
       if (!mounted) return;
       setState(() {
         _downloadedVideos = [];
-        _storageUsedMB = 0;
-        _storageLimitMB = 500;
-        _storagePercentage = 0;
         _isLoading = false;
       });
     }
@@ -323,9 +306,6 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                           physics: const AlwaysScrollableScrollPhysics(),
                           child: Column(
                             children: [
-                              // Storage Card - matches React: bg-white rounded-3xl p-5 shadow-lg
-                              _buildStorageCard(),
-
                               // Downloaded Videos List
                               if (_downloadedVideos.isEmpty)
                                 _buildEmptyState()
@@ -367,111 +347,6 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildStorageCard() {
-    final usedGB = _storageUsedMB / 1024;
-    final limitGB = _storageLimitMB / 1024;
-    final percentage = _storagePercentage / 100;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16), // space-y-4
-      padding: const EdgeInsets.all(20), // p-5
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24), // rounded-3xl
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.brandTeal.withValues(alpha: 0.08),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // Storage icon and info - matches React: gap-3 mb-4
-          Padding(
-            padding: const EdgeInsets.only(bottom: 16), // mb-4
-            child: Row(
-              children: [
-                Container(
-                  width: 48, // w-12
-                  height: 48, // h-12
-                  decoration: BoxDecoration(
-                    color: AppColors.brandTeal.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.storage,
-                    size: 24, // w-6 h-6
-                    color: AppColors.purple,
-                  ),
-                ),
-                const SizedBox(width: 12), // gap-3
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        context.l10n.storage,
-                        style: GoogleFonts.cairo(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.foreground,
-                        ),
-                      ),
-                      Text(
-                        context.l10n.storageUsed(
-                          usedGB.toStringAsFixed(1),
-                          limitGB.toStringAsFixed(1),
-                        ),
-                        style: GoogleFonts.cairo(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.mutedForeground,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Progress bar - matches React: h-3 bg-gray-100 rounded-full
-          Container(
-            height: 12, // h-3
-            decoration: BoxDecoration(
-              color: AppColors.muted,
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: FractionallySizedBox(
-              alignment: AlignmentDirectional.centerStart,
-              widthFactor:
-                  percentage > 1 ? 1 : (percentage < 0 ? 0 : percentage),
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                    colors: [
-                      AppColors.brandTealLight,
-                      AppColors.brandTeal,
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

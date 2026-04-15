@@ -436,18 +436,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
-                                  const SizedBox(height: 4), // mb-1
-                                  Text(
-                                    course['instructor'] is Map
-                                        ? (course['instructor'] as Map)['name']
-                                                ?.toString() ??
-                                            l10n.instructor
-                                        : course['instructor']?.toString() ??
-                                            l10n.instructor,
-                                    style: AppTextStyles.bodySmall(
-                                      color: AppColors.purple,
-                                    ),
-                                  ),
                                   const SizedBox(height: 8), // mb-2
                                   Row(
                                     children: [

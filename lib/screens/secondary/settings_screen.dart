@@ -5,9 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/design/app_colors.dart';
 import '../../core/design/app_radius.dart';
 import '../../core/navigation/route_names.dart';
-import '../../core/api/api_endpoints.dart';
 import '../../services/profile_service.dart';
-import '../../core/config/theme_provider.dart';
 import '../../l10n/app_localizations.dart';
 
 Widget _settingsGradientIcon(IconData icon, double size) {
@@ -41,26 +39,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _emailNotifications = true;
   bool _pushNotifications = true;
 
-  final ThemeProvider _themeProvider = ThemeProvider.instance;
-
   @override
   void initState() {
     super.initState();
     _loadProfile();
-    // Listen to theme changes
-    _themeProvider.addListener(_onThemeChanged);
   }
 
   @override
   void dispose() {
-    _themeProvider.removeListener(_onThemeChanged);
     super.dispose();
-  }
-
-  void _onThemeChanged() {
-    if (mounted) {
-      setState(() {});
-    }
   }
 
   Future<void> _loadProfile() async {
@@ -116,7 +103,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         print(
             '  Will display: ${_profile?['name']?.toString() ?? AppLocalizations.of(context)!.user}');
       }
-
     } catch (e) {
       if (kDebugMode) {
         print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -300,30 +286,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               ),
                               padding: const EdgeInsets.all(2),
                               child: ClipOval(
-                                child: _profile?['avatar'] != null
-                                    ? Image.network(
-                                        ApiEndpoints.getImageUrl(
-                                          _profile!['avatar']?.toString(),
-                                        ),
-                                        fit: BoxFit.cover,
-                                        errorBuilder:
-                                            (context, error, stackTrace) =>
-                                                Image.asset(
-                                          'assets/images/user-avatar.png',
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (_, __, ___) =>
-                                              _settingsGradientIcon(
-                                                  Icons.person, 32),
-                                        ),
-                                      )
-                                    : Image.asset(
-                                        'assets/images/user-avatar.png',
-                                        fit: BoxFit.cover,
-                                        errorBuilder:
-                                            (context, error, stackTrace) =>
-                                                _settingsGradientIcon(
-                                                    Icons.person, 32),
-                                      ),
+                                child: Container(
+                                  color: Colors.white,
+                                  child: Image.asset(
+                                    'assets/images/WhatsApp Image 2026-04-14 at 5.04.03 PM.jpeg',
+                                    fit: BoxFit.contain,
+                                    errorBuilder:
+                                        (context, error, stackTrace) =>
+                                            Image.asset(
+                                      'assets/images/user-avatar.png',
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) =>
+                                          _settingsGradientIcon(
+                                              Icons.person, 32),
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
                             const SizedBox(width: 16), // gap-4
@@ -422,14 +400,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         onTap: () => context.push(RouteNames.chatConversations),
                       ),
 
-                      // Language setting - matches React SettingItem
-                      _buildSettingItem(
-                        icon: Icons.language,
-                        label: AppLocalizations.of(context)!.language,
-                        value: _themeProvider.getLanguageName(),
-                        onTap: () => _showLanguageDialog(),
-                      ),
-
                       // Notifications toggle - matches React SettingItem with toggle
                       _buildSettingItem(
                         icon: Icons.notifications,
@@ -444,17 +414,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           _updatePreferences();
                         },
                       ),
-
-                      // Dark mode toggle - matches React SettingItem with toggle
-                      // _buildSettingItem(
-                      //   icon: Icons.dark_mode,
-                      //   label: AppLocalizations.of(context)!.darkMode,
-                      //   hasToggle: true,
-                      //   toggleValue: _themeProvider.isDarkMode,
-                      //   onToggle: () {
-                      //     _themeProvider.toggleDarkMode();
-                      //   },
-                      // ),
 
                       // Privacy setting
                       _buildSettingItem(
@@ -615,136 +574,4 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
     );
   }
-
-  void _showLanguageDialog() {
-    final l10n = AppLocalizations.of(context)!;
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          l10n.selectLanguage,
-          style: GoogleFonts.cairo(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: AppColors.foreground,
-          ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildLanguageOption('ar', l10n.arabic, Icons.language),
-            const SizedBox(height: 12),
-            _buildLanguageOption('en', l10n.english, Icons.language),
-          ],
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLanguageOption(String code, String name, IconData icon) {
-    final isSelected = _themeProvider.locale.languageCode == code;
-    return GestureDetector(
-      onTap: () {
-        _themeProvider.setLanguage(Locale(code));
-        Navigator.of(context).pop();
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              AppLocalizations.of(context)!.languageChanged(name),
-              style: GoogleFonts.cairo(fontSize: 14),
-            ),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-        );
-      },
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: isSelected
-              ? LinearGradient(
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                  colors: [
-                    AppColors.brandBlue.withOpacity(0.08),
-                    AppColors.brandPurple.withOpacity(0.08),
-                  ],
-                )
-              : null,
-          color: isSelected ? null : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? AppColors.brandPurple : AppColors.border,
-            width: isSelected ? 2 : 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            isSelected
-                ? ShaderMask(
-                    blendMode: BlendMode.srcIn,
-                    shaderCallback: (bounds) => const LinearGradient(
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                      colors: AppColors.brandGradient,
-                    ).createShader(bounds),
-                    child: Icon(icon, color: Colors.white, size: 24),
-                  )
-                : Icon(
-                    icon,
-                    color: AppColors.mutedForeground,
-                  ),
-            const SizedBox(width: 12),
-            isSelected
-                ? ShaderMask(
-                    blendMode: BlendMode.srcIn,
-                    shaderCallback: (bounds) => const LinearGradient(
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                      colors: AppColors.brandGradient,
-                    ).createShader(bounds),
-                    child: Text(
-                      name,
-                      style: GoogleFonts.cairo(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  )
-                : Text(
-                    name,
-                    style: GoogleFonts.cairo(
-                      fontSize: 14,
-                      color: AppColors.foreground,
-                    ),
-                  ),
-            const Spacer(),
-            if (isSelected)
-              ShaderMask(
-                blendMode: BlendMode.srcIn,
-                shaderCallback: (bounds) => const LinearGradient(
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                  colors: AppColors.brandGradient,
-                ).createShader(bounds),
-                child: const Icon(
-                  Icons.check_circle,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
 }

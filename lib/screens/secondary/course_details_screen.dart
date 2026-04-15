@@ -728,35 +728,6 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
               color: AppColors.foreground,
             ),
           ),
-          const SizedBox(height: 8),
-
-          // Instructor
-          Row(
-            children: [
-              Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: AppColors.purple.withOpacity(0.2),
-                  shape: BoxShape.circle,
-                ),
-                child:
-                    const Icon(Icons.person, size: 16, color: AppColors.purple),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                course['instructor'] is Map
-                    ? (course['instructor'] as Map)['name']?.toString() ??
-                        'المدرب'
-                    : course['instructor']?.toString() ?? 'المدرب',
-                style: GoogleFonts.cairo(
-                  fontSize: 14,
-                  color: AppColors.purple,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
           const SizedBox(height: 12),
 
           // Stats Row

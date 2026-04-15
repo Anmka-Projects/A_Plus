@@ -1214,10 +1214,10 @@ abstract class AppLocalizations {
   /// **'Total'**
   String get total;
 
-  /// Edit profile
+  /// Student profile screen title
   ///
   /// In en, this message translates to:
-  /// **'Edit Profile'**
+  /// **'Student Profile'**
   String get editProfile;
 
   /// Profile loading error message
@@ -2809,6 +2809,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} students'**
   String studentsCount(int count);
+
+  /// Local notification title when user backgrounds the app
+  ///
+  /// In en, this message translates to:
+  /// **'See you soon!'**
+  String get appExitNotificationTitle;
+
+  /// Local notification body when user backgrounds the app
+  ///
+  /// In en, this message translates to:
+  /// **'Open A Plus anytime to keep learning.'**
+  String get appExitNotificationBody;
 }
 
 class _AppLocalizationsDelegate

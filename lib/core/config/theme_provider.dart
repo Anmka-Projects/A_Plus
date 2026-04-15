@@ -7,14 +7,14 @@ class ThemeProvider extends ChangeNotifier {
   static const String _languageKey = 'language';
 
   static ThemeProvider? _instance;
-  
+
   static ThemeProvider get instance {
     _instance ??= ThemeProvider._();
     return _instance!;
   }
 
   bool _isDarkMode = false;
-  Locale _locale = const Locale('ar');
+  Locale _locale = const Locale('en');
 
   bool get isDarkMode => _isDarkMode;
   Locale get locale => _locale;
@@ -38,13 +38,13 @@ class ThemeProvider extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       _isDarkMode = prefs.getBool(_darkModeKey) ?? false;
-      final languageCode = prefs.getString(_languageKey) ?? 'ar';
-      _locale = Locale(languageCode);
+      final languageCode = prefs.getString(_languageKey) ?? 'en';
+      _locale = languageCode == 'ar' ? const Locale('ar') : const Locale('en');
       notifyListeners();
     } catch (e) {
       // Use defaults if loading fails
       _isDarkMode = false;
-      _locale = const Locale('ar');
+      _locale = const Locale('en');
     }
   }
 
@@ -101,8 +101,7 @@ class ThemeProvider extends ChangeNotifier {
       case 'en':
         return 'English';
       default:
-        return 'العربية';
+        return 'English';
     }
   }
 }
-

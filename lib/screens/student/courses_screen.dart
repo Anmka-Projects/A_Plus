@@ -38,7 +38,6 @@ class _CoursesScreenState extends State<CoursesScreen> {
       'id': 1,
       'title': courseData['title'],
       'category': courseData['category'],
-      'instructor': l10n.instructor,
       'rating': 4.8,
       'hours': 48,
       'price': 0.0, // Default to free

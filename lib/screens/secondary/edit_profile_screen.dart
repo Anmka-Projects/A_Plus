@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/design/app_colors.dart';
-import '../../core/api/api_endpoints.dart';
 import '../../core/localization/localization_helper.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/profile_service.dart';
@@ -321,37 +320,22 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Widget _buildAvatar() {
-    final raw = _profile?['avatar']?.toString();
-    if (raw == null || raw.isEmpty) {
-      return const ColoredBox(
-        color: AppColors.muted,
-        child: Icon(
-          Icons.person_rounded,
-          size: 56,
-          color: AppColors.brandTeal,
-        ),
-      );
-    }
-    final url = ApiEndpoints.getImageUrl(raw);
-    if (url.isEmpty) {
-      return const ColoredBox(
-        color: AppColors.muted,
-        child: Icon(
-          Icons.person_rounded,
-          size: 56,
-          color: AppColors.brandTeal,
-        ),
-      );
-    }
-    return Image.network(
-      url,
-      fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) => const ColoredBox(
-        color: AppColors.muted,
-        child: Icon(
-          Icons.person_rounded,
-          size: 56,
-          color: AppColors.brandTeal,
+    return Container(
+      color: Colors.white,
+      child: Image.asset(
+        'assets/images/WhatsApp Image 2026-04-14 at 5.04.03 PM.jpeg',
+        fit: BoxFit.contain,
+        errorBuilder: (_, __, ___) => Image.asset(
+          'assets/images/user-avatar.png',
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => const ColoredBox(
+            color: AppColors.muted,
+            child: Icon(
+              Icons.person_rounded,
+              size: 56,
+              color: AppColors.brandTeal,
+            ),
+          ),
         ),
       ),
     );

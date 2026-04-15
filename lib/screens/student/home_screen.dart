@@ -4,14 +4,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import '../../core/design/app_colors.dart';
 import '../../core/navigation/route_names.dart';
-import '../../core/config/theme_provider.dart';
 import '../../core/api/api_endpoints.dart';
 import '../../widgets/bottom_nav.dart';
 import '../../services/home_service.dart';
@@ -41,6 +39,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   String? _errorMessage;
   Map<String, dynamic>? _homeData;
   Map<String, dynamic>? _userProfile;
+
   /// Enrollment rows from [CoursesService.getEnrollments] (each may include `course`).
   List<Map<String, dynamic>> _enrolledCourses = [];
   List<Map<String, dynamic>> _teachers = [];
@@ -287,8 +286,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         statusBarHeight: statusBarHeight,
         l10n: l10n,
         userProfile: _userProfile,
-        onLanguageTap: () => _showHomeLanguagePicker(l10n),
-        onSettingsTap: () => context.push(RouteNames.settings),
+        onProfileTap: () => context.push(
+          RouteNames.editProfile,
+          extra: _userProfile,
+        ),
       ),
       body: Stack(
         children: [
@@ -325,57 +326,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ],
             ),
           ),
-
           const BottomNav(activeTab: 'home'),
         ],
       ),
-    );
-  }
-
-  void _showHomeLanguagePicker(AppLocalizations l10n) {
-    showModalBottomSheet<void>(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text(
-                    l10n.chooseLanguage,
-                    style: GoogleFonts.cairo(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.foreground,
-                    ),
-                  ),
-                ),
-                ListTile(
-                  title: Text('العربية', style: GoogleFonts.cairo()),
-                  onTap: () {
-                    ThemeProvider.instance.setLanguage(const Locale('ar'));
-                    Navigator.of(ctx).pop();
-                  },
-                ),
-                ListTile(
-                  title: Text('English', style: GoogleFonts.cairo()),
-                  onTap: () {
-                    ThemeProvider.instance.setLanguage(const Locale('en'));
-                    Navigator.of(ctx).pop();
-                  },
-                ),
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 
@@ -439,13 +392,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildCoursesTrackSection(AppLocalizations l10n) {
-    const trackSvgs = <String>[
-      'assets/icons/tracks/doctor.svg',
-      'assets/icons/tracks/dentist.svg',
-      'assets/icons/tracks/physiotherapist.svg',
-      'assets/icons/tracks/pharmacist.svg',
-      'assets/icons/tracks/nurse.svg',
-      'assets/icons/tracks/scientist.svg',
+    const trackImages = <String>[
+      'assets/images/WhatsApp Image 2026-04-14 at 5.03.54 PM.jpeg',
+      'assets/images/WhatsApp Image 2026-04-14 at 5.03.55 PM.jpeg',
+      'assets/images/WhatsApp Image 2026-04-14 at 5.03.56 PM.jpeg',
+      'assets/images/WhatsApp Image 2026-04-14 at 5.03.57 PM.jpeg',
+      'assets/images/WhatsApp Image 2026-04-14 at 5.03.58 PM.jpeg',
+      'assets/images/WhatsApp Image 2026-04-14 at 5.04.03 PM.jpeg',
     ];
 
     return Column(
@@ -483,8 +436,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             final track = MedicalTrack.values[i];
             final label = _trackLabel(l10n, track);
             return _buildTrackTile(
-              svgAsset: trackSvgs[i],
+              imageAsset: trackImages[i],
               label: label,
+              iconBackgroundColor: track == MedicalTrack.scientist
+                  ? Colors.white
+                  : const Color(0xFFF0F7F8),
               onTap: () => context.push(
                 RouteNames.allCourses,
                 extra: <String, dynamic>{
@@ -517,11 +473,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildTrackTile({
-    required String svgAsset,
+    required String imageAsset,
     required String label,
     required VoidCallback onTap,
+    required Color iconBackgroundColor,
   }) {
-    const iconBg = Color(0xFFF0F7F8);
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -541,16 +497,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 width: 52,
                 height: 52,
                 decoration: BoxDecoration(
-                  color: iconBg,
+                  color: iconBackgroundColor,
                   borderRadius: BorderRadius.circular(14),
                 ),
-                alignment: Alignment.center,
-                child: SvgPicture.asset(
-                  svgAsset,
-                  width: 40,
-                  height: 40,
+                clipBehavior: Clip.antiAlias,
+                child: Image.asset(
+                  imageAsset,
+                  width: 52,
+                  height: 52,
                   fit: BoxFit.contain,
-                  placeholderBuilder: (_) => Icon(
+                  errorBuilder: (_, __, ___) => Icon(
                     Icons.medical_services_outlined,
                     size: 28,
                     color: _homeTitleTeal.withValues(alpha: 0.85),
@@ -1350,9 +1306,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           child: CircleAvatar(
                             radius: 24,
                             backgroundColor: Colors.white,
-                            backgroundImage: hasAvatar
-                                ? NetworkImage(avatarUrl)
-                                : null,
+                            backgroundImage:
+                                hasAvatar ? NetworkImage(avatarUrl) : null,
                             onBackgroundImageError: (_, __) {},
                             child: hasAvatar
                                 ? null
@@ -1859,12 +1814,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    course['instructor']?['name'] ?? course['instructor'] ?? '',
-                    style: GoogleFonts.cairo(
-                        fontSize: 12, color: AppColors.mutedForeground),
-                  ),
                   const SizedBox(height: 8),
                   Row(
                     children: [
@@ -1999,23 +1948,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 }
 
-/// Home-only app bar: teal gradient, profile (read-only), language action, tagline.
+/// Home-only app bar: teal gradient, welcome row, profile data action, language, tagline.
 class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
   final double statusBarHeight;
   final AppLocalizations l10n;
   final Map<String, dynamic>? userProfile;
-  final VoidCallback onLanguageTap;
-  final VoidCallback onSettingsTap;
+  final VoidCallback onProfileTap;
 
   const _HomeAppBar({
     required this.statusBarHeight,
     required this.l10n,
     required this.userProfile,
-    required this.onLanguageTap,
-    required this.onSettingsTap,
+    required this.onProfileTap,
   });
 
-  static const double _contentHeight = 138;
+  static const double _contentHeight = 140;
   static const Color _gradientTop = Color(0xFF23C5C0);
   static const Color _gradientBottom = Color(0xFF0A6D6E);
 
@@ -2024,9 +1971,11 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    final displayName = userProfile?['name']?.toString().trim().isNotEmpty == true
-        ? userProfile!['name'].toString()
-        : l10n.visitor;
+    final displayName =
+        userProfile?['name']?.toString().trim().isNotEmpty == true
+            ? userProfile!['name'].toString()
+            : l10n.visitor;
+    const motivationalText = 'Stay focused, your A+ is coming...';
 
     return Material(
       elevation: 0,
@@ -2056,205 +2005,133 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 44,
-                              height: 44,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.5),
-                                  width: 2,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.2),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              child: ClipOval(
-                                child: userProfile?['avatar'] != null
-                                    ? Image.network(
-                                        ApiEndpoints.getImageUrl(
-                                          userProfile!['avatar']?.toString(),
-                                        ),
-                                        fit: BoxFit.cover,
-                                        loadingBuilder:
-                                            (context, child, loadingProgress) {
-                                          if (loadingProgress == null) {
-                                            return child;
-                                          }
-                                          return Container(
-                                            color: Colors.white,
-                                            child: const Center(
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                                color: AppColors.purple,
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                        errorBuilder:
-                                            (context, error, stackTrace) {
-                                          return Image.asset(
-                                            'assets/images/student-avatar.png',
-                                            fit: BoxFit.cover,
-                                            errorBuilder: (_, __, ___) =>
-                                                Container(
-                                              color: Colors.white,
-                                              child: const Icon(
-                                                Icons.person,
-                                                color: AppColors.purple,
-                                                size: 26,
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                      )
-                                    : Image.asset(
-                                        'assets/images/student-avatar.png',
-                                        fit: BoxFit.cover,
-                                        errorBuilder:
-                                            (context, error, stackTrace) =>
-                                                Container(
-                                          color: Colors.white,
-                                          child: const Icon(
-                                            Icons.person,
-                                            color: AppColors.purple,
-                                            size: 26,
-                                          ),
-                                        ),
-                                      ),
-                              ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.5),
+                              width: 2,
                             ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    l10n.welcomeLabel,
-                                    style: GoogleFonts.cairo(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                      color:
-                                          Colors.white.withValues(alpha: 0.9),
-                                      height: 1.1,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    displayName,
-                                    style: GoogleFonts.cairo(
-                                      fontSize: 17,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                      height: 1.15,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.2),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: onSettingsTap,
-                          borderRadius: BorderRadius.circular(12),
-                          child: Tooltip(
-                            message: l10n.settings,
+                            ],
+                          ),
+                          child: ClipOval(
                             child: Container(
-                              width: 42,
-                              height: 42,
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.35),
-                                ),
-                              ),
-                              child: Icon(
-                                Icons.settings_rounded,
-                                color: Colors.white.withValues(alpha: 0.95),
-                                size: 22,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: onLanguageTap,
-                          borderRadius: BorderRadius.circular(12),
-                          child: Container(
-                            width: 42,
-                            height: 42,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.35),
-                              ),
-                            ),
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                Icon(
-                                  Icons.language_rounded,
-                                  color: Colors.white.withValues(alpha: 0.95),
-                                  size: 22,
-                                ),
-                                Positioned(
-                                  right: 7,
-                                  bottom: 8,
-                                  child: Text(
-                                    'A',
-                                    style: GoogleFonts.cairo(
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.w800,
-                                      color: Colors.white,
+                              color: Colors.white,
+                              child: Image.asset(
+                                'assets/images/WhatsApp Image 2026-04-14 at 5.04.03 PM.jpeg',
+                                fit: BoxFit.contain,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    Image.asset(
+                                  'assets/images/student-avatar.png',
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => Container(
+                                    color: Colors.white,
+                                    child: const Icon(
+                                      Icons.person,
+                                      color: AppColors.purple,
+                                      size: 26,
                                     ),
                                   ),
                                 ),
-                              ],
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                l10n.welcomeLabel,
+                                style: GoogleFonts.cairo(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                  height: 1.1,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                displayName,
+                                style: GoogleFonts.cairo(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  height: 1.15,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 10),
-                  Text(
-                    l10n.homeMotivationalLine,
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.cairo(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
-                      height: 1.35,
-                      letterSpacing: 0.2,
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: onProfileTap,
+                      borderRadius: BorderRadius.circular(12),
+                      child: Tooltip(
+                        message: l10n.profile,
+                        child: Container(
+                          width: 42,
+                          height: 42,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.35),
+                            ),
+                          ),
+                          child: Icon(
+                            Icons.contact_page_outlined,
+                            color: Colors.white.withValues(alpha: 0.95),
+                            size: 22,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ],
               ),
-            ),
+              const SizedBox(height: 30),
+              Center(
+                child: Text(
+                  motivationalText,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.cairo(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                    height: 1.35,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

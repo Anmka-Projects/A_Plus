@@ -593,7 +593,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get total => 'الإجمالي';
 
   @override
-  String get editProfile => 'بيانات الطالب';
+  String get editProfile => 'ملف الطالب';
 
   @override
   String get errorLoadingProfile => 'حدث خطأ أثناء تحميل الملف الشخصي';
@@ -1492,4 +1492,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String studentsCount(int count) {
     return '$count طالب';
   }
+
+  @override
+  String get appExitNotificationTitle => 'نراك قريباً!';
+
+  @override
+  String get appExitNotificationBody => 'افتح A Plus في أي وقت لمتابعة تعلمك.';
 }

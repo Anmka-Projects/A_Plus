@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'package:educational_app/core/notification_service/app_lifecycle_notifications.dart';
 import 'package:educational_app/core/notification_service/notification_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -60,30 +61,32 @@ class EducationalApp extends StatelessWidget {
         return ListenableBuilder(
           listenable: themeProvider,
           builder: (context, _) {
-            return MaterialApp.router(
-              title: configProvider.config?.appName ?? 'A Plus',
-              debugShowCheckedModeBanner: false,
+            return AppLifecycleNotifier(
+              child: MaterialApp.router(
+                title: configProvider.config?.appName ?? 'A Plus',
+                debugShowCheckedModeBanner: false,
 
-              // RTL & Localization
-              locale: themeProvider.locale,
-              supportedLocales: const [
-                Locale('ar'),
-                Locale('en'),
-              ],
-              localizationsDelegates: const [
-                AppLocalizations.delegate,
-                GlobalMaterialLocalizations.delegate,
-                GlobalWidgetsLocalizations.delegate,
-                GlobalCupertinoLocalizations.delegate,
-              ],
+                // RTL & Localization
+                locale: const Locale('en'),
+                supportedLocales: const [
+                  Locale('ar'),
+                  Locale('en'),
+                ],
+                localizationsDelegates: const [
+                  AppLocalizations.delegate,
+                  GlobalMaterialLocalizations.delegate,
+                  GlobalWidgetsLocalizations.delegate,
+                  GlobalCupertinoLocalizations.delegate,
+                ],
 
-              // Theme - use API config if available
-              theme: AppTheme.lightTheme(configProvider.config?.theme),
-              darkTheme: AppTheme.darkTheme(configProvider.config?.theme),
-              themeMode: themeProvider.themeMode,
+                // Theme - use API config if available
+                theme: AppTheme.lightTheme(configProvider.config?.theme),
+                darkTheme: AppTheme.darkTheme(configProvider.config?.theme),
+                themeMode: themeProvider.themeMode,
 
-              // Router
-              routerConfig: AppRouter.router,
+                // Router
+                routerConfig: AppRouter.router,
+              ),
             );
           },
         );

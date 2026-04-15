@@ -417,9 +417,6 @@ class _LiveCourseCard extends StatelessWidget {
     final isUpcoming =
         course['status'] == 'upcoming' || course['status'] == 'scheduled';
     final courseTitle = course['title']?.toString() ?? context.l10n.liveSession;
-    final instructor = course['instructor'] is Map
-        ? (course['instructor'] as Map)['name']?.toString() ?? ''
-        : course['instructor']?.toString() ?? context.l10n.instructor;
     final startDate = course['start_date']?.toString() ??
         course['date']?.toString() ??
         course['scheduled_at']?.toString();
@@ -569,15 +566,6 @@ class _LiveCourseCard extends StatelessWidget {
                     color: AppColors.foreground,
                   ),
                 ),
-                const SizedBox(height: 8), // mb-2
-                Text(
-                  instructor,
-                  style: GoogleFonts.cairo(
-                    fontSize: 13,
-                    color: AppColors.brandPurple,
-                  ),
-                ),
-                const SizedBox(height: 12), // mb-3
 
                 // Info row - matches React: gap-4 text-xs mb-4
                 Padding(

@@ -389,10 +389,6 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
     final categoryName = course['category'] is Map
         ? (course['category'] as Map)['name']?.toString() ?? ''
         : course['category']?.toString() ?? '';
-    final instructorName = course['instructor'] is Map
-        ? (course['instructor'] as Map)['name']?.toString() ?? ''
-        : course['instructor']?.toString() ?? '';
-
     // Safely parse rating
     num ratingValue = 0.0;
     if (course['rating'] != null) {
@@ -587,16 +583,6 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
-                    // Instructor
-                    if (instructorName.isNotEmpty)
-                      Text(
-                        instructorName,
-                        style: GoogleFonts.cairo(
-                          fontSize: 10,
-                          color: AppColors.mutedForeground,
-                        ),
-                      ),
                     const Spacer(),
                     // Stats
                     Row(

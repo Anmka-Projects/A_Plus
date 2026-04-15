@@ -50,19 +50,20 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyAxFMoc3XRlkB2q48wA6RMFUJ1guzJzplU',
-    appId: '1:134644525634:android:7ab309e0ec7c3e2c879bdb',
-    messagingSenderId: '134644525634',
-    projectId: 'anmka-stp',
-    storageBucket: 'anmka-stp.firebasestorage.app',
+    apiKey: 'AIzaSyBhDIuEf-OfUgguVdFuiwL_WmxkTh_cOuc',
+    appId: '1:594364865620:android:cb2d5f83390ac04f4921c1',
+    messagingSenderId: '594364865620',
+    projectId: 'ziadstoreapp',
+    storageBucket: 'ziadstoreapp.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyDRwnalNK21IACz3-NKvITk2M0MYKlMa1w',
-    appId: '1:134644525634:ios:d772218680f97b04879bdb',
-    messagingSenderId: '134644525634',
-    projectId: 'anmka-stp',
-    storageBucket: 'anmka-stp.firebasestorage.app',
+    apiKey: 'AIzaSyBP-jXvbB0YUwZk5D-HL8iTxA6qh6jqXWQ',
+    appId: '1:594364865620:ios:260122407d1fff0e4921c1',
+    messagingSenderId: '594364865620',
+    projectId: 'ziadstoreapp',
+    storageBucket: 'ziadstoreapp.firebasestorage.app',
     iosBundleId: 'com.anmka.stpnew',
   );
+
 }

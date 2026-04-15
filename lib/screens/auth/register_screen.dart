@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../core/config/theme_provider.dart';
 import '../../core/design/app_colors.dart';
 import '../../core/navigation/route_names.dart';
 import '../../services/academic_structure_service.dart';
@@ -36,10 +37,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   List<Map<String, dynamic>> _faculties = [];
   List<Map<String, dynamic>> _sections = [];
-  List<Map<String, dynamic>> _grades = [];
   bool _loadingFaculties = false;
   bool _loadingSections = false;
-  bool _loadingGrades = false;
   bool _facultiesLoadFailed = false;
 
   Map<String, dynamic>? _selectedFaculty;
@@ -81,13 +80,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() {
       _loadingSections = true;
       _sections = [];
-      _grades = [];
       _selectedSection = null;
       _selectedGrade = null;
     });
     try {
-      final list =
-          await AcademicStructureService.instance.getSectionsForFaculty(facultyId);
+      final list = await AcademicStructureService.instance
+          .getSectionsForFaculty(facultyId);
       if (!mounted) return;
       setState(() => _sections = list);
     } catch (e) {
@@ -100,20 +98,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _loadGrades(String sectionId) async {
     setState(() {
-      _loadingGrades = true;
-      _grades = [];
       _selectedGrade = null;
     });
     try {
-      final list =
-          await AcademicStructureService.instance.getGradesForSection(sectionId);
+      final list = await AcademicStructureService.instance
+          .getGradesForSection(sectionId);
       if (!mounted) return;
-      setState(() => _grades = list);
+      setState(() {
+        _selectedGrade = list.isNotEmpty ? list.first : null;
+      });
     } catch (e) {
       debugPrint('Grades load failed: $e');
-      if (mounted) setState(() => _grades = []);
-    } finally {
-      if (mounted) setState(() => _loadingGrades = false);
     }
   }
 
@@ -150,7 +145,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (_entityId(_selectedGrade) == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(l10n.selectGrade, style: GoogleFonts.cairo()),
+          content: Text(
+            Localizations.localeOf(context).languageCode == 'ar'
+                ? 'لا توجد مرحلة دراسية متاحة لهذا القسم'
+                : 'No grade available for this section',
+            style: GoogleFonts.cairo(),
+          ),
           backgroundColor: AppColors.destructive,
         ),
       );
@@ -222,6 +222,54 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
+  void _showLanguagePicker() {
+    final l10n = AppLocalizations.of(context)!;
+    showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    l10n.chooseLanguage,
+                    style: GoogleFonts.cairo(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.foreground,
+                    ),
+                  ),
+                ),
+                ListTile(
+                  title: Text('العربية', style: GoogleFonts.cairo()),
+                  onTap: () {
+                    ThemeProvider.instance.setLanguage(const Locale('ar'));
+                    Navigator.of(ctx).pop();
+                  },
+                ),
+                ListTile(
+                  title: Text('English', style: GoogleFonts.cairo()),
+                  onTap: () {
+                    ThemeProvider.instance.setLanguage(const Locale('en'));
+                    Navigator.of(ctx).pop();
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     SystemChrome.setSystemUIOverlayStyle(
@@ -231,115 +279,125 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
     );
 
-    final l10n = AppLocalizations.of(context)!;
-
-    return Scaffold(
-      backgroundColor: AppColors.beige,
-      body: Column(
-        children: [
-          _buildHeader(context, l10n),
-          Expanded(
-            child: Transform.translate(
-              offset: const Offset(0, -20),
-              child: Container(
-                decoration: const BoxDecoration(
-                  color: AppColors.beige,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-                ),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(24, 30, 24, 24),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildLabel(l10n.quadNameTitle),
-                        const SizedBox(height: 8),
-                        _buildQuadNameRow(l10n),
-                        const SizedBox(height: 16),
-                        _buildLabel(l10n.phone),
-                        const SizedBox(height: 8),
-                        _buildPhoneField(context, l10n),
-                        const SizedBox(height: 16),
-                        _buildLabel(l10n.studentCode),
-                        const SizedBox(height: 8),
-                        _buildGrayTextField(
-                          context: context,
-                          controller: _codeController,
-                          hint: l10n.enterStudentCode,
-                          icon: Icons.badge_outlined,
-                          keyboardType: TextInputType.text,
-                        ),
-                        const SizedBox(height: 16),
-                        _buildLabel(l10n.nationalId),
-                        const SizedBox(height: 8),
-                        _buildNationalIdField(context, l10n),
-                        const SizedBox(height: 16),
-                        _buildLabel(l10n.faculty),
-                        const SizedBox(height: 8),
-                        _buildFacultyPicker(context, l10n),
-                        const SizedBox(height: 16),
-                        _buildLabel(l10n.section),
-                        const SizedBox(height: 8),
-                        _buildSectionPicker(context, l10n),
-                        const SizedBox(height: 16),
-                        _buildLabel(l10n.grade),
-                        const SizedBox(height: 8),
-                        _buildGradePicker(context, l10n),
-                        const SizedBox(height: 24),
-                        _buildSignUpButton(l10n),
-                        const SizedBox(height: 20),
-                        Center(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
+    return ListenableBuilder(
+      listenable: ThemeProvider.instance,
+      builder: (context, _) => Localizations.override(
+        context: context,
+        locale: ThemeProvider.instance.locale,
+        child: Builder(
+          builder: (context) {
+            final l10n = AppLocalizations.of(context)!;
+            return Scaffold(
+            backgroundColor: AppColors.beige,
+            body: Column(
+              children: [
+                _buildHeader(context, l10n),
+                Expanded(
+                  child: Transform.translate(
+                    offset: const Offset(0, -20),
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        color: AppColors.beige,
+                        borderRadius:
+                            BorderRadius.vertical(top: Radius.circular(32)),
+                      ),
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(24, 30, 24, 24),
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                l10n.alreadyHaveAccount,
-                                style: GoogleFonts.cairo(
-                                  fontSize: 14,
-                                  color: AppColors.mutedForeground,
-                                ),
+                              _buildLabel(l10n.quadNameTitle),
+                              const SizedBox(height: 8),
+                              _buildQuadNameRow(l10n),
+                              const SizedBox(height: 16),
+                              _buildLabel(l10n.phone),
+                              const SizedBox(height: 8),
+                              _buildPhoneField(context, l10n),
+                              const SizedBox(height: 16),
+                              _buildLabel(l10n.studentCode),
+                              const SizedBox(height: 8),
+                              _buildGrayTextField(
+                                context: context,
+                                controller: _codeController,
+                                hint: l10n.enterStudentCode,
+                                icon: Icons.badge_outlined,
+                                keyboardType: TextInputType.text,
                               ),
-                              TextButton(
-                                onPressed: () => context.go(RouteNames.login),
-                                style: TextButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                ),
-                                child: ShaderMask(
-                                  blendMode: BlendMode.srcIn,
-                                  shaderCallback: (bounds) =>
-                                      const LinearGradient(
-                                    begin: Alignment.centerLeft,
-                                    end: Alignment.centerRight,
-                                    colors: [
-                                      _headerNavy,
-                                      _buttonTealEnd,
-                                    ],
-                                  ).createShader(bounds),
-                                  child: Text(
-                                    l10n.login,
-                                    style: GoogleFonts.cairo(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
+                              const SizedBox(height: 16),
+                              _buildLabel(l10n.nationalId),
+                              const SizedBox(height: 8),
+                              _buildNationalIdField(context, l10n),
+                              const SizedBox(height: 16),
+                              _buildLabel(l10n.faculty),
+                              const SizedBox(height: 8),
+                              _buildFacultyPicker(context, l10n),
+                              const SizedBox(height: 16),
+                              _buildLabel(l10n.section),
+                              const SizedBox(height: 8),
+                              _buildSectionPicker(context, l10n),
+                              const SizedBox(height: 24),
+                              _buildSignUpButton(l10n),
+                              const SizedBox(height: 20),
+                              Center(
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      l10n.alreadyHaveAccount,
+                                      style: GoogleFonts.cairo(
+                                        fontSize: 14,
+                                        color: AppColors.mutedForeground,
+                                      ),
                                     ),
-                                  ),
+                                    TextButton(
+                                      onPressed: () =>
+                                          context.go(RouteNames.login),
+                                      style: TextButton.styleFrom(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                      ),
+                                      child: ShaderMask(
+                                        blendMode: BlendMode.srcIn,
+                                        shaderCallback: (bounds) =>
+                                            const LinearGradient(
+                                          begin: Alignment.centerLeft,
+                                          end: Alignment.centerRight,
+                                          colors: [
+                                            _headerNavy,
+                                            _buttonTealEnd,
+                                          ],
+                                        ).createShader(bounds),
+                                        child: Text(
+                                          l10n.login,
+                                          style: GoogleFonts.cairo(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
+                              const SizedBox(height: 8),
+                              _buildFooter(l10n),
                             ],
                           ),
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
-              ),
+              ],
             ),
-          ),
-        ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -488,8 +546,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         filled: true,
         fillColor: _fieldFill,
         isDense: true,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 6, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 12),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
@@ -698,9 +755,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
           : (_facultiesLoadFailed
               ? l10n.academicDataUnavailable
               : l10n.tapToSelectFaculty),
-      selectedName: _selectedFaculty != null
-          ? _entityName(_selectedFaculty!)
-          : null,
+      selectedName:
+          _selectedFaculty != null ? _entityName(_selectedFaculty!) : null,
       enabled: canOpenList || canRetryLoad,
       onTap: canRetryLoad
           ? _loadFaculties
@@ -729,9 +785,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
           : (_loadingSections
               ? l10n.academicDataLoading
               : l10n.tapToSelectSection),
-      selectedName: _selectedSection != null
-          ? _entityName(_selectedSection!)
-          : null,
+      selectedName:
+          _selectedSection != null ? _entityName(_selectedSection!) : null,
       enabled: ready && !_loadingSections && _sections.isNotEmpty,
       onTap: !ready || _loadingSections
           ? null
@@ -743,32 +798,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   setState(() => _selectedSection = map);
                   final id = _entityId(map);
                   if (id != null) _loadGrades(id);
-                },
-              ),
-    );
-  }
-
-  Widget _buildGradePicker(BuildContext context, AppLocalizations l10n) {
-    final ready = _entityId(_selectedSection) != null;
-    return _buildAcademicPickerTile(
-      context: context,
-      icon: Icons.grade_outlined,
-      placeholder: !ready
-          ? l10n.selectSectionFirst
-          : (_loadingGrades
-              ? l10n.academicDataLoading
-              : l10n.tapToSelectGrade),
-      selectedName:
-          _selectedGrade != null ? _entityName(_selectedGrade!) : null,
-      enabled: ready && !_loadingGrades && _grades.isNotEmpty,
-      onTap: !ready || _loadingGrades
-          ? null
-          : () => _openAcademicSheet(
-                title: l10n.grade,
-                items: _grades,
-                selectedId: _entityId(_selectedGrade),
-                onPick: (map) {
-                  setState(() => _selectedGrade = map);
                 },
               ),
     );
@@ -977,6 +1006,66 @@ class _RegisterScreenState extends State<RegisterScreen> {
         fontWeight: FontWeight.w600,
         color: AppColors.foreground,
       ),
+    );
+  }
+
+  Widget _buildFooter(AppLocalizations l10n) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        InkWell(
+          onTap: () => context.push(RouteNames.supportAndHelp),
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.support_agent_rounded,
+                  size: 28,
+                  color: _headerNavy,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  l10n.contactUs,
+                  style: GoogleFonts.cairo(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: _headerNavy,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        InkWell(
+          onTap: _showLanguagePicker,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.translate_rounded,
+                  size: 28,
+                  color: _headerNavy,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  l10n.chooseLanguage,
+                  style: GoogleFonts.cairo(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: _headerNavy,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

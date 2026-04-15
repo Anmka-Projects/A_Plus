@@ -148,164 +148,174 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
 
-    final l10n = AppLocalizations.of(context)!;
-
-    return Scaffold(
-      backgroundColor: AppColors.pureWhite,
-      body: Column(
-        children: [
-          Expanded(
-            flex: 42,
-            child: _buildHeader(context),
-          ),
-          Expanded(
-            flex: 58,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+    return ListenableBuilder(
+      listenable: ThemeProvider.instance,
+      builder: (context, _) => Localizations.override(
+        context: context,
+        locale: ThemeProvider.instance.locale,
+        child: Builder(
+          builder: (context) {
+            final l10n = AppLocalizations.of(context)!;
+            return Scaffold(
+            backgroundColor: AppColors.pureWhite,
+            body: Column(
               children: [
                 Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(28, 28, 28, 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text(
-                          l10n.loginEnterCodeTitle,
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.cairo(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 1.4,
-                            color: _darkTeal,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        TextField(
-                            controller: _codeController,
-                            keyboardType: TextInputType.text,
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.cairo(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.foreground,
-                            ),
-                            decoration: InputDecoration(
-                              hintText: l10n.enterStudentCode,
-                              hintStyle: GoogleFonts.cairo(
-                                color: AppColors.mutedForeground,
-                                fontSize: 15,
-                              ),
-                              filled: true,
-                              fillColor: _fieldFill,
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 16,
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(32),
-                                borderSide: const BorderSide(
-                                  color: _fieldBorder,
-                                  width: 1,
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(32),
-                                borderSide: const BorderSide(
-                                  color: _fieldBorder,
-                                  width: 1,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(32),
-                                borderSide: const BorderSide(
+                  flex: 42,
+                  child: _buildHeader(context),
+                ),
+                Expanded(
+                  flex: 58,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.fromLTRB(28, 28, 28, 16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Text(
+                                l10n.loginEnterCodeTitle,
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.cairo(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 1.4,
                                   color: _darkTeal,
-                                  width: 2,
                                 ),
                               ),
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            l10n.pleaseActivateCodeFirst,
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.cairo(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              color: _hintRed,
-                              height: 1.3,
-                            ),
-                          ),
-                          const SizedBox(height: 28),
-                          SizedBox(
-                            width: double.infinity,
-                            height: 50,
-                            child: FilledButton(
-                              onPressed: _isLoading ? null : _handleLogin,
-                              style: FilledButton.styleFrom(
-                                backgroundColor: _darkTeal,
-                                foregroundColor: AppColors.pureWhite,
-                                disabledBackgroundColor:
-                                    _darkTeal.withValues(alpha: 0.5),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(14),
-                                ),
-                                elevation: 0,
-                              ),
-                              child: _isLoading
-                                  ? const SizedBox(
-                                      width: 22,
-                                      height: 22,
-                                      child: CircularProgressIndicator(
-                                        color: AppColors.pureWhite,
-                                        strokeWidth: 2.5,
-                                      ),
-                                    )
-                                  : Text(
-                                      l10n.loginLogIn,
-                                      style: GoogleFonts.cairo(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                            ),
-                          ),
-                          const SizedBox(height: 14),
-                          SizedBox(
-                            width: double.infinity,
-                            height: 56,
-                            child: FilledButton(
-                              onPressed: _isLoading
-                                  ? null
-                                  : () => context.go(RouteNames.register),
-                              style: FilledButton.styleFrom(
-                                backgroundColor: _darkTeal,
-                                foregroundColor: AppColors.pureWhite,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(14),
-                                ),
-                                elevation: 0,
-                              ),
-                              child: Text(
-                                l10n.codeActivation,
+                              const SizedBox(height: 20),
+                              TextField(
+                                controller: _codeController,
+                                keyboardType: TextInputType.text,
+                                textAlign: TextAlign.center,
                                 style: GoogleFonts.cairo(
                                   fontSize: 16,
-                                  fontWeight: FontWeight.bold,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.foreground,
+                                ),
+                                decoration: InputDecoration(
+                                  hintText: l10n.enterStudentCode,
+                                  hintStyle: GoogleFonts.cairo(
+                                    color: AppColors.mutedForeground,
+                                    fontSize: 15,
+                                  ),
+                                  filled: true,
+                                  fillColor: _fieldFill,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                    vertical: 16,
+                                  ),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(32),
+                                    borderSide: const BorderSide(
+                                      color: _fieldBorder,
+                                      width: 1,
+                                    ),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(32),
+                                    borderSide: const BorderSide(
+                                      color: _fieldBorder,
+                                      width: 1,
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(32),
+                                    borderSide: const BorderSide(
+                                      color: _darkTeal,
+                                      width: 2,
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
+                              const SizedBox(height: 10),
+                              Text(
+                                l10n.pleaseActivateCodeFirst,
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.cairo(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                  color: _hintRed,
+                                  height: 1.3,
+                                ),
+                              ),
+                              const SizedBox(height: 28),
+                              SizedBox(
+                                width: double.infinity,
+                                height: 50,
+                                child: FilledButton(
+                                  onPressed: _isLoading ? null : _handleLogin,
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: _darkTeal,
+                                    foregroundColor: AppColors.pureWhite,
+                                    disabledBackgroundColor:
+                                        _darkTeal.withValues(alpha: 0.5),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                    elevation: 0,
+                                  ),
+                                  child: _isLoading
+                                      ? const SizedBox(
+                                          width: 22,
+                                          height: 22,
+                                          child: CircularProgressIndicator(
+                                            color: AppColors.pureWhite,
+                                            strokeWidth: 2.5,
+                                          ),
+                                        )
+                                      : Text(
+                                          l10n.loginLogIn,
+                                          style: GoogleFonts.cairo(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                ),
+                              ),
+                              const SizedBox(height: 14),
+                              SizedBox(
+                                width: double.infinity,
+                                height: 56,
+                                child: FilledButton(
+                                  onPressed: _isLoading
+                                      ? null
+                                      : () => context.go(RouteNames.register),
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: _darkTeal,
+                                    foregroundColor: AppColors.pureWhite,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                    elevation: 0,
+                                  ),
+                                  child: Text(
+                                    l10n.codeActivation,
+                                    style: GoogleFonts.cairo(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(32, 8, 32, 24),
+                        child: _buildFooter(l10n),
+                      ),
+                    ],
                   ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(32, 8, 32, 24),
-                  child: _buildFooter(l10n),
                 ),
               ],
             ),
-          ),
-        ],
+            );
+          },
+        ),
       ),
     );
   }

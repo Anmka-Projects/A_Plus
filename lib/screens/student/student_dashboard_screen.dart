@@ -189,7 +189,6 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
 
     final enrolledCourses = _statistics?['enrolled_courses'] ?? 0;
     final certificates = _statistics?['certificates_earned'] ?? 0;
-    final totalHours = _statistics?['total_learning_hours'] ?? 0;
     final l10n = AppLocalizations.of(context)!;
 
     // Get student type from profile
@@ -264,7 +263,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
           Column(
             children: [
               // Header
-              _buildHeader(context, enrolledCourses, certificates, totalHours),
+              _buildHeader(context),
 
               // Content
               Expanded(
@@ -344,20 +343,6 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
                                 ),
                               ),
                             ),
-
-                            const SizedBox(height: 12),
-
-                            // Delete Account
-                            Center(
-                              child: TextButton(
-                                onPressed: () {},
-                                child: Text(
-                                  AppLocalizations.of(context)!.deleteAccount,
-                                  style: GoogleFonts.cairo(
-                                      fontSize: 13, color: Colors.red[300]),
-                                ),
-                              ),
-                            ),
                           ],
                         ),
                       ),
@@ -372,8 +357,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
     );
   }
 
-  Widget _buildHeader(BuildContext context, int enrolledCourses,
-      int certificates, int totalHours) {
+  Widget _buildHeader(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         gradient: const LinearGradient(
@@ -525,76 +509,10 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
                   color: Colors.white.withOpacity(0.7),
                 ),
               ),
-
-              const SizedBox(height: 16),
-
-              // Stats Row
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _buildStat(
-                        '$enrolledCourses',
-                        AppLocalizations.of(context)!.course,
-                        Icons.play_circle_fill_rounded),
-                    Container(
-                      width: 1,
-                      height: 25,
-                      margin: const EdgeInsets.symmetric(horizontal: 16),
-                      color: Colors.white.withOpacity(0.3),
-                    ),
-                    _buildStat(
-                        '$certificates',
-                        AppLocalizations.of(context)!.certificates,
-                        Icons.emoji_events_rounded),
-                    Container(
-                      width: 1,
-                      height: 25,
-                      margin: const EdgeInsets.symmetric(horizontal: 16),
-                      color: Colors.white.withOpacity(0.3),
-                    ),
-                    _buildStat(
-                        '$totalHours',
-                        AppLocalizations.of(context)!.hour,
-                        Icons.access_time_filled_rounded),
-                  ],
-                ),
-              ),
             ],
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildStat(String value, String label, IconData icon) {
-    return Row(
-      children: [
-        Icon(icon, size: 16, color: Colors.white.withOpacity(0.8)),
-        const SizedBox(width: 4),
-        Text(
-          value,
-          style: GoogleFonts.cairo(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-        const SizedBox(width: 3),
-        Text(
-          label,
-          style: GoogleFonts.cairo(
-            fontSize: 11,
-            color: Colors.white.withOpacity(0.8),
-          ),
-        ),
-      ],
     );
   }
 

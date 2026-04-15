@@ -806,9 +806,9 @@
     "description": "Total"
   },
   
-  "editProfile": "Edit Profile",
+  "editProfile": "Student Profile",
   "@editProfile": {
-    "description": "Edit profile"
+    "description": "Student profile screen title"
   },
   "errorLoadingProfile": "Error loading profile",
   "@errorLoadingProfile": {
@@ -2125,6 +2125,14 @@
         "type": "int"
       }
     }
+  },
+  "appExitNotificationTitle": "See you soon!",
+  "@appExitNotificationTitle": {
+    "description": "Local notification title when user backgrounds the app"
+  },
+  "appExitNotificationBody": "Open A Plus anytime to keep learning.",
+  "@appExitNotificationBody": {
+    "description": "Local notification body when user backgrounds the app"
   }
 }
 

@@ -25,7 +25,10 @@ String _userMessageFromApiException(ApiException e, String fallback) {
         if (m != null) {
           if (m is String && m.isNotEmpty) return m;
           if (m is List && m.isNotEmpty) {
-            return m.map((x) => x.toString()).where((s) => s.isNotEmpty).join('\n');
+            return m
+                .map((x) => x.toString())
+                .where((s) => s.isNotEmpty)
+                .join('\n');
           }
         }
       }
@@ -109,6 +112,7 @@ class AuthService {
           refreshToken: authResponse.refreshToken,
         );
         await TokenStorageService.instance.saveUserRole(authResponse.user.role);
+        await FirebaseNotification.syncFcmTokenWithBackend();
 
         // Verify token was saved to cache
         print('🔍 Verifying token was saved to cache...');
@@ -166,6 +170,14 @@ class AuthService {
       final g = nameGrandfather.trim();
       final fam = nameFamily.trim();
       final fullName = '$f $fa $g $fam'.trim();
+      String? currentFcmToken = FirebaseNotification.fcmToken;
+      if (currentFcmToken == null || currentFcmToken.isEmpty) {
+        try {
+          currentFcmToken = await FirebaseNotification.messaging.getToken();
+        } catch (_) {
+          // Keep null/empty; backend registration still proceeds.
+        }
+      }
 
       final body = <String, dynamic>{
         'name': fullName,
@@ -180,6 +192,8 @@ class AuthService {
         'section_id': sectionId,
         'grade_id': gradeId,
         'device_id': await DeviceIdService.getOrCreateDeviceId(),
+        if (currentFcmToken != null && currentFcmToken.isNotEmpty)
+          'fcm_token': currentFcmToken,
       };
 
       final response = await ApiClient.instance.post(
@@ -257,6 +271,7 @@ class AuthService {
           refreshToken: authResponse.refreshToken,
         );
         await TokenStorageService.instance.saveUserRole(authResponse.user.role);
+        await FirebaseNotification.syncFcmTokenWithBackend();
 
         // Verify token was saved to cache
         print('🔍 Verifying token was saved to cache...');
@@ -487,6 +502,7 @@ class AuthService {
           refreshToken: authResponse.refreshToken,
         );
         await TokenStorageService.instance.saveUserRole(authResponse.user.role);
+        await FirebaseNotification.syncFcmTokenWithBackend();
 
         // Verify token was cached
         final savedToken = await TokenStorageService.instance.getAccessToken();
@@ -638,6 +654,7 @@ class AuthService {
           refreshToken: authResponse.refreshToken,
         );
         await TokenStorageService.instance.saveUserRole(authResponse.user.role);
+        await FirebaseNotification.syncFcmTokenWithBackend();
 
         // Verify token was cached
         final savedToken = await TokenStorageService.instance.getAccessToken();

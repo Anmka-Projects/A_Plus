@@ -806,9 +806,9 @@
     "description": "الإجمالي"
   },
   
-  "editProfile": "بيانات الطالب",
+  "editProfile": "ملف الطالب",
   "@editProfile": {
-    "description": "بيانات الطالب"
+    "description": "عنوان شاشة ملف الطالب"
   },
   "errorLoadingProfile": "حدث خطأ أثناء تحميل الملف الشخصي",
   "@errorLoadingProfile": {
@@ -2125,6 +2125,14 @@
         "type": "int"
       }
     }
+  },
+  "appExitNotificationTitle": "نراك قريباً!",
+  "@appExitNotificationTitle": {
+    "description": "عنوان إشعار محلي عند إغلاق التطبيق أو الخروج للخلفية"
+  },
+  "appExitNotificationBody": "افتح A Plus في أي وقت لمتابعة تعلمك.",
+  "@appExitNotificationBody": {
+    "description": "نص إشعار محلي عند الخروج من التطبيق"
   }
 }
 

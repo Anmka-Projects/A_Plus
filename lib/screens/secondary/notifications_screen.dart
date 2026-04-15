@@ -238,18 +238,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return iconMap[iconName.toLowerCase()] ?? Icons.notifications;
   }
 
-  Color _parseColor(dynamic colorValue) {
-    if (colorValue == null) return AppColors.brandPurple;
-    if (colorValue is Color) return colorValue;
-    if (colorValue is String) {
-      String hex = colorValue.replaceAll('#', '');
-      if (hex.length == 6) {
-        return Color(int.parse('FF$hex', radix: 16));
-      }
-    }
-    return AppColors.brandPurple;
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -575,7 +563,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Widget _buildNotificationCard(
       BuildContext context, Map<String, dynamic> notification,
       {required bool isNew}) {
-    final color = _parseColor(notification['color']?.toString());
     final icon = notification['icon'] is IconData
         ? notification['icon'] as IconData
         : _getIconFromString(notification['icon']?.toString());
@@ -648,14 +635,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   width: 48, // w-12
                   height: 48, // h-12
                   decoration: BoxDecoration(
-                    color: color.withOpacity(
-                        isNew ? 0.15 : 0.1), // color15 or opacity-60
+                    color: AppColors.primary
+                        .withOpacity(isNew ? 0.15 : 0.1), // brand tint
                     borderRadius: BorderRadius.circular(12), // rounded-xl
                   ),
                   child: Icon(
                     icon,
                     size: 24, // w-6 h-6
-                    color: isNew ? color : color.withOpacity(0.6),
+                    color: isNew
+                        ? AppColors.primary
+                        : AppColors.primary.withOpacity(0.6),
                   ),
                 ),
                 const SizedBox(width: 12), // gap-3

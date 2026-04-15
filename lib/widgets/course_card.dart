@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
 import '../core/design/app_colors.dart';
 import '../core/design/app_text_styles.dart';
-import '../core/design/app_radius.dart';
-import '../core/design/app_shadows.dart';
 
 /// Course Card Widget - Pixel-perfect match to React version
 /// Matches: components/screens/home-screen.tsx featured courses
 class CourseCard extends StatelessWidget {
   final String title;
-  final String instructor;
   final double rating;
   final int hours;
   final double price;
@@ -21,7 +18,6 @@ class CourseCard extends StatelessWidget {
   const CourseCard({
     super.key,
     required this.title,
-    required this.instructor,
     required this.rating,
     required this.hours,
     required this.price,
@@ -126,14 +122,6 @@ class CourseCard extends StatelessWidget {
                     ).copyWith(fontWeight: FontWeight.bold),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 8), // mb-2
-                  // Instructor - matches React: text-sm mb-3
-                  Text(
-                    instructor,
-                    style: AppTextStyles.bodySmall(
-                      color: AppColors.mutedForeground,
-                    ),
                   ),
                   const SizedBox(height: 12), // mb-3
                   // Rating and price - matches React: gap-3 text-xs
@@ -249,14 +237,6 @@ class CourseCard extends StatelessWidget {
                     ).copyWith(fontWeight: FontWeight.bold),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4), // mb-1
-                  // Instructor - matches React: text-xs mb-2
-                  Text(
-                    instructor,
-                    style: AppTextStyles.labelSmall(
-                      color: AppColors.mutedForeground,
-                    ),
                   ),
                   const SizedBox(height: 8), // mb-2
                   // Rating and price - matches React: gap-1 text-xs

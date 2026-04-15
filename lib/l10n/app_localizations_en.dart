@@ -594,7 +594,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get total => 'Total';
 
   @override
-  String get editProfile => 'Edit Profile';
+  String get editProfile => 'Student Profile';
 
   @override
   String get errorLoadingProfile => 'Error loading profile';
@@ -1503,4 +1503,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String studentsCount(int count) {
     return '$count students';
   }
+
+  @override
+  String get appExitNotificationTitle => 'See you soon!';
+
+  @override
+  String get appExitNotificationBody => 'Open A Plus anytime to keep learning.';
 }

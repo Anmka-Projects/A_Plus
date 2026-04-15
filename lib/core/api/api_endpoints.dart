@@ -2,12 +2,10 @@
 class ApiEndpoints {
   ApiEndpoints._();
 
-  static const String baseUrl =
-      'https://a-plus.anmka.com/api';
+  static const String baseUrl = 'https://a-plus.anmka.com/api';
 
   /// Base URL for images and media files
-  static const String imageBaseUrl =
-      'https://a-plus.anmka.com';
+  static const String imageBaseUrl = 'https://a-plus.anmka.com';
 
   /// Helper method to convert relative image path to full URL
   static String getImageUrl(String? imagePath) {
@@ -50,6 +48,7 @@ class ApiEndpoints {
   // Authentication
   static String get login => '$baseUrl/auth/login';
   static String get register => '$baseUrl/auth/register';
+  static String get fcmToken => '$baseUrl/auth/fcm-token';
 
   /// Academic structure for registration (faculty → section → grade).
   static String get registrationFaculties => '$baseUrl/registration/faculties';

@@ -22,9 +22,6 @@ class PremiumCourseCard extends StatelessWidget {
         ? (course['category']?['name'] ?? '')
         : (course['category'] ?? '');
     final title = course['title'] ?? '';
-    final instructorName = course['instructor'] is Map
-        ? (course['instructor']?['name'] ?? '')
-        : (course['instructor'] ?? '');
     final rating = course['rating'] ?? 0.0;
     final hours = course['duration_hours'] ?? course['hours'] ?? 0;
     final lessons = course['lessons_count'] ?? course['lessons'] ?? 0;
@@ -217,31 +214,6 @@ class PremiumCourseCard extends StatelessWidget {
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Instructor
-                  Row(
-                    children: [
-                      Container(
-                        width: 24,
-                        height: 24,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: AppColors.purple.withOpacity(0.1),
-                        ),
-                        child: const Icon(Icons.person,
-                            size: 14, color: AppColors.purple),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        instructorName.toString(),
-                        style: GoogleFonts.cairo(
-                          fontSize: 12,
-                          color: AppColors.mutedForeground,
-                        ),
-                      ),
-                    ],
                   ),
                   const SizedBox(height: 12),
 
