@@ -1,16 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../core/design/app_colors.dart';
-import '../../core/design/app_text_styles.dart';
-import '../../core/design/app_radius.dart';
 import '../../core/navigation/route_names.dart';
-import '../../widgets/bottom_nav.dart';
-import '../../widgets/course_card_courses.dart';
-import '../../widgets/subject_chip.dart';
 import '../../l10n/app_localizations.dart';
+import '../../models/medical_track.dart';
+import '../../widgets/bottom_nav.dart';
 
-/// Courses Screen - Pixel-perfect match to React version
-/// Matches: components/screens/courses-screen.tsx
 class CoursesScreen extends StatefulWidget {
   const CoursesScreen({super.key});
 
@@ -19,362 +15,241 @@ class CoursesScreen extends StatefulWidget {
 }
 
 class _CoursesScreenState extends State<CoursesScreen> {
-  String? _activeSubject;
-
-  List<Map<String, String>> get _subjects {
-    final l10n = AppLocalizations.of(context)!;
-    return [
-      {'icon': '📚', 'label': l10n.literature, 'key': 'literature'},
-      {'icon': '📐', 'label': l10n.math, 'key': 'math'},
-      {'icon': '🧬', 'label': l10n.biology, 'key': 'biology'},
-      {'icon': '⚛️', 'label': l10n.physics, 'key': 'physics'},
-      {'icon': '🧪', 'label': l10n.chemistry, 'key': 'chemistry'},
-    ];
-  }
-
-  void _handleCourseClick(Map<String, dynamic> courseData) {
-    final l10n = AppLocalizations.of(context)!;
-    final course = {
-      'id': 1,
-      'title': courseData['title'],
-      'category': courseData['category'],
-      'rating': 4.8,
-      'hours': 48,
-      'price': 0.0, // Default to free
-      'isFree': true,
-      'youtubeVideoId': 'AevtORdu4pc',
-      'banner': 'assets/images/motion-graphics-course-in-mumbai.png',
-      'lessons': [
-        {
-          'id': 1,
-          'title': l10n.introduction,
-          'duration': '2 ${l10n.minute} 18 ${l10n.minute}',
-          'completed': true,
-          'locked': false,
-          'youtubeVideoId': 'AevtORdu4pc',
-        },
-        {
-          'id': 2,
-          'title': l10n.whatIsDesign,
-          'duration': '18 ${l10n.minute} 46 ${l10n.minute}',
-          'completed': false,
-          'locked': false,
-          'youtubeVideoId': 'AevtORdu4pc',
-        },
-        {
-          'id': 3,
-          'title': l10n.howToCreateWireframe,
-          'duration': '20 ${l10n.minute} 58 ${l10n.minute}',
-          'completed': false,
-          'locked': false,
-          'youtubeVideoId': 'AevtORdu4pc',
-        },
-        {
-          'id': 4,
-          'title': l10n.yourFirstDesign,
-          'duration': '15 ${l10n.minute} 30 ${l10n.minute}',
-          'completed': false,
-          'locked': false,
-          'youtubeVideoId': 'AevtORdu4pc',
-        },
-      ],
-      'exam': {
-        'id': 1,
-        'title': l10n.exam,
-        'questions': [
-          {
-            'id': 1,
-            'question': l10n.question,
-            'options': ['${l10n.next} 1', '${l10n.next} 2', '${l10n.next} 3', '${l10n.next} 4'],
-            'correctAnswer': 0,
-          },
-          {
-            'id': 2,
-            'question': l10n.question,
-            'options': ['${l10n.next} 1', '${l10n.next} 2', '${l10n.next} 3', '${l10n.next} 4'],
-            'correctAnswer': 1,
-          },
-        ],
-      },
-    };
-    context.push(RouteNames.courseDetails, extra: course);
-  }
+  static const Color _titleTeal = Color(0xFF006677);
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
-      backgroundColor: AppColors.beige,
+      backgroundColor: const Color(0xFFF2F6F7),
+      appBar: _CoursesAppBar(title: l10n.courses),
       body: SafeArea(
         child: Stack(
           children: [
-            Container(
-              constraints: const BoxConstraints(maxWidth: 400),
-              margin: EdgeInsets.symmetric(
-                horizontal: MediaQuery.of(context).size.width > 400
-                    ? (MediaQuery.of(context).size.width - 400) / 2
-                    : 0,
-              ),
-              child: Column(
-                children: [
-                  // Orange header section - matches React: bg-[var(--orange)] pt-4 pb-8 px-4
-                  Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.orange, // NOT purple!
-                      borderRadius: BorderRadius.only(
-                        bottomLeft: Radius.circular(AppRadius.largeCard),
-                        bottomRight: Radius.circular(AppRadius.largeCard),
-                      ),
-                    ),
-                    padding: const EdgeInsets.only(
-                      top: 16, // pt-4
-                      bottom: 32, // pb-8
-                      left: 16, // px-4
-                      right: 16,
-                    ),
-                    constraints: const BoxConstraints(minHeight: 220),
-                    child: Stack(
-                      children: [
-                        // Decorative elements - matches React
-                        Positioned(
-                          top: 32, // top-8
-                          left: 32, // left-8
-                          child: Container(
-                            width: 8, // w-2
-                            height: 8, // h-2
-                            decoration: BoxDecoration(
-                              color: AppColors.whiteOverlay40, // bg-white/40
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          top: 80, // top-20
-                          right: 48, // right-12
-                          child: Text(
-                            '⭐',
-                            style: TextStyle(
-                              fontSize: 24, // text-2xl
-                              fontFamily: AppTextStyles.indigoFamily,
-                              color: AppColors.whiteOverlay20, // white/20
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          bottom: 80, // bottom-20
-                          left: 80, // left-20
-                          child: Text(
-                            '✦',
-                            style: TextStyle(
-                              fontSize: 20, // text-xl
-                              fontFamily: AppTextStyles.indigoFamily,
-                              color: AppColors.whiteOverlay20, // white/20
-                            ),
-                          ),
-                        ),
-
-                        // Content
-                        Column(
-                          children: [
-                            // Back button - matches React: w-10 h-10 bg-white/20 mb-6
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: GestureDetector(
-                                onTap: () => context.push(RouteNames.categories),
-                                child: Container(
-                                  width: 40, // w-10
-                                  height: 40, // h-10
-                                  decoration: BoxDecoration(
-                                    color: AppColors.whiteOverlay20, // bg-white/20
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.chevron_right,
-                                    color: Colors.white,
-                                    size: 20, // w-5 h-5
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 24), // mb-6
-
-                            // Title and badges
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    // Title - matches React: text-3xl font-bold mb-4
-                                    Text(
-                                      AppLocalizations.of(context)!.myCourses,
-                                      style: AppTextStyles.h1(color: Colors.white),
-                                    ),
-                                    const SizedBox(height: 16), // mb-4
-                                    // Badges - matches React: gap-2
-                                    Row(
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 16, // px-4
-                                            vertical: 8, // py-2
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: AppColors.dark, // bg-[var(--dark)]
-                                            borderRadius: BorderRadius.circular(999),
-                                          ),
-                                          child: Row(
-                                            children: [
-                                              const Icon(
-                                                Icons.menu_book,
-                                                size: 16, // w-4 h-4
-                                                color: Colors.white,
-                                              ),
-                                              const SizedBox(width: 8), // gap-2
-                                              Text(
-                                                AppLocalizations.of(context)!.subjects,
-                                                style: AppTextStyles.bodySmall(
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8), // gap-2
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 16, // px-4
-                                            vertical: 8, // py-2
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: AppColors.whiteOverlay20, // bg-white/20
-                                            borderRadius: BorderRadius.circular(999),
-                                          ),
-                                          child: Row(
-                                            children: [
-                                              const Icon(
-                                                Icons.menu_book,
-                                                size: 16, // w-4 h-4
-                                                color: Colors.white,
-                                              ),
-                                              const SizedBox(width: 8), // gap-2
-                                              Text(
-                                                AppLocalizations.of(context)!.lessonsCount(43),
-                                                style: AppTextStyles.bodySmall(
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-
-                                // Graduation cap - matches React: text-6xl transform -rotate-12
-                                Transform.rotate(
-                                  angle: -0.2, // -rotate-12
-                                  child: const Text(
-                                    '🎓',
-                                    style: TextStyle(
-                                      fontSize: 48, // text-6xl
-                                      fontFamily: AppTextStyles.indigoFamily,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Content - matches React: px-4 -mt-4
-                  Expanded(
-                    child: Transform.translate(
-                      offset: const Offset(0, -16), // -mt-4 = -16px
+            Positioned.fill(
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 430),
+                margin: EdgeInsets.symmetric(
+                  horizontal: MediaQuery.of(context).size.width > 430
+                      ? (MediaQuery.of(context).size.width - 430) / 2
+                      : 0,
+                ),
+                child: Column(
+                  children: [
+                    Expanded(
                       child: SingleChildScrollView(
-                        padding: const EdgeInsets.symmetric(horizontal: 16), // px-4
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Subject chips - matches React: gap-3 pb-4 my-6
-                            Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 24), // my-6
-                              child: SizedBox(
-                                height: 40,
-                                child: ListView.builder(
-                                  scrollDirection: Axis.horizontal,
-                                  itemCount: _subjects.length,
-                                  itemBuilder: (context, index) {
-                                    final subject = _subjects[index];
-                                    final isActive = _activeSubject == subject['key'];
-                                    return Padding(
-                                      padding: EdgeInsets.only(
-                                        left: index == 0 ? 0 : 12, // gap-3
-                                      ),
-                                      child: SubjectChip(
-                                        icon: subject['icon']!,
-                                        label: subject['label']!,
-                                        isActive: isActive,
-                                        onTap: () {
-                                          setState(() {
-                                            _activeSubject = subject['key'];
-                                          });
-                                        },
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                            ),
-
-                            // Course cards - matches React: space-y-4 mt-4
-                            Padding(
-                              padding: const EdgeInsets.only(top: 16), // mt-4
-                              child: Column(
-                                children: [
-                                  CourseCardCourses(
-                                    category: AppLocalizations.of(context)!.practicalEngineering,
-                                    title: AppLocalizations.of(context)!.creativePlaneShapes,
-                                    participants: 43,
-                                    variant: 'dark',
-                                    icon: '📐',
-                                    onTap: () => _handleCourseClick({
-                                      'category': AppLocalizations.of(context)!.practicalEngineering,
-                                      'title': AppLocalizations.of(context)!.creativePlaneShapes,
-                                    }),
-                                  ),
-                                  const SizedBox(height: 16), // space-y-4
-                                  CourseCardCourses(
-                                    category: AppLocalizations.of(context)!.category,
-                                    title: AppLocalizations.of(context)!.cellularBiologyDiscoveries,
-                                    participants: 12,
-                                    variant: 'light',
-                                    icon: '🔬',
-                                    onTap: () => _handleCourseClick({
-                                      'category': AppLocalizations.of(context)!.category,
-                                      'title': AppLocalizations.of(context)!.cellularBiologyDiscoveries,
-                                    }),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 120), // Space for bottom nav
+                            _buildTracksSection(l10n),
+                            const SizedBox(height: 120),
                           ],
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-
-            // Bottom Navigation
-            const BottomNav(activeTab: ''),
+            const BottomNav(activeTab: 'courses'),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTracksSection(AppLocalizations l10n) {
+    const trackImages = <String>[
+      'assets/images/WhatsApp Image 2026-04-14 at 5.03.54 PM.jpeg',
+      'assets/images/WhatsApp Image 2026-04-14 at 5.03.55 PM.jpeg',
+      'assets/images/WhatsApp Image 2026-04-14 at 5.03.55 PM (1).jpeg',
+      'assets/images/WhatsApp Image 2026-04-14 at 5.03.56 PM.jpeg',
+      'assets/images/WhatsApp Image 2026-04-14 at 5.03.56 PM (1).jpeg',
+      'assets/images/WhatsApp Image 2026-04-14 at 5.03.57 PM.jpeg',
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(
+              Icons.monitor_heart_outlined,
+              size: 25,
+              color: _titleTeal,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                l10n.homeCoursesSectionTitle,
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  color: _titleTeal,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: 3,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: 0.9,
+          children: List.generate(MedicalTrack.values.length, (i) {
+            final track = MedicalTrack.values[i];
+            final label = _trackLabel(l10n, track);
+            return _buildTrackTile(
+              imageAsset: trackImages[i],
+              label: label,
+              onTap: () => context.push(
+                RouteNames.allCourses,
+                extra: <String, dynamic>{
+                  'categorySlug': track.slug,
+                  'screenTitle': label,
+                },
+              ),
+            );
+          }),
+        ),
+      ],
+    );
+  }
+
+  String _trackLabel(AppLocalizations l10n, MedicalTrack track) {
+    switch (track) {
+      case MedicalTrack.doctor:
+        return l10n.trackDoctor;
+      case MedicalTrack.dentist:
+        return l10n.trackDentist;
+      case MedicalTrack.physiotherapist:
+        return l10n.trackPhysiotherapist;
+      case MedicalTrack.pharmacist:
+        return l10n.trackPharmacist;
+      case MedicalTrack.nurse:
+        return l10n.trackNurse;
+      case MedicalTrack.scientist:
+        return l10n.trackScientist;
+    }
+  }
+
+  Widget _buildTrackTile({
+    required String imageAsset,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.06),
+                blurRadius: 14,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.fromLTRB(8, 10, 8, 10),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 54,
+                height: 54,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0F7F8),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: Image.asset(
+                  imageAsset,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => const Icon(
+                    Icons.medical_services_outlined,
+                    size: 28,
+                    color: _titleTeal,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.mutedForeground,
+                  height: 1.2,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CoursesAppBar extends StatelessWidget implements PreferredSizeWidget {
+  final String title;
+
+  const _CoursesAppBar({required this.title});
+
+  static const double _contentHeight = 88;
+  static const Color _gradientTop = Color(0xFF23C5C0);
+  static const Color _gradientBottom = Color(0xFF0A6D6E);
+
+  @override
+  Size get preferredSize => const Size.fromHeight(_contentHeight);
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      elevation: 0,
+      color: Colors.transparent,
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [_gradientTop, _gradientBottom],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: _gradientBottom.withValues(alpha: 0.35),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          bottom: false,
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                title,
+                style: GoogleFonts.cairo(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );

@@ -347,7 +347,7 @@ abstract class AppLocalizations {
   /// Home books row title
   ///
   /// In en, this message translates to:
-  /// **'Department Heads\' Books'**
+  /// **'Books'**
   String get homeDeptHeadsBooks;
 
   /// Home assignments row title

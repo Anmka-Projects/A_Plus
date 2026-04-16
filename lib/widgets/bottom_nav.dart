@@ -5,7 +5,7 @@ import '../core/design/app_colors.dart';
 import '../core/navigation/route_names.dart';
 import '../core/localization/localization_helper.dart';
 
-/// Bottom navigation — teal gradient bar (home, notifications, cart, profile).
+/// Bottom navigation — teal gradient bar (home, notifications, cart, courses).
 class BottomNav extends StatelessWidget {
   final String activeTab;
 
@@ -74,12 +74,12 @@ class BottomNav extends StatelessWidget {
                   onTap: () => context.go(RouteNames.allCourses),
                 ),
                 _NavItem(
-                  icon: Icons.person_outline_rounded,
-                  activeIcon: Icons.person_rounded,
-                  label: context.l10n.profile,
-                  id: 'dashboard',
+                  icon: Icons.menu_book_outlined,
+                  activeIcon: Icons.menu_book_rounded,
+                  label: context.l10n.courses,
+                  id: 'courses',
                   activeTab: activeTab,
-                  onTap: () => context.go(RouteNames.dashboard),
+                  onTap: () => context.go(RouteNames.courses),
                 ),
               ],
             ),

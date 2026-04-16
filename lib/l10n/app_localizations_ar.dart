@@ -135,7 +135,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get homeCoursesSectionTitle => 'الكورسات ..';
 
   @override
-  String get homeDeptHeadsBooks => 'كتب رؤساء الأقسام';
+  String get homeDeptHeadsBooks => 'الكتب';
 
   @override
   String get homeQuizzesAssignments => 'الاختبارات والواجبات';

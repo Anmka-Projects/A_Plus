@@ -32,6 +32,12 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   static const Color _homeTitleTeal = Color(0xFF006677);
 
+  double _homeTextScale(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    final scale = width / 390;
+    return scale.clamp(0.84, 1.08);
+  }
+
   late AnimationController _bannerController;
   late Animation<double> _bannerAnimation;
 
@@ -342,72 +348,75 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     final statusBarHeight = MediaQuery.of(context).padding.top;
     final l10n = AppLocalizations.of(context)!;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF2F6F7),
-      extendBodyBehindAppBar: false,
-      appBar: _HomeAppBar(
-        statusBarHeight: statusBarHeight,
-        l10n: l10n,
-        userProfile: _userProfile,
-        onProfileTap: () => context.push(
-          RouteNames.editProfile,
-          extra: _userProfile,
-        ),
-        onLogoutTap: _handleLogout,
+    return MediaQuery(
+      data: MediaQuery.of(context).copyWith(
+        textScaler: TextScaler.linear(_homeTextScale(context)),
       ),
-      body: Stack(
-        children: [
-          Container(
-            constraints: const BoxConstraints(maxWidth: 430),
-            margin: EdgeInsets.symmetric(
-              horizontal: MediaQuery.of(context).size.width > 430
-                  ? (MediaQuery.of(context).size.width - 430) / 2
-                  : 0,
-            ),
-            child: Column(
-              children: [
-                Expanded(
-                  child: RefreshIndicator(
-                    onRefresh: _loadHomeData,
-                    child: _errorMessage != null
-                        ? ListView(
-                            physics: const AlwaysScrollableScrollPhysics(
-                              parent: BouncingScrollPhysics(),
-                            ),
-                            children: [
-                              SizedBox(
-                                height:
-                                    MediaQuery.of(context).size.height * 0.65,
-                                child: _buildErrorView(),
-                              ),
-                            ],
-                          )
-                        : SingleChildScrollView(
-                            physics: const AlwaysScrollableScrollPhysics(
-                              parent: BouncingScrollPhysics(),
-                            ),
-                            padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                if (_isLoading) ...[
-                                  _buildHomeMainSkeleton(),
-                                ] else ...[
-                                  _buildCoursesTrackSection(l10n),
-                                  const SizedBox(height: 28),
-                                  _buildBooksAssignmentsSection(l10n),
-                                ],
-                                const SizedBox(height: 140),
-                              ],
-                            ),
-                          ),
-                  ),
-                ),
-              ],
-            ),
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF2F6F7),
+        extendBodyBehindAppBar: false,
+        appBar: _HomeAppBar(
+          statusBarHeight: statusBarHeight,
+          l10n: l10n,
+          userProfile: _userProfile,
+          onProfileTap: () => context.push(
+            RouteNames.editProfile,
+            extra: _userProfile,
           ),
-          const BottomNav(activeTab: 'home'),
-        ],
+          onLogoutTap: _handleLogout,
+        ),
+        body: Stack(
+          children: [
+            Container(
+              constraints: const BoxConstraints(maxWidth: 430),
+              margin: EdgeInsets.symmetric(
+                horizontal: MediaQuery.of(context).size.width > 430
+                    ? (MediaQuery.of(context).size.width - 430) / 2
+                    : 0,
+              ),
+              child: Column(
+                children: [
+                  Expanded(
+                    child: RefreshIndicator(
+                      onRefresh: _loadHomeData,
+                      child: _errorMessage != null
+                          ? ListView(
+                              physics: const AlwaysScrollableScrollPhysics(
+                                parent: BouncingScrollPhysics(),
+                              ),
+                              children: [
+                                SizedBox(
+                                  height:
+                                      MediaQuery.of(context).size.height * 0.65,
+                                  child: _buildErrorView(),
+                                ),
+                              ],
+                            )
+                          : SingleChildScrollView(
+                              physics: const AlwaysScrollableScrollPhysics(
+                                parent: BouncingScrollPhysics(),
+                              ),
+                              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (_isLoading) ...[
+                                    _buildHomeMainSkeleton(),
+                                  ] else ...[
+                                    _buildBooksAssignmentsSection(l10n),
+                                  ],
+                                  const SizedBox(height: 140),
+                                ],
+                              ),
+                            ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const BottomNav(activeTab: 'home'),
+          ],
+        ),
       ),
     );
   }
