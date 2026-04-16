@@ -202,25 +202,55 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
 
               // Courses Grid
               Expanded(
-                child: _isLoading
-                    ? _buildCoursesSkeleton()
-                    : _courses.isEmpty
-                        ? _buildEmptyState()
-                        : GridView.builder(
-                            padding: const EdgeInsets.fromLTRB(20, 20, 20, 140),
-                            physics: const BouncingScrollPhysics(),
-                            gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              crossAxisSpacing: 14,
-                              mainAxisSpacing: 14,
-                              childAspectRatio: 0.63,
-                            ),
-                            itemCount: _courses.length,
-                            itemBuilder: (context, index) {
-                              return _buildCourseCard(_courses[index]);
-                            },
+                child: RefreshIndicator(
+                  onRefresh: _loadCourses,
+                  child: _isLoading
+                      ? ListView(
+                          physics: const AlwaysScrollableScrollPhysics(
+                            parent: BouncingScrollPhysics(),
                           ),
+                          padding: const EdgeInsets.fromLTRB(20, 20, 20, 140),
+                          children: [
+                            SizedBox(
+                              height: MediaQuery.of(context).size.height * 0.55,
+                              child: _buildCoursesSkeleton(),
+                            ),
+                          ],
+                        )
+                      : _courses.isEmpty
+                          ? ListView(
+                              physics: const AlwaysScrollableScrollPhysics(
+                                parent: BouncingScrollPhysics(),
+                              ),
+                              padding:
+                                  const EdgeInsets.fromLTRB(20, 20, 20, 140),
+                              children: [
+                                SizedBox(
+                                  height:
+                                      MediaQuery.of(context).size.height * 0.5,
+                                  child: _buildEmptyState(),
+                                ),
+                              ],
+                            )
+                          : GridView.builder(
+                              padding:
+                                  const EdgeInsets.fromLTRB(20, 20, 20, 140),
+                              physics: const AlwaysScrollableScrollPhysics(
+                                parent: BouncingScrollPhysics(),
+                              ),
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                crossAxisSpacing: 14,
+                                mainAxisSpacing: 14,
+                                childAspectRatio: 0.63,
+                              ),
+                              itemCount: _courses.length,
+                              itemBuilder: (context, index) {
+                                return _buildCourseCard(_courses[index]);
+                              },
+                            ),
+                ),
               ),
             ],
           ),

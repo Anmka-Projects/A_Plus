@@ -16,6 +16,7 @@ import '../../services/home_service.dart';
 import '../../services/courses_service.dart';
 import '../../services/profile_service.dart';
 import '../../services/teachers_service.dart';
+import '../../services/auth_service.dart';
 import '../../l10n/app_localizations.dart';
 import '../../data/sample_teachers.dart';
 import '../../models/medical_track.dart';
@@ -267,6 +268,68 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
+  Future<void> _handleLogout() async {
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: Text(
+          AppLocalizations.of(context)!.logout,
+          style: GoogleFonts.cairo(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Text(
+          AppLocalizations.of(context)!.confirmLogout,
+          style: GoogleFonts.cairo(fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(
+              AppLocalizations.of(context)!.cancel,
+              style: GoogleFonts.cairo(color: AppColors.mutedForeground),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(
+              AppLocalizations.of(context)!.logout,
+              style: GoogleFonts.cairo(
+                color: Colors.red,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldLogout != true || !mounted) return;
+
+    try {
+      await AuthService.instance.logout();
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('hasLaunched');
+      if (mounted) context.go(RouteNames.splash);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!
+                .errorLoggingOut(e.toString().replaceFirst('Exception: ', '')),
+            style: GoogleFonts.cairo(),
+          ),
+          backgroundColor: AppColors.destructive,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     SystemChrome.setSystemUIOverlayStyle(
@@ -290,6 +353,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           RouteNames.editProfile,
           extra: _userProfile,
         ),
+        onLogoutTap: _handleLogout,
       ),
       body: Stack(
         children: [
@@ -303,25 +367,41 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             child: Column(
               children: [
                 Expanded(
-                  child: _errorMessage != null
-                      ? _buildErrorView()
-                      : SingleChildScrollView(
-                          physics: const BouncingScrollPhysics(),
-                          padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                  child: RefreshIndicator(
+                    onRefresh: _loadHomeData,
+                    child: _errorMessage != null
+                        ? ListView(
+                            physics: const AlwaysScrollableScrollPhysics(
+                              parent: BouncingScrollPhysics(),
+                            ),
                             children: [
-                              if (_isLoading) ...[
-                                _buildHomeMainSkeleton(),
-                              ] else ...[
-                                _buildCoursesTrackSection(l10n),
-                                const SizedBox(height: 28),
-                                _buildBooksAssignmentsSection(l10n),
-                              ],
-                              const SizedBox(height: 140),
+                              SizedBox(
+                                height:
+                                    MediaQuery.of(context).size.height * 0.65,
+                                child: _buildErrorView(),
+                              ),
                             ],
+                          )
+                        : SingleChildScrollView(
+                            physics: const AlwaysScrollableScrollPhysics(
+                              parent: BouncingScrollPhysics(),
+                            ),
+                            padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (_isLoading) ...[
+                                  _buildHomeMainSkeleton(),
+                                ] else ...[
+                                  _buildCoursesTrackSection(l10n),
+                                  const SizedBox(height: 28),
+                                  _buildBooksAssignmentsSection(l10n),
+                                ],
+                                const SizedBox(height: 140),
+                              ],
+                            ),
                           ),
-                        ),
+                  ),
                 ),
               ],
             ),
@@ -395,10 +475,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     const trackImages = <String>[
       'assets/images/WhatsApp Image 2026-04-14 at 5.03.54 PM.jpeg',
       'assets/images/WhatsApp Image 2026-04-14 at 5.03.55 PM.jpeg',
+      'assets/images/WhatsApp Image 2026-04-14 at 5.03.55 PM (1).jpeg',
       'assets/images/WhatsApp Image 2026-04-14 at 5.03.56 PM.jpeg',
+      'assets/images/WhatsApp Image 2026-04-14 at 5.03.56 PM (1).jpeg',
       'assets/images/WhatsApp Image 2026-04-14 at 5.03.57 PM.jpeg',
-      'assets/images/WhatsApp Image 2026-04-14 at 5.03.58 PM.jpeg',
-      'assets/images/WhatsApp Image 2026-04-14 at 5.04.03 PM.jpeg',
     ];
 
     return Column(
@@ -1954,12 +2034,14 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
   final AppLocalizations l10n;
   final Map<String, dynamic>? userProfile;
   final VoidCallback onProfileTap;
+  final VoidCallback onLogoutTap;
 
   const _HomeAppBar({
     required this.statusBarHeight,
     required this.l10n,
     required this.userProfile,
     required this.onProfileTap,
+    required this.onLogoutTap,
   });
 
   static const double _contentHeight = 140;
@@ -2084,32 +2166,82 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
                       ],
                     ),
                   ),
-                  Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: onProfileTap,
-                      borderRadius: BorderRadius.circular(12),
-                      child: Tooltip(
-                        message: l10n.profile,
-                        child: Container(
-                          width: 42,
-                          height: 42,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.35),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: onLogoutTap,
+                          borderRadius: BorderRadius.circular(12),
+                          child: Tooltip(
+                            message: l10n.logout,
+                            child: Container(
+                              width: 86,
+                              height: 42,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: Colors.red[50],
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: Colors.red.withOpacity(0.2),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.logout_rounded,
+                                    color: Colors.red[600],
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    l10n.logout,
+                                    style: GoogleFonts.cairo(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.red[600],
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                          child: Icon(
-                            Icons.contact_page_outlined,
-                            color: Colors.white.withValues(alpha: 0.95),
-                            size: 22,
                           ),
                         ),
                       ),
-                    ),
+                      const SizedBox(width: 8),
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: onProfileTap,
+                          borderRadius: BorderRadius.circular(12),
+                          child: Tooltip(
+                            message: l10n.profile,
+                            child: Container(
+                              width: 42,
+                              height: 42,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.35),
+                                ),
+                              ),
+                              child: Icon(
+                                Icons.contact_page_outlined,
+                                color: Colors.white.withValues(alpha: 0.95),
+                                size: 22,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

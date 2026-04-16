@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../core/config/theme_provider.dart';
 import '../../core/design/app_colors.dart';
 import '../../core/navigation/route_names.dart';
 import '../../services/auth_service.dart';
@@ -28,6 +27,19 @@ class _LoginScreenState extends State<LoginScreen> {
 
   final _codeController = TextEditingController();
   bool _isLoading = false;
+
+  bool _shouldRedirectToRegister(String message) {
+    final normalized = message.toLowerCase();
+    return normalized.contains('activate') ||
+        normalized.contains('activation') ||
+        normalized.contains('verify') ||
+        normalized.contains('verification') ||
+        normalized.contains('not activated') ||
+        normalized.contains('كود الطالب غير صحيح') ||
+        normalized.contains('غير مفعل') ||
+        normalized.contains('تفعيل') ||
+        normalized.contains('تحقق');
+  }
 
   Future<void> _handleLogin() async {
     final l10n = AppLocalizations.of(context)!;
@@ -67,11 +79,17 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } catch (e) {
       if (!mounted) return;
+      final errorMessage = e.toString().replaceFirst('Exception: ', '');
+
+      if (_shouldRedirectToRegister(errorMessage)) {
+        context.go(RouteNames.register);
+        return;
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            e.toString().replaceFirst('Exception: ', ''),
+            errorMessage,
             style: GoogleFonts.cairo(),
           ),
           backgroundColor: AppColors.destructive,
@@ -83,54 +101,6 @@ class _LoginScreenState extends State<LoginScreen> {
         setState(() => _isLoading = false);
       }
     }
-  }
-
-  void _showLanguagePicker() {
-    final l10n = AppLocalizations.of(context)!;
-    showModalBottomSheet<void>(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text(
-                    l10n.chooseLanguage,
-                    style: GoogleFonts.cairo(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.foreground,
-                    ),
-                  ),
-                ),
-                ListTile(
-                  title: Text('العربية', style: GoogleFonts.cairo()),
-                  onTap: () {
-                    ThemeProvider.instance.setLanguage(const Locale('ar'));
-                    Navigator.of(ctx).pop();
-                  },
-                ),
-                ListTile(
-                  title: Text('English', style: GoogleFonts.cairo()),
-                  onTap: () {
-                    ThemeProvider.instance.setLanguage(const Locale('en'));
-                    Navigator.of(ctx).pop();
-                  },
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
   }
 
   @override
@@ -148,15 +118,13 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
 
-    return ListenableBuilder(
-      listenable: ThemeProvider.instance,
-      builder: (context, _) => Localizations.override(
-        context: context,
-        locale: ThemeProvider.instance.locale,
-        child: Builder(
-          builder: (context) {
-            final l10n = AppLocalizations.of(context)!;
-            return Scaffold(
+    return Localizations.override(
+      context: context,
+      locale: const Locale('ar'),
+      child: Builder(
+        builder: (context) {
+          final l10n = AppLocalizations.of(context)!;
+          return Scaffold(
             backgroundColor: AppColors.pureWhite,
             body: Column(
               children: [
@@ -267,37 +235,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                           ),
                                         )
                                       : Text(
-                                          l10n.loginLogIn,
+                                          'أدخل الكود',
                                           style: GoogleFonts.cairo(
                                             fontSize: 16,
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
-                                ),
-                              ),
-                              const SizedBox(height: 14),
-                              SizedBox(
-                                width: double.infinity,
-                                height: 56,
-                                child: FilledButton(
-                                  onPressed: _isLoading
-                                      ? null
-                                      : () => context.go(RouteNames.register),
-                                  style: FilledButton.styleFrom(
-                                    backgroundColor: _darkTeal,
-                                    foregroundColor: AppColors.pureWhite,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(14),
-                                    ),
-                                    elevation: 0,
-                                  ),
-                                  child: Text(
-                                    l10n.codeActivation,
-                                    style: GoogleFonts.cairo(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
                                 ),
                               ),
                             ],
@@ -313,9 +256,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ],
             ),
-            );
-          },
-        ),
+          );
+        },
       ),
     );
   }
@@ -424,62 +366,33 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildFooter(AppLocalizations l10n) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        InkWell(
-          onTap: () => context.push(RouteNames.supportAndHelp),
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.all(8),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.support_agent_rounded,
-                  size: 28,
+    return Center(
+      child: InkWell(
+        onTap: () => context.push(RouteNames.supportAndHelp),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.support_agent_rounded,
+                size: 28,
+                color: _darkTeal,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                l10n.contactUs,
+                style: GoogleFonts.cairo(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
                   color: _darkTeal,
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  l10n.contactUs,
-                  style: GoogleFonts.cairo(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: _darkTeal,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
-        InkWell(
-          onTap: _showLanguagePicker,
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.all(8),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.translate_rounded,
-                  size: 28,
-                  color: _darkTeal,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  l10n.chooseLanguage,
-                  style: GoogleFonts.cairo(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: _darkTeal,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
+      ),
     );
   }
 }

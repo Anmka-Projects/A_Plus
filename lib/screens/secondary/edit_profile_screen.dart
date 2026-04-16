@@ -66,13 +66,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     return s;
   }
 
-  String _languageLabel(AppLocalizations l10n) {
-    final code = _str('language').toLowerCase();
-    if (code == 'en') return l10n.english;
-    if (code == 'ar' || code.isEmpty) return l10n.arabic;
-    return code;
-  }
-
   String _extractReadable(dynamic raw) {
     if (raw == null) return '';
     if (raw is String) return raw.trim();
@@ -192,6 +185,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     return '';
   }
 
+  String _studentCode() {
+    return _valueFromProfile([
+      'code',
+      'student_code',
+      'studentCode',
+      'registration_code',
+      'registrationCode',
+    ]);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -273,9 +276,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ),
                   const SizedBox(height: 16),
                   _readOnlyField(
-                    label: l10n.language,
-                    value: _languageLabel(l10n),
-                    icon: Icons.language_rounded,
+                    label: isArabic ? 'الكود' : 'Code',
+                    value: _studentCode(),
+                    icon: Icons.badge_outlined,
                   ),
                   const SizedBox(height: 32),
                   Container(

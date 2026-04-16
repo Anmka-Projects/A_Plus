@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../core/config/theme_provider.dart';
 import '../../core/design/app_colors.dart';
 import '../../core/navigation/route_names.dart';
 import '../../services/academic_structure_service.dart';
@@ -25,14 +23,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   static const Color _fieldFill = Color(0xFFD8D8D8);
 
   final _formKey = GlobalKey<FormState>();
-  final _nameFirstController = TextEditingController();
-  final _nameFatherController = TextEditingController();
-  final _nameGrandfatherController = TextEditingController();
-  final _nameFamilyController = TextEditingController();
+  final _fullNameController = TextEditingController();
   final _nationalIdController = TextEditingController();
   final _codeController = TextEditingController();
   final _phoneController = TextEditingController();
-  String? _phoneE164;
   bool _isLoading = false;
 
   List<Map<String, dynamic>> _faculties = [];
@@ -121,6 +115,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   String? _entityId(Map<String, dynamic>? map) => map?['id']?.toString();
 
+  String? _validateQuadName(String? value, AppLocalizations l10n) {
+    final normalized = (value ?? '').trim().replaceAll(RegExp(r'\s+'), ' ');
+    if (normalized.isEmpty) return l10n.fieldRequired;
+
+    final parts = normalized.split(' ');
+    if (parts.length != 4) {
+      return 'الاسم يجب أن يكون رباعي';
+    }
+
+    return null;
+  }
+
   Future<void> _handleRegister() async {
     final l10n = AppLocalizations.of(context)!;
 
@@ -161,16 +167,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
       setState(() => _isLoading = true);
 
       try {
-        final phoneE164 = (_phoneE164 ?? '').trim();
-
         final authResponse = await AuthService.instance.register(
-          nameFirst: _nameFirstController.text.trim(),
-          nameFather: _nameFatherController.text.trim(),
-          nameGrandfather: _nameGrandfatherController.text.trim(),
-          nameFamily: _nameFamilyController.text.trim(),
+          fullName: _fullNameController.text.trim(),
           nationalId: _nationalIdController.text.trim(),
           code: _codeController.text.trim(),
-          phone: phoneE164,
+          phone: _phoneController.text.trim(),
           facultyId: _entityId(_selectedFaculty)!,
           sectionId: _entityId(_selectedSection)!,
           gradeId: _entityId(_selectedGrade)!,
@@ -212,62 +213,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   void dispose() {
-    _nameFirstController.dispose();
-    _nameFatherController.dispose();
-    _nameGrandfatherController.dispose();
-    _nameFamilyController.dispose();
+    _fullNameController.dispose();
     _nationalIdController.dispose();
     _codeController.dispose();
     _phoneController.dispose();
     super.dispose();
-  }
-
-  void _showLanguagePicker() {
-    final l10n = AppLocalizations.of(context)!;
-    showModalBottomSheet<void>(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text(
-                    l10n.chooseLanguage,
-                    style: GoogleFonts.cairo(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.foreground,
-                    ),
-                  ),
-                ),
-                ListTile(
-                  title: Text('العربية', style: GoogleFonts.cairo()),
-                  onTap: () {
-                    ThemeProvider.instance.setLanguage(const Locale('ar'));
-                    Navigator.of(ctx).pop();
-                  },
-                ),
-                ListTile(
-                  title: Text('English', style: GoogleFonts.cairo()),
-                  onTap: () {
-                    ThemeProvider.instance.setLanguage(const Locale('en'));
-                    Navigator.of(ctx).pop();
-                  },
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
   }
 
   @override
@@ -279,15 +229,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
     );
 
-    return ListenableBuilder(
-      listenable: ThemeProvider.instance,
-      builder: (context, _) => Localizations.override(
-        context: context,
-        locale: ThemeProvider.instance.locale,
-        child: Builder(
-          builder: (context) {
-            final l10n = AppLocalizations.of(context)!;
-            return Scaffold(
+    return Localizations.override(
+      context: context,
+      locale: const Locale('ar'),
+      child: Builder(
+        builder: (context) {
+          final l10n = AppLocalizations.of(context)!;
+          return Scaffold(
             backgroundColor: AppColors.beige,
             body: Column(
               children: [
@@ -310,7 +258,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             children: [
                               _buildLabel(l10n.quadNameTitle),
                               const SizedBox(height: 8),
-                              _buildQuadNameRow(l10n),
+                              _buildGrayTextField(
+                                context: context,
+                                controller: _fullNameController,
+                                hint: l10n.quadNameTitle,
+                                icon: Icons.person_outline_rounded,
+                                validator: (value) =>
+                                    _validateQuadName(value, l10n),
+                              ),
                               const SizedBox(height: 16),
                               _buildLabel(l10n.phone),
                               const SizedBox(height: 8),
@@ -395,9 +350,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ],
             ),
-            );
-          },
-        ),
+          );
+        },
       ),
     );
   }
@@ -492,164 +446,49 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Widget _buildQuadNameRow(AppLocalizations l10n) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: _buildNamePart(
-            label: l10n.namePartFirst,
-            controller: _nameFirstController,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _buildNamePart(
-            label: l10n.namePartFather,
-            controller: _nameFatherController,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _buildNamePart(
-            label: l10n.namePartGrandfather,
-            controller: _nameGrandfatherController,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _buildNamePart(
-            label: l10n.namePartFamily,
-            controller: _nameFamilyController,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildNamePart({
-    required String label,
-    required TextEditingController controller,
-  }) {
-    final l10n = AppLocalizations.of(context)!;
+  Widget _buildPhoneField(BuildContext context, AppLocalizations l10n) {
     return TextFormField(
-      controller: controller,
-      textAlign: TextAlign.center,
-      style: GoogleFonts.cairo(fontSize: 14, fontWeight: FontWeight.w600),
+      controller: _phoneController,
+      keyboardType: TextInputType.phone,
+      inputFormatters: [
+        FilteringTextInputFormatter.digitsOnly,
+        LengthLimitingTextInputFormatter(15),
+      ],
+      style: GoogleFonts.cairo(fontSize: 15),
       decoration: InputDecoration(
-        hintText: label,
-        hintStyle: GoogleFonts.cairo(
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-          color: AppColors.mutedForeground,
-        ),
         filled: true,
         fillColor: _fieldFill,
-        isDense: true,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 12),
+        hintText: l10n.phone,
+        hintStyle:
+            GoogleFonts.cairo(color: AppColors.mutedForeground, fontSize: 14),
+        prefixIcon: const Icon(
+          Icons.phone_outlined,
+          color: AppColors.purple,
+          size: 22,
+        ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: AppColors.primary, width: 2),
         ),
+        contentPadding:
+            const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
       ),
-      validator: (v) {
-        if (v == null || v.trim().isEmpty) return l10n.fieldRequired;
+      validator: (value) {
+        final digitsOnly = (value ?? '').replaceAll(RegExp(r'[^0-9]'), '');
+        if (digitsOnly.isEmpty) return l10n.fieldRequired;
+        if (digitsOnly.length < 6 || digitsOnly.length > 15) {
+          return l10n.invalidPhone;
+        }
         return null;
       },
-    );
-  }
-
-  Widget _buildPhoneField(BuildContext context, AppLocalizations l10n) {
-    return Container(
-      decoration: BoxDecoration(
-        color: _fieldFill,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.blackOverlay20,
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: IntlPhoneField(
-        controller: _phoneController,
-        initialCountryCode: 'EG',
-        disableLengthCheck: true,
-        showDropdownIcon: true,
-        dropdownIconPosition: IconPosition.trailing,
-        dropdownIcon: Icon(
-          Icons.keyboard_arrow_down_rounded,
-          size: 20,
-          color: Theme.of(context).colorScheme.secondary,
-        ),
-        flagsButtonPadding:
-            const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        flagsButtonMargin:
-            const EdgeInsets.only(left: 10, top: 10, bottom: 10, right: 6),
-        dropdownTextStyle: GoogleFonts.cairo(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          color: AppColors.foreground,
-        ),
-        style: GoogleFonts.cairo(fontSize: 15),
-        dropdownDecoration: BoxDecoration(
-          color: AppColors.pureWhite,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: Theme.of(context).colorScheme.secondary,
-            width: 1,
-          ),
-        ),
-        decoration: InputDecoration(
-          filled: true,
-          fillColor: _fieldFill,
-          prefixIcon: const Icon(
-            Icons.phone_outlined,
-            color: AppColors.purple,
-            size: 22,
-          ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide.none,
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide.none,
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: AppColors.primary, width: 2),
-          ),
-          contentPadding:
-              const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-        ),
-        validator: (phone) {
-          final digitsOnly =
-              (phone?.number ?? '').replaceAll(RegExp(r'[^0-9]'), '');
-          if (digitsOnly.isEmpty) return l10n.fieldRequired;
-          if (digitsOnly.length < 6 || digitsOnly.length > 15) {
-            return l10n.invalidPhone;
-          }
-          return null;
-        },
-        onChanged: (phone) {
-          _phoneE164 = phone.completeNumber;
-        },
-        onCountryChanged: (country) {
-          final digitsOnly =
-              _phoneController.text.replaceAll(RegExp(r'[^0-9]'), '');
-          _phoneE164 = '+${country.dialCode}$digitsOnly';
-        },
-      ),
     );
   }
 
@@ -705,6 +544,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     required String hint,
     required IconData icon,
     TextInputType? keyboardType,
+    String? Function(String?)? validator,
   }) {
     final l10n = AppLocalizations.of(context)!;
     return TextFormField(
@@ -733,12 +573,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
         contentPadding:
             const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
       ),
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return l10n.fieldRequired;
-        }
-        return null;
-      },
+      validator: validator ??
+          (value) {
+            if (value == null || value.isEmpty) {
+              return l10n.fieldRequired;
+            }
+            return null;
+          },
     );
   }
 
@@ -1010,62 +851,33 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Widget _buildFooter(AppLocalizations l10n) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        InkWell(
-          onTap: () => context.push(RouteNames.supportAndHelp),
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.all(8),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.support_agent_rounded,
-                  size: 28,
+    return Center(
+      child: InkWell(
+        onTap: () => context.push(RouteNames.supportAndHelp),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.support_agent_rounded,
+                size: 28,
+                color: _headerNavy,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                l10n.contactUs,
+                style: GoogleFonts.cairo(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
                   color: _headerNavy,
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  l10n.contactUs,
-                  style: GoogleFonts.cairo(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: _headerNavy,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
-        InkWell(
-          onTap: _showLanguagePicker,
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.all(8),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.translate_rounded,
-                  size: 28,
-                  color: _headerNavy,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  l10n.chooseLanguage,
-                  style: GoogleFonts.cairo(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: _headerNavy,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
+      ),
     );
   }
 }

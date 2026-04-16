@@ -153,10 +153,7 @@ class AuthService {
 
   /// Register student: quad name, national ID, code, phone, faculty → section → grade, device binding.
   Future<AuthResponse> register({
-    required String nameFirst,
-    required String nameFather,
-    required String nameGrandfather,
-    required String nameFamily,
+    required String fullName,
     required String nationalId,
     required String code,
     required String phone,
@@ -165,11 +162,7 @@ class AuthService {
     required String gradeId,
   }) async {
     try {
-      final f = nameFirst.trim();
-      final fa = nameFather.trim();
-      final g = nameGrandfather.trim();
-      final fam = nameFamily.trim();
-      final fullName = '$f $fa $g $fam'.trim();
+      final normalizedFullName = fullName.trim();
       String? currentFcmToken = FirebaseNotification.fcmToken;
       if (currentFcmToken == null || currentFcmToken.isEmpty) {
         try {
@@ -180,13 +173,10 @@ class AuthService {
       }
 
       final body = <String, dynamic>{
-        'name': fullName,
-        'name_first': f,
-        'name_father': fa,
-        'name_grandfather': g,
-        'name_family': fam,
+        'name': normalizedFullName,
         'national_id': nationalId.trim(),
         'code': code.trim(),
+        // Registration now sends local phone number only (without country code).
         'phone': phone.trim(),
         'faculty_id': facultyId,
         'section_id': sectionId,
