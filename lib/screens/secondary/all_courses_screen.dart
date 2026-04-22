@@ -54,15 +54,16 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
-    _searchDebounce?.cancel();
     super.dispose();
   }
 
   void _onSearchChanged() {
     _searchDebounce?.cancel();
     _searchDebounce = Timer(const Duration(milliseconds: 500), () {
+      if (!mounted) return;
       if (_searchController.text != _searchQuery) {
         setState(() {
           _searchQuery = _searchController.text;
@@ -73,6 +74,7 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
   }
 
   Future<void> _loadCourses() async {
+    if (!mounted) return;
     try {
       setState(() => _isLoading = true);
       List<Map<String, dynamic>> coursesList = [];
@@ -154,6 +156,7 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
         totalCoursesValue = coursesList.length;
       }
 
+      if (!mounted) return;
       setState(() {
         _courses = coursesList;
         _totalCourses = totalCoursesValue;
@@ -164,6 +167,7 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
         print('❌ Error loading courses: $e');
         print('  Stack trace: ${StackTrace.current}');
       }
+      if (!mounted) return;
       setState(() {
         _courses = [];
         _totalCourses = 0;

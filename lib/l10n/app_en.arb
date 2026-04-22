@@ -183,6 +183,52 @@
   "@homeBooksAssignmentsSection": {
     "description": "Second home section heading"
   },
+  "homeCohortContentLockedHint": "This content is locked until an administrator enables it for your class.",
+  "@homeCohortContentLockedHint": {
+    "description": "SnackBar when books/quizzes cohort section is locked"
+  },
+  "homeCohortLockedLabel": "Locked",
+  "@homeCohortLockedLabel": {
+    "description": "Short badge on home card when cohort content locked"
+  },
+  "cohortLibraryMaterialsAppTitle": "Books",
+  "@cohortLibraryMaterialsAppTitle": {
+    "description": "App bar for cohort library materials root"
+  },
+  "cohortLibraryQuizzesAppTitle": "Quizzes and assignments",
+  "@cohortLibraryQuizzesAppTitle": {
+    "description": "App bar for cohort library quizzes root"
+  },
+  "cohortLibraryEmpty": "No content for your class yet.",
+  "@cohortLibraryEmpty": {
+    "description": "Empty cohort library"
+  },
+  "cohortLibraryLoadError": "Could not load library. Pull to retry.",
+  "@cohortLibraryLoadError": {
+    "description": "Cohort library fetch failed"
+  },
+  "cohortLibrarySyntheticSubjectTitle": "All materials",
+  "@cohortLibrarySyntheticSubjectTitle": {
+    "description": "Fallback subject title when API returns flat lists"
+  },
+  "cohortGroupTypeSummary": "Summaries",
+  "@cohortGroupTypeSummary": { "description": "Cohort group type" },
+  "cohortGroupTypeBook": "Books",
+  "@cohortGroupTypeBook": { "description": "Cohort group type" },
+  "cohortGroupTypeQuiz": "Quizzes",
+  "@cohortGroupTypeQuiz": { "description": "Cohort group type" },
+  "cohortGroupTypeFile": "Files",
+  "@cohortGroupTypeFile": { "description": "Cohort group type" },
+  "cohortGroupTypeVideo": "Videos",
+  "@cohortGroupTypeVideo": { "description": "Cohort group type" },
+  "cohortGroupTypeAssignment": "Assignments",
+  "@cohortGroupTypeAssignment": { "description": "Cohort group type" },
+  "cohortGroupTypeOther": "Other",
+  "@cohortGroupTypeOther": { "description": "Cohort group type" },
+  "cohortLibraryNoFileYet": "No file is available for this item yet.",
+  "@cohortLibraryNoFileYet": {
+    "description": "Unlocked item without file_url"
+  },
   "trackDoctor": "Doctor",
   "@trackDoctor": { "description": "Medical track" },
   "trackDentist": "Dentist",
@@ -583,6 +629,10 @@
   "downloads": "Downloads",
   "@downloads": {
     "description": "Downloads"
+  },
+  "booksScreenAppBarTitle": "Books",
+  "@booksScreenAppBarTitle": {
+    "description": "Header title on books/downloads screen opened from home"
   },
   "downloadLinkReceived": "Download link received. Download will start soon...",
   "@downloadLinkReceived": {
@@ -1286,6 +1336,10 @@
   "@myExams": {
     "description": "My Exams"
   },
+  "quizzesAssignmentsScreenTitle": "Quizzes and Assignments",
+  "@quizzesAssignmentsScreenTitle": {
+    "description": "Header title on my exams / quizzes screen"
+  },
   "viewAllExams": "View all completed exams",
   "@viewAllExams": {
     "description": "View all completed exams"
@@ -1904,6 +1958,15 @@
   "downloadedFiles": "{count, plural, =1 {downloaded file} other {downloaded files}}",
   "@downloadedFiles": {
     "description": "Downloaded files",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "availableBooks": "{count, plural, =1 {Available book} other {Available books}}",
+  "@availableBooks": {
+    "description": "Subtitle under books screen header (offline items count)",
     "placeholders": {
       "count": {
         "type": "int"

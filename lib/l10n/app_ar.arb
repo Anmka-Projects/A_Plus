@@ -183,6 +183,52 @@
   "@homeBooksAssignmentsSection": {
     "description": "عنوان القسم الثاني"
   },
+  "homeCohortContentLockedHint": "المحتوى مقفول لحد ما الإدارة تفتحه لفرقتك.",
+  "@homeCohortContentLockedHint": {
+    "description": "تنبيه عند قفل كتب/اختبارات المجموعة"
+  },
+  "homeCohortLockedLabel": "مقفول",
+  "@homeCohortLockedLabel": {
+    "description": "شارة قصيرة على بطاقة الرئيسية عند القفل"
+  },
+  "cohortLibraryMaterialsAppTitle": "الكتب",
+  "@cohortLibraryMaterialsAppTitle": {
+    "description": "عنوان شاشة مكتبة المواد"
+  },
+  "cohortLibraryQuizzesAppTitle": "الاختبارات والواجبات",
+  "@cohortLibraryQuizzesAppTitle": {
+    "description": "عنوان شاشة الاختبارات من المكتبة"
+  },
+  "cohortLibraryEmpty": "لا يوجد محتوى لفرقتك بعد.",
+  "@cohortLibraryEmpty": {
+    "description": "مكتبة فارغة"
+  },
+  "cohortLibraryLoadError": "تعذر تحميل المكتبة. اسحب للتحديث.",
+  "@cohortLibraryLoadError": {
+    "description": "فشل طلب المكتبة"
+  },
+  "cohortLibrarySyntheticSubjectTitle": "كل المواد",
+  "@cohortLibrarySyntheticSubjectTitle": {
+    "description": "عنوان مادة افتراضية عند قائمة مسطحة"
+  },
+  "cohortGroupTypeSummary": "تلخيصات",
+  "@cohortGroupTypeSummary": { "description": "نوع مجموعة" },
+  "cohortGroupTypeBook": "كتب",
+  "@cohortGroupTypeBook": { "description": "نوع مجموعة" },
+  "cohortGroupTypeQuiz": "اختبارات",
+  "@cohortGroupTypeQuiz": { "description": "نوع مجموعة" },
+  "cohortGroupTypeFile": "ملفات",
+  "@cohortGroupTypeFile": { "description": "نوع مجموعة" },
+  "cohortGroupTypeVideo": "فيديوهات",
+  "@cohortGroupTypeVideo": { "description": "نوع مجموعة" },
+  "cohortGroupTypeAssignment": "واجبات",
+  "@cohortGroupTypeAssignment": { "description": "نوع مجموعة" },
+  "cohortGroupTypeOther": "أخرى",
+  "@cohortGroupTypeOther": { "description": "نوع مجموعة" },
+  "cohortLibraryNoFileYet": "لا يوجد ملف متاح لهذا العنصر بعد.",
+  "@cohortLibraryNoFileYet": {
+    "description": "عنصر مفتوح بدون رابط ملف"
+  },
   "trackDoctor": "طبيب",
   "@trackDoctor": { "description": "مسار طبي" },
   "trackDentist": "طبيب أسنان",
@@ -583,6 +629,10 @@
   "downloads": "التحميلات",
   "@downloads": {
     "description": "التحميلات"
+  },
+  "booksScreenAppBarTitle": "الكتب",
+  "@booksScreenAppBarTitle": {
+    "description": "عنوان شاشة الكتب من الرئيسية"
   },
   "downloadLinkReceived": "تم الحصول على رابط التحميل. سيتم التحميل قريباً...",
   "@downloadLinkReceived": {
@@ -1286,6 +1336,10 @@
   "@myExams": {
     "description": "اختباراتي"
   },
+  "quizzesAssignmentsScreenTitle": "الاختبارات والواجبات",
+  "@quizzesAssignmentsScreenTitle": {
+    "description": "عنوان شاشة الاختبارات والواجبات"
+  },
   "viewAllExams": "عرض جميع الاختبارات المكتملة",
   "@viewAllExams": {
     "description": "عرض جميع الاختبارات المكتملة"
@@ -1904,6 +1958,15 @@
   "downloadedFiles": "{count, plural, =1 {ملف محمل} other {ملفات محملة}}",
   "@downloadedFiles": {
     "description": "ملفات محملة",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "availableBooks": "{count, plural, =1 {كتاب متاح} other {كتب متاحة}}",
+  "@availableBooks": {
+    "description": "نص تحت عنوان شاشة الكتب",
     "placeholders": {
       "count": {
         "type": "int"

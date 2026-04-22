@@ -144,6 +144,53 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeBooksAssignmentsSection => 'Doctors books and assignments..';
 
   @override
+  String get homeCohortContentLockedHint =>
+      'This content is locked until an administrator enables it for your class.';
+
+  @override
+  String get homeCohortLockedLabel => 'Locked';
+
+  @override
+  String get cohortLibraryMaterialsAppTitle => 'Books';
+
+  @override
+  String get cohortLibraryQuizzesAppTitle => 'Quizzes and assignments';
+
+  @override
+  String get cohortLibraryEmpty => 'No content for your class yet.';
+
+  @override
+  String get cohortLibraryLoadError => 'Could not load library. Pull to retry.';
+
+  @override
+  String get cohortLibrarySyntheticSubjectTitle => 'All materials';
+
+  @override
+  String get cohortGroupTypeSummary => 'Summaries';
+
+  @override
+  String get cohortGroupTypeBook => 'Books';
+
+  @override
+  String get cohortGroupTypeQuiz => 'Quizzes';
+
+  @override
+  String get cohortGroupTypeFile => 'Files';
+
+  @override
+  String get cohortGroupTypeVideo => 'Videos';
+
+  @override
+  String get cohortGroupTypeAssignment => 'Assignments';
+
+  @override
+  String get cohortGroupTypeOther => 'Other';
+
+  @override
+  String get cohortLibraryNoFileYet =>
+      'No file is available for this item yet.';
+
+  @override
   String get trackDoctor => 'Doctor';
 
   @override
@@ -445,6 +492,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get downloads => 'Downloads';
+
+  @override
+  String get booksScreenAppBarTitle => 'Books';
 
   @override
   String get downloadLinkReceived =>
@@ -932,6 +982,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get myExams => 'My Exams';
 
   @override
+  String get quizzesAssignmentsScreenTitle => 'Quizzes and Assignments';
+
+  @override
   String get viewAllExams => 'View all completed exams';
 
   @override
@@ -1357,6 +1410,17 @@ class AppLocalizationsEn extends AppLocalizations {
       locale: localeName,
       other: 'downloaded files',
       one: 'downloaded file',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String availableBooks(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Available books',
+      one: 'Available book',
     );
     return '$_temp0';
   }

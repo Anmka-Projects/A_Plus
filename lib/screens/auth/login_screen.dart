@@ -28,17 +28,14 @@ class _LoginScreenState extends State<LoginScreen> {
   final _codeController = TextEditingController();
   bool _isLoading = false;
 
-  bool _shouldRedirectToRegister(String message) {
+  bool _shouldRedirectToRegisterForInactiveCode(String message) {
     final normalized = message.toLowerCase();
-    return normalized.contains('activate') ||
-        normalized.contains('activation') ||
-        normalized.contains('verify') ||
-        normalized.contains('verification') ||
+    return normalized.contains('غير مفعل') ||
+        normalized.contains('غير مفعّل') ||
+        normalized.contains('not active') ||
         normalized.contains('not activated') ||
-        normalized.contains('كود الطالب غير صحيح') ||
-        normalized.contains('غير مفعل') ||
-        normalized.contains('تفعيل') ||
-        normalized.contains('تحقق');
+        normalized.contains('activation required') ||
+        normalized.contains('activate code');
   }
 
   Future<void> _handleLogin() async {
@@ -81,8 +78,11 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
       final errorMessage = e.toString().replaceFirst('Exception: ', '');
 
-      if (_shouldRedirectToRegister(errorMessage)) {
-        context.go(RouteNames.register);
+      if (_shouldRedirectToRegisterForInactiveCode(errorMessage)) {
+        context.go(
+          RouteNames.register,
+          extra: <String, dynamic>{'code': code},
+        );
         return;
       }
 
@@ -164,7 +164,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   color: AppColors.foreground,
                                 ),
                                 decoration: InputDecoration(
-                                  hintText: l10n.enterStudentCode,
+                                  hintText: 'الكود',
                                   hintStyle: GoogleFonts.cairo(
                                     color: AppColors.mutedForeground,
                                     fontSize: 15,
@@ -198,17 +198,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                 ),
                               ),
-                              const SizedBox(height: 10),
-                              Text(
-                                l10n.pleaseActivateCodeFirst,
-                                textAlign: TextAlign.center,
-                                style: GoogleFonts.cairo(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500,
-                                  color: _hintRed,
-                                  height: 1.3,
-                                ),
-                              ),
                               const SizedBox(height: 28),
                               SizedBox(
                                 width: double.infinity,
@@ -235,7 +224,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                           ),
                                         )
                                       : Text(
-                                          'أدخل الكود',
+                                          'تسجيل الدخول',
                                           style: GoogleFonts.cairo(
                                             fontSize: 16,
                                             fontWeight: FontWeight.bold,
@@ -353,7 +342,7 @@ class _LoginScreenState extends State<LoginScreen> {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(34),
         child: Image.asset(
-          'assets/images/app_logo.png',
+          'assets/images/splashLogo.png',
           fit: BoxFit.cover,
           errorBuilder: (_, __, ___) => const Icon(
             Icons.school_rounded,

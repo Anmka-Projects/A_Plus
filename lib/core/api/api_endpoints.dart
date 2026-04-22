@@ -67,6 +67,9 @@ class ApiEndpoints {
   // Home Page
   static String get home => '$baseUrl/home';
 
+  /// Books + quizzes for the student's faculty/section/grade (cohort). See docs/BACKEND_HOME_COHORT_BOOKS_QUIZZES.md
+  static String get studentCohortLibrary => '$baseUrl/student/cohort-library';
+
   // Categories
   static String get categories => '$baseUrl/categories';
   static String get adminCategories => '$baseUrl/admin/categories';

@@ -26,6 +26,7 @@ import '../../screens/secondary/notifications_screen.dart';
 import '../../screens/secondary/checkout_screen.dart';
 import '../../screens/secondary/live_courses_screen.dart';
 import '../../screens/secondary/downloads_screen.dart';
+import '../../screens/secondary/cohort_library_screen.dart';
 import '../../screens/secondary/certificates_screen.dart';
 import '../../screens/secondary/enrolled_screen.dart';
 import '../../screens/secondary/settings_screen.dart';
@@ -75,10 +76,19 @@ class AppRouter {
       ),
       GoRoute(
         path: RouteNames.register,
-        pageBuilder: (context, state) => _buildPageWithTransition(
-          key: state.pageKey,
-          child: const RegisterScreen(),
-        ),
+        pageBuilder: (context, state) {
+          String? initialCode;
+          final extra = state.extra;
+          if (extra is Map) {
+            initialCode = extra['code']?.toString();
+          } else if (extra is String) {
+            initialCode = extra;
+          }
+          return _buildPageWithTransition(
+            key: state.pageKey,
+            child: RegisterScreen(initialCode: initialCode),
+          );
+        },
       ),
       GoRoute(
         path: RouteNames.forgotPassword,
@@ -301,7 +311,11 @@ class AppRouter {
         path: RouteNames.exams,
         pageBuilder: (context, state) => _buildPageWithTransition(
           key: state.pageKey,
-          child: const ExamsScreen(),
+          child: ExamsScreen(
+            examData: state.extra is Map<String, dynamic>
+                ? state.extra as Map<String, dynamic>
+                : null,
+          ),
         ),
       ),
       GoRoute(
@@ -340,6 +354,20 @@ class AppRouter {
           key: state.pageKey,
           child: const DownloadsScreen(),
         ),
+      ),
+      GoRoute(
+        path: RouteNames.cohortLibrary,
+        pageBuilder: (context, state) {
+          var root = 'materials';
+          final extra = state.extra;
+          if (extra is Map) {
+            root = extra['root']?.toString() ?? 'materials';
+          }
+          return _buildPageWithTransition(
+            key: state.pageKey,
+            child: CohortLibraryScreen(root: root),
+          );
+        },
       ),
       GoRoute(
         path: RouteNames.certificates,

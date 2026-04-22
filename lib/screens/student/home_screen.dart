@@ -16,7 +16,6 @@ import '../../services/home_service.dart';
 import '../../services/courses_service.dart';
 import '../../services/profile_service.dart';
 import '../../services/teachers_service.dart';
-import '../../services/auth_service.dart';
 import '../../l10n/app_localizations.dart';
 import '../../data/sample_teachers.dart';
 import '../../models/medical_track.dart';
@@ -35,7 +34,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   double _homeTextScale(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
     final scale = width / 390;
-    return scale.clamp(0.84, 1.08);
+    return scale.clamp(0.78, 0.96);
   }
 
   late AnimationController _bannerController;
@@ -103,7 +102,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       _errorMessage = null;
     });
     try {
-      // Load home data
       final homeData = await HomeService.instance.getHomeData();
 
       // Load user profile if logged in
@@ -274,68 +272,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
-  Future<void> _handleLogout() async {
-    final shouldLogout = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        title: Text(
-          AppLocalizations.of(context)!.logout,
-          style: GoogleFonts.cairo(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        content: Text(
-          AppLocalizations.of(context)!.confirmLogout,
-          style: GoogleFonts.cairo(fontSize: 14),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(
-              AppLocalizations.of(context)!.cancel,
-              style: GoogleFonts.cairo(color: AppColors.mutedForeground),
-            ),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(
-              AppLocalizations.of(context)!.logout,
-              style: GoogleFonts.cairo(
-                color: Colors.red,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (shouldLogout != true || !mounted) return;
-
-    try {
-      await AuthService.instance.logout();
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('hasLaunched');
-      if (mounted) context.go(RouteNames.splash);
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            AppLocalizations.of(context)!
-                .errorLoggingOut(e.toString().replaceFirst('Exception: ', '')),
-            style: GoogleFonts.cairo(),
-          ),
-          backgroundColor: AppColors.destructive,
-        ),
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     SystemChrome.setSystemUIOverlayStyle(
@@ -363,7 +299,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             RouteNames.editProfile,
             extra: _userProfile,
           ),
-          onLogoutTap: _handleLogout,
         ),
         body: Stack(
           children: [
@@ -622,6 +557,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
+  void _onBooksCardTap() {
+    context.push(
+      RouteNames.cohortLibrary,
+      extra: <String, dynamic>{'root': 'materials'},
+    );
+  }
+
+  void _onQuizzesCardTap() {
+    context.push(
+      RouteNames.cohortLibrary,
+      extra: <String, dynamic>{'root': 'quizzes'},
+    );
+  }
+
   Widget _buildBooksAssignmentsSection(AppLocalizations l10n) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -629,36 +578,29 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         Text(
           l10n.homeBooksAssignmentsSection,
           style: GoogleFonts.cairo(
-            fontSize: 17,
+            fontSize: 15,
             fontWeight: FontWeight.w800,
             color: _homeTitleTeal,
           ),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 12),
         _buildHomeWideCard(
-          icon: Icons.library_books_rounded,
-          iconColors: const [
-            Color(0xFF5B8DEF),
-            Color(0xFFE85D75),
-            Color(0xFF4ECDC4),
-          ],
+          imageAsset: 'assets/images/books.jpeg',
           title: l10n.homeDeptHeadsBooks,
-          onTap: () => context.push(RouteNames.downloads),
+          onTap: _onBooksCardTap,
         ),
         const SizedBox(height: 12),
         _buildHomeWideCard(
-          icon: Icons.fact_check_outlined,
-          iconColors: const [Color(0xFF006677)],
+          imageAsset: 'assets/images/quizzes.jpeg',
           title: l10n.homeQuizzesAssignments,
-          onTap: () => context.push(RouteNames.myExams),
+          onTap: _onQuizzesCardTap,
         ),
       ],
     );
   }
 
   Widget _buildHomeWideCard({
-    required IconData icon,
-    required List<Color> iconColors,
+    required String imageAsset,
     required String title,
     required VoidCallback onTap,
   }) {
@@ -666,78 +608,40 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(16),
             boxShadow: _homeCardShadows,
           ),
           child: Row(
             children: [
-              if (iconColors.length >= 3)
-                SizedBox(
-                  width: 52,
-                  height: 44,
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Positioned(
-                        left: 0,
-                        top: 4,
-                        child: Container(
-                          width: 22,
-                          height: 30,
-                          decoration: BoxDecoration(
-                            color: iconColors[0],
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        left: 12,
-                        top: 0,
-                        child: Container(
-                          width: 22,
-                          height: 30,
-                          decoration: BoxDecoration(
-                            color: iconColors[1],
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        left: 24,
-                        top: 6,
-                        child: Container(
-                          width: 22,
-                          height: 30,
-                          decoration: BoxDecoration(
-                            color: iconColors[2],
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              else
-                Container(
-                  width: 52,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: iconColors.first.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(icon, color: iconColors.first, size: 28),
+              Container(
+                width: 46,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFF4F5),
+                  borderRadius: BorderRadius.circular(11),
                 ),
-              const SizedBox(width: 14),
+                clipBehavior: Clip.antiAlias,
+                child: Image.asset(
+                  imageAsset,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const Icon(
+                    Icons.image_outlined,
+                    color: AppColors.mutedForeground,
+                    size: 22,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   title,
                   style: GoogleFonts.cairo(
-                    fontSize: 15,
+                    fontSize: 13.5,
                     fontWeight: FontWeight.w800,
                     color: _homeTitleTeal,
                     height: 1.25,
@@ -2043,17 +1947,15 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
   final AppLocalizations l10n;
   final Map<String, dynamic>? userProfile;
   final VoidCallback onProfileTap;
-  final VoidCallback onLogoutTap;
 
   const _HomeAppBar({
     required this.statusBarHeight,
     required this.l10n,
     required this.userProfile,
     required this.onProfileTap,
-    required this.onLogoutTap,
   });
 
-  static const double _contentHeight = 140;
+  static const double _contentHeight = 148;
   static const Color _gradientTop = Color(0xFF23C5C0);
   static const Color _gradientBottom = Color(0xFF0A6D6E);
 
@@ -2091,7 +1993,7 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
             top: statusBarHeight + 6,
             left: 20,
             right: 16,
-            bottom: 22,
+            bottom: 18,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -2103,8 +2005,8 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
                     child: Row(
                       children: [
                         Container(
-                          width: 44,
-                          height: 44,
+                          width: 40,
+                          height: 40,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             border: Border.all(
@@ -2151,7 +2053,7 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
                               Text(
                                 l10n.welcomeLabel,
                                 style: GoogleFonts.cairo(
-                                  fontSize: 12,
+                                  fontSize: 11,
                                   fontWeight: FontWeight.w500,
                                   color: Colors.white.withValues(alpha: 0.9),
                                   height: 1.1,
@@ -2161,7 +2063,7 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
                               Text(
                                 displayName,
                                 style: GoogleFonts.cairo(
-                                  fontSize: 17,
+                                  fontSize: 15,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.white,
                                   height: 1.15,
@@ -2175,86 +2077,36 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
                       ],
                     ),
                   ),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: onLogoutTap,
-                          borderRadius: BorderRadius.circular(12),
-                          child: Tooltip(
-                            message: l10n.logout,
-                            child: Container(
-                              width: 86,
-                              height: 42,
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                color: Colors.red[50],
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: Colors.red.withOpacity(0.2),
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.logout_rounded,
-                                    color: Colors.red[600],
-                                    size: 20,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    l10n.logout,
-                                    style: GoogleFonts.cairo(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w700,
-                                      color: Colors.red[600],
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
-                              ),
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: onProfileTap,
+                      borderRadius: BorderRadius.circular(12),
+                      child: Tooltip(
+                        message: l10n.profile,
+                        child: Container(
+                          width: 38,
+                          height: 38,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.35),
                             ),
+                          ),
+                          child: Icon(
+                            Icons.contact_page_outlined,
+                            color: Colors.white.withValues(alpha: 0.95),
+                            size: 20,
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: onProfileTap,
-                          borderRadius: BorderRadius.circular(12),
-                          child: Tooltip(
-                            message: l10n.profile,
-                            child: Container(
-                              width: 42,
-                              height: 42,
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.35),
-                                ),
-                              ),
-                              child: Icon(
-                                Icons.contact_page_outlined,
-                                color: Colors.white.withValues(alpha: 0.95),
-                                size: 22,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 30),
+              const Spacer(flex: 3),
               Center(
                 child: Text(
                   motivationalText,
@@ -2262,14 +2114,15 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.cairo(
-                    fontSize: 20,
+                    fontSize: 21,
                     fontWeight: FontWeight.w900,
                     color: Colors.white,
-                    height: 1.35,
+                    height: 1.25,
                     letterSpacing: 0.2,
                   ),
                 ),
               ),
+              const Spacer(flex: 1),
             ],
           ),
         ),

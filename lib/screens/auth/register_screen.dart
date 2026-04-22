@@ -11,7 +11,12 @@ import '../../l10n/app_localizations.dart';
 
 /// Register: quad name, national ID, code, phone, faculty → section → grade (API).
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+  final String? initialCode;
+
+  const RegisterScreen({
+    super.key,
+    this.initialCode,
+  });
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -42,6 +47,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   void initState() {
     super.initState();
+    final prefillCode = widget.initialCode?.trim() ?? '';
+    if (prefillCode.isNotEmpty) {
+      _codeController.text = prefillCode;
+    }
     _loadFaculties();
   }
 

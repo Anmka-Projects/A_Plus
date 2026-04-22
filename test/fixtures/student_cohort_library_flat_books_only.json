@@ -1,0 +1,16 @@
+{
+  "success": true,
+  "data": {
+    "books_has_access": true,
+    "quizzes_has_access": false,
+    "books": [
+      {
+        "id": "flat-book-1",
+        "title": "Flat list book",
+        "is_unlocked": true,
+        "thumbnail": "/uploads/thumb.jpg"
+      }
+    ],
+    "quizzes": []
+  }
+}

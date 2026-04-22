@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
@@ -105,51 +104,6 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
     }
   }
 
-  Future<void> _pickPdfFromDevice() async {
-    try {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['pdf'],
-      );
-      if (result == null || result.files.isEmpty) return;
-      final picked = result.files.single;
-      final sourcePath = picked.path;
-      if (sourcePath == null || sourcePath.isEmpty) return;
-      final sourceFile = File(sourcePath);
-      if (!await sourceFile.exists()) return;
-
-      final dir = await _pdfStorageDirectory();
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final safeName = picked.name.replaceAll(' ', '_');
-      final targetPath =
-          '${dir.path}${Platform.pathSeparator}${timestamp}_$safeName';
-      await sourceFile.copy(targetPath);
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'تمت إضافة ملف PDF إلى التحميلات',
-            style: GoogleFonts.cairo(),
-          ),
-          backgroundColor: AppColors.success,
-        ),
-      );
-      await _loadLocalPdfFiles();
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            e.toString().replaceFirst('Exception: ', ''),
-            style: GoogleFonts.cairo(),
-          ),
-          backgroundColor: AppColors.destructive,
-        ),
-      );
-    }
-  }
-
   Future<void> _deleteLocalPdf(_LocalPdfFile file) async {
     try {
       final f = File(file.path);
@@ -239,29 +193,12 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          context.l10n.downloads,
+                          context.l10n.booksScreenAppBarTitle,
                           style: GoogleFonts.cairo(
                             fontSize: 22,
                             fontWeight: FontWeight.w800,
                             color: Colors.white,
                             height: 1.2,
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        tooltip: 'رفع PDF',
-                        onPressed: _pickPdfFromDevice,
-                        icon: Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: AppColors.whiteOverlay20,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(
-                            Icons.upload_file_rounded,
-                            color: Colors.white,
-                            size: 20,
                           ),
                         ),
                       ),
@@ -271,14 +208,16 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                   Row(
                     children: [
                       Icon(
-                        Icons.download_rounded,
+                        Icons.menu_book_rounded,
                         size: 20,
                         color: Colors.white.withValues(alpha: 0.88),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          context.l10n.downloadedFiles(_downloadedVideos.length),
+                          context.l10n.availableBooks(
+                            _downloadedVideos.length + _localPdfFiles.length,
+                          ),
                           style: GoogleFonts.cairo(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,

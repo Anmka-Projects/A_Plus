@@ -122,6 +122,72 @@ class SupportAndHelpScreen extends StatelessWidget {
     );
   }
 
+  Widget _founderSection() {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(AppRadius.button),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.brandTeal.withValues(alpha: 0.07),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          ClipOval(
+            child: Image.asset(
+              'assets/images/personSplash.jfif',
+              width: 56,
+              height: 56,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(
+                width: 56,
+                height: 56,
+                color: AppColors.muted,
+                child: const Icon(
+                  Icons.person_rounded,
+                  color: AppColors.brandTeal,
+                  size: 30,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'DR. YOUSSEF SAMIR',
+                  style: GoogleFonts.cairo(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.foreground,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  'CEO & FOUNDER',
+                  style: GoogleFonts.cairo(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.brandTealDark,
+                    letterSpacing: 0.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -225,6 +291,8 @@ class SupportAndHelpScreen extends StatelessWidget {
                         subtitle: '@usifsamir_9',
                         onTap: () => _launch(context, _instagram),
                       ),
+                      const SizedBox(height: 24),
+                      _founderSection(),
                       const SizedBox(height: 24),
                     ],
                   ),

@@ -23,6 +23,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   List<Map<String, dynamic>> _notifications = [];
   int _unreadCount = 0;
 
+  void _safeSetState(VoidCallback fn) {
+    if (!mounted) return;
+    setState(fn);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -30,13 +35,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Future<void> _loadNotifications() async {
-    setState(() => _isLoading = true);
+    _safeSetState(() => _isLoading = true);
     try {
       final response = await NotificationsService.instance.getNotifications(
         page: 1,
         perPage: 50,
         unreadOnly: false,
       );
+      if (!mounted) return;
 
       // Handle response - safely check if data is a List or Map
       List<Map<String, dynamic>> notificationsList = [];
@@ -101,13 +107,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             .length;
       }
 
-      setState(() {
+      _safeSetState(() {
         _notifications = notificationsList;
         _unreadCount = unreadCount;
         _isLoading = false;
       });
     } catch (e, stackTrace) {
-      setState(() => _isLoading = false);
+      _safeSetState(() => _isLoading = false);
       if (mounted) {
         // Print error for debugging
         debugPrint('❌ Error loading notifications: $e');
@@ -130,8 +136,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Future<void> _markAsRead(String notificationId) async {
     try {
       await NotificationsService.instance.markAsRead(notificationId);
+      if (!mounted) return;
       // Update local state immediately for better UX
-      setState(() {
+      _safeSetState(() {
         final index = _notifications.indexWhere(
           (n) => n['id']?.toString() == notificationId,
         );
@@ -161,8 +168,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Future<void> _markAllAsRead() async {
     try {
       await NotificationsService.instance.markAllAsRead();
+      if (!mounted) return;
       // Update local state immediately
-      setState(() {
+      _safeSetState(() {
         for (var notification in _notifications) {
           notification['is_read'] = true;
         }

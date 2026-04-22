@@ -35,6 +35,8 @@ class RouteNames {
   static const String checkout = '/checkout';
   static const String liveCourses = '/live-courses';
   static const String downloads = '/downloads';
+  /// Cohort library (subjects → groups → items). extra: `{ 'root': 'materials' | 'quizzes' }`
+  static const String cohortLibrary = '/cohort-library';
   static const String certificates = '/certificates';
   static const String enrolled = '/enrolled';
   static const String settings = '/settings';

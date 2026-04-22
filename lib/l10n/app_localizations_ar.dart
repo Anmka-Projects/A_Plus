@@ -144,6 +144,52 @@ class AppLocalizationsAr extends AppLocalizations {
   String get homeBooksAssignmentsSection => 'كتب الأطباء والواجبات..';
 
   @override
+  String get homeCohortContentLockedHint =>
+      'المحتوى مقفول لحد ما الإدارة تفتحه لفرقتك.';
+
+  @override
+  String get homeCohortLockedLabel => 'مقفول';
+
+  @override
+  String get cohortLibraryMaterialsAppTitle => 'الكتب';
+
+  @override
+  String get cohortLibraryQuizzesAppTitle => 'الاختبارات والواجبات';
+
+  @override
+  String get cohortLibraryEmpty => 'لا يوجد محتوى لفرقتك بعد.';
+
+  @override
+  String get cohortLibraryLoadError => 'تعذر تحميل المكتبة. اسحب للتحديث.';
+
+  @override
+  String get cohortLibrarySyntheticSubjectTitle => 'كل المواد';
+
+  @override
+  String get cohortGroupTypeSummary => 'تلخيصات';
+
+  @override
+  String get cohortGroupTypeBook => 'كتب';
+
+  @override
+  String get cohortGroupTypeQuiz => 'اختبارات';
+
+  @override
+  String get cohortGroupTypeFile => 'ملفات';
+
+  @override
+  String get cohortGroupTypeVideo => 'فيديوهات';
+
+  @override
+  String get cohortGroupTypeAssignment => 'واجبات';
+
+  @override
+  String get cohortGroupTypeOther => 'أخرى';
+
+  @override
+  String get cohortLibraryNoFileYet => 'لا يوجد ملف متاح لهذا العنصر بعد.';
+
+  @override
   String get trackDoctor => 'طبيب';
 
   @override
@@ -444,6 +490,9 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get downloads => 'التحميلات';
+
+  @override
+  String get booksScreenAppBarTitle => 'الكتب';
 
   @override
   String get downloadLinkReceived =>
@@ -929,6 +978,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get myExams => 'اختباراتي';
 
   @override
+  String get quizzesAssignmentsScreenTitle => 'الاختبارات والواجبات';
+
+  @override
   String get viewAllExams => 'عرض جميع الاختبارات المكتملة';
 
   @override
@@ -1352,6 +1404,17 @@ class AppLocalizationsAr extends AppLocalizations {
       locale: localeName,
       other: 'ملفات محملة',
       one: 'ملف محمل',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String availableBooks(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'كتب متاحة',
+      one: 'كتاب متاح',
     );
     return '$_temp0';
   }

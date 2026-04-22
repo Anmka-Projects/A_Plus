@@ -1,0 +1,62 @@
+{
+  "success": true,
+  "data": {
+    "cohort": {
+      "faculty_id": "fac-1",
+      "section_id": "sec-1",
+      "grade_id": "gr-1",
+      "label_ar": "فرقة تجريبية"
+    },
+    "books_has_access": true,
+    "quizzes_has_access": false,
+    "subjects": [
+      {
+        "id": "subj-psych",
+        "title": "Psychology",
+        "title_ar": "علم النفس",
+        "sort_order": 0,
+        "groups": [
+          {
+            "id": "grp-psych-books",
+            "type": "book",
+            "label": "Books",
+            "label_ar": "كتب",
+            "sort_order": 0,
+            "items": [
+              {
+                "id": "item-book-1",
+                "title": "Course book PDF",
+                "title_ar": "كتاب المادة",
+                "type": "book",
+                "is_unlocked": true,
+                "file_url": "/api/uploads/sample.pdf",
+                "thumbnail": "https://example.com/cover.jpg"
+              }
+            ]
+          },
+          {
+            "id": "grp-psych-quizzes",
+            "type": "quiz",
+            "label": "Quizzes",
+            "label_ar": "اختبارات",
+            "sort_order": 1,
+            "items": [
+              {
+                "id": "item-quiz-1",
+                "title": "Midterm",
+                "title_ar": "نصفي",
+                "type": "quiz",
+                "is_unlocked": false,
+                "file_url": null,
+                "thumbnail": null,
+                "exam_id": "exam-99"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "books": [],
+    "quizzes": []
+  }
+}

@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/design/app_colors.dart';
 import '../../core/localization/localization_helper.dart';
-import '../../l10n/app_localizations.dart';
+import '../../core/navigation/route_names.dart';
+import '../../services/auth_service.dart';
 import '../../services/profile_service.dart';
 
 /// Profile screen — data is read-only (display only).
@@ -22,6 +24,7 @@ class EditProfileScreen extends StatefulWidget {
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
   bool _isLoading = true;
+  bool _isLoggingOut = false;
   Map<String, dynamic>? _profile;
 
   @override
@@ -195,6 +198,63 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     ]);
   }
 
+  Future<void> _handleLogout() async {
+    final l10n = context.l10n;
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          l10n.logout,
+          style: GoogleFonts.cairo(fontWeight: FontWeight.w700),
+        ),
+        content: Text(
+          l10n.confirmLogout,
+          style: GoogleFonts.cairo(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(l10n.cancel, style: GoogleFonts.cairo()),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(
+              l10n.logout,
+              style: GoogleFonts.cairo(
+                color: Colors.red,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldLogout != true || !mounted) return;
+
+    setState(() => _isLoggingOut = true);
+    try {
+      await AuthService.instance.logout();
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('hasLaunched');
+      if (mounted) context.go(RouteNames.splash);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            l10n.errorLoggingOut(e.toString().replaceFirst('Exception: ', '')),
+            style: GoogleFonts.cairo(),
+          ),
+          backgroundColor: AppColors.destructive,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoggingOut = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -313,6 +373,40 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           ),
                         ),
                       ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: FilledButton.icon(
+                      onPressed: _isLoggingOut ? null : _handleLogout,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.destructive,
+                        disabledBackgroundColor:
+                            AppColors.destructive.withValues(alpha: 0.6),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      icon: _isLoggingOut
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Icon(Icons.logout_rounded, color: Colors.white),
+                      label: Text(
+                        l10n.logout,
+                        style: GoogleFonts.cairo(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 24),

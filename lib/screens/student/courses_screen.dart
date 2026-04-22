@@ -23,39 +23,146 @@ class _CoursesScreenState extends State<CoursesScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF2F6F7),
-      appBar: _CoursesAppBar(title: l10n.courses),
-      body: SafeArea(
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: Container(
-                constraints: const BoxConstraints(maxWidth: 430),
-                margin: EdgeInsets.symmetric(
-                  horizontal: MediaQuery.of(context).size.width > 430
-                      ? (MediaQuery.of(context).size.width - 430) / 2
-                      : 0,
+      body: Stack(
+        children: [
+          SafeArea(
+            top: false,
+            child: Column(
+              children: [
+                Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: AppColors.brandGradient,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.brandTealDark.withValues(alpha: 0.25),
+                        blurRadius: 16,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  padding: EdgeInsets.only(
+                    top: MediaQuery.of(context).padding.top + 12,
+                    bottom: 22,
+                    left: 16,
+                    right: 16,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () {
+                                if (context.canPop()) {
+                                  context.pop();
+                                } else {
+                                  context.go(RouteNames.home);
+                                }
+                              },
+                              borderRadius: BorderRadius.circular(14),
+                              child: Container(
+                                width: 44,
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  color: AppColors.whiteOverlay20,
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: Icon(
+                                  Directionality.of(context) ==
+                                          TextDirection.rtl
+                                      ? Icons.arrow_forward_ios_rounded
+                                      : Icons.arrow_back_ios_new_rounded,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.menu_book_rounded,
+                                  color: Colors.white,
+                                  size: 26,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    l10n.courses,
+                                    style: GoogleFonts.cairo(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.white,
+                                      height: 1.2,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-                child: Column(
-                  children: [
-                    Expanded(
+                Expanded(
+                  child: Transform.translate(
+                    offset: const Offset(0, -16),
+                    child: Container(
+                      constraints: const BoxConstraints(maxWidth: 430),
+                      margin: EdgeInsets.symmetric(
+                        horizontal: MediaQuery.of(context).size.width > 430
+                            ? (MediaQuery.of(context).size.width - 430) / 2
+                            : 0,
+                      ),
                       child: SingleChildScrollView(
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                        padding: const EdgeInsets.fromLTRB(16, 36, 16, 0),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.monitor_heart_outlined,
+                                  size: 25,
+                                  color: _titleTeal,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    l10n.homeCoursesSectionTitle,
+                                    style: GoogleFonts.cairo(
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.w800,
+                                      color: _titleTeal,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
                             _buildTracksSection(l10n),
                             const SizedBox(height: 120),
                           ],
                         ),
                       ),
                     ),
-                  ],
+                  ),
                 ),
-              ),
+              ],
             ),
-            const BottomNav(activeTab: 'courses'),
-          ],
-        ),
+          ),
+          const BottomNav(activeTab: 'courses'),
+        ],
       ),
     );
   }
@@ -73,27 +180,6 @@ class _CoursesScreenState extends State<CoursesScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Icon(
-              Icons.monitor_heart_outlined,
-              size: 25,
-              color: _titleTeal,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                l10n.homeCoursesSectionTitle,
-                style: const TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w800,
-                  color: _titleTeal,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 14),
         GridView.count(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -196,59 +282,6 @@ class _CoursesScreenState extends State<CoursesScreen> {
                 ),
               ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CoursesAppBar extends StatelessWidget implements PreferredSizeWidget {
-  final String title;
-
-  const _CoursesAppBar({required this.title});
-
-  static const double _contentHeight = 88;
-  static const Color _gradientTop = Color(0xFF23C5C0);
-  static const Color _gradientBottom = Color(0xFF0A6D6E);
-
-  @override
-  Size get preferredSize => const Size.fromHeight(_contentHeight);
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      elevation: 0,
-      color: Colors.transparent,
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [_gradientTop, _gradientBottom],
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: _gradientBottom.withValues(alpha: 0.35),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: SafeArea(
-          bottom: false,
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Text(
-                title,
-                style: GoogleFonts.cairo(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                ),
-              ),
-            ),
           ),
         ),
       ),

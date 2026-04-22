@@ -150,7 +150,7 @@ class _MyExamsScreenState extends State<MyExamsScreen> {
                       ),
                       const SizedBox(width: 16), // gap-4
                       Text(
-                        context.l10n.myExams,
+                        context.l10n.quizzesAssignmentsScreenTitle,
                         style: GoogleFonts.cairo(
                           fontSize: 24,
                           fontWeight: FontWeight.w600,

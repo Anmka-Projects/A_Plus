@@ -362,6 +362,96 @@ abstract class AppLocalizations {
   /// **'Doctors books and assignments..'**
   String get homeBooksAssignmentsSection;
 
+  /// SnackBar when books/quizzes cohort section is locked
+  ///
+  /// In en, this message translates to:
+  /// **'This content is locked until an administrator enables it for your class.'**
+  String get homeCohortContentLockedHint;
+
+  /// Short badge on home card when cohort content locked
+  ///
+  /// In en, this message translates to:
+  /// **'Locked'**
+  String get homeCohortLockedLabel;
+
+  /// App bar for cohort library materials root
+  ///
+  /// In en, this message translates to:
+  /// **'Books'**
+  String get cohortLibraryMaterialsAppTitle;
+
+  /// App bar for cohort library quizzes root
+  ///
+  /// In en, this message translates to:
+  /// **'Quizzes and assignments'**
+  String get cohortLibraryQuizzesAppTitle;
+
+  /// Empty cohort library
+  ///
+  /// In en, this message translates to:
+  /// **'No content for your class yet.'**
+  String get cohortLibraryEmpty;
+
+  /// Cohort library fetch failed
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load library. Pull to retry.'**
+  String get cohortLibraryLoadError;
+
+  /// Fallback subject title when API returns flat lists
+  ///
+  /// In en, this message translates to:
+  /// **'All materials'**
+  String get cohortLibrarySyntheticSubjectTitle;
+
+  /// Cohort group type
+  ///
+  /// In en, this message translates to:
+  /// **'Summaries'**
+  String get cohortGroupTypeSummary;
+
+  /// Cohort group type
+  ///
+  /// In en, this message translates to:
+  /// **'Books'**
+  String get cohortGroupTypeBook;
+
+  /// Cohort group type
+  ///
+  /// In en, this message translates to:
+  /// **'Quizzes'**
+  String get cohortGroupTypeQuiz;
+
+  /// Cohort group type
+  ///
+  /// In en, this message translates to:
+  /// **'Files'**
+  String get cohortGroupTypeFile;
+
+  /// Cohort group type
+  ///
+  /// In en, this message translates to:
+  /// **'Videos'**
+  String get cohortGroupTypeVideo;
+
+  /// Cohort group type
+  ///
+  /// In en, this message translates to:
+  /// **'Assignments'**
+  String get cohortGroupTypeAssignment;
+
+  /// Cohort group type
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get cohortGroupTypeOther;
+
+  /// Unlocked item without file_url
+  ///
+  /// In en, this message translates to:
+  /// **'No file is available for this item yet.'**
+  String get cohortLibraryNoFileYet;
+
   /// Medical track
   ///
   /// In en, this message translates to:
@@ -949,6 +1039,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Downloads'**
   String get downloads;
+
+  /// Header title on books/downloads screen opened from home
+  ///
+  /// In en, this message translates to:
+  /// **'Books'**
+  String get booksScreenAppBarTitle;
 
   /// Download link message
   ///
@@ -1832,6 +1928,12 @@ abstract class AppLocalizations {
   /// **'My Exams'**
   String get myExams;
 
+  /// Header title on my exams / quizzes screen
+  ///
+  /// In en, this message translates to:
+  /// **'Quizzes and Assignments'**
+  String get quizzesAssignmentsScreenTitle;
+
   /// View all completed exams
   ///
   /// In en, this message translates to:
@@ -2563,6 +2665,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1 {downloaded file} other {downloaded files}}'**
   String downloadedFiles(int count);
+
+  /// Subtitle under books screen header (offline items count)
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1 {Available book} other {Available books}}'**
+  String availableBooks(int count);
 
   /// Storage
   ///

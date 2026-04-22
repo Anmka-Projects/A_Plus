@@ -33,6 +33,20 @@ class ApiClient {
     return trimmed;
   }
 
+  bool _looksLikeAuthenticationError(Map<String, dynamic>? errorData) {
+    if (errorData == null) return false;
+    final message = errorData['message']?.toString().toLowerCase() ?? '';
+    return message.contains('token') ||
+        message.contains('jwt') ||
+        message.contains('unauthenticated') ||
+        message.contains('authentication') ||
+        message.contains('bearer') ||
+        message.contains('please login') ||
+        message.contains('please log in') ||
+        message.contains('login required') ||
+        message.contains('يرجى تسجيل الدخول');
+  }
+
   /// Log API request (optionally via dart:developer for filterable logs)
   void _logRequest(String method, String url, Map<String, String>? headers,
       Map<String, dynamic>? body,
@@ -473,21 +487,11 @@ class ApiClient {
         }
 
         // Check if it's a real token/auth error (not authorization/validation error)
-        bool isAuthError = false;
-        if (errorData != null) {
-          final message = errorData['message']?.toString().toLowerCase() ?? '';
-          // Only treat as auth error when the backend explicitly mentions token/auth problems.
-          if (message.contains('token') ||
-              message.contains('jwt') ||
-              message.contains('unauthenticated') ||
-              message.contains('authentication') ||
-              message.contains('bearer')) {
-            isAuthError = true;
-          } else if (kDebugMode) {
-            // Common case: 401 used for "not enrolled / not allowed" – keep tokens.
-            print(
-                '  ℹ️ 401 appears to be authorization/validation error, not token expiry. Tokens will NOT be cleared.');
-          }
+        final isAuthError = _looksLikeAuthenticationError(errorData);
+        if (!isAuthError && kDebugMode) {
+          // Common case: 401 used for "not enrolled / not allowed" – keep tokens.
+          print(
+              '  ℹ️ 401 appears to be authorization/validation error, not token expiry. Tokens will NOT be cleared.');
         }
 
         if (isAuthError) {
