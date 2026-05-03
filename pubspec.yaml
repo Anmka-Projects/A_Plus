@@ -1,0 +1,74 @@
+name: educational_app
+description: Educational Mobile App - Flutter Native Migration
+publish_to: 'none'
+version: 1.0.0+2
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  just_audio: any
+  crypto: any
+  device_info_plus: any
+  dio: any
+  firebase_auth: any
+  firebase_core: any
+  firebase_messaging: any
+  flutter:
+    sdk: flutter
+  flutter_local_notifications: any
+  flutter_localizations:
+    sdk: flutter
+  flutter_pdfview: any
+  flutter_svg: any
+  go_router: any
+  get: any
+  google_fonts: any
+  google_sign_in: any
+  http: any
+  file_picker: any
+  image_picker: any
+  intl: any
+  path: any
+  path_provider: any
+  permission_handler: any
+  pod_player: any
+  qr_flutter: any
+  mobile_scanner: any
+  screen_protector: any
+  share_plus: any
+  shared_preferences: any
+  sign_in_with_apple: any
+  fl_chart: any
+  skeletonizer: any
+  sqflite: any
+  url_launcher: any
+  video_player: any
+  webview_flutter: any
+  socket_io_client_new: any
+  youtube_explode_dart: any
+
+dev_dependencies:
+  change_app_package_name: any
+  flutter_launcher_icons: any
+  flutter_lints: any
+  flutter_test:
+    sdk: flutter
+
+
+flutter_launcher_icons:
+  android: false
+  ios: true
+  image_path: "assets/images/company-logo.jpeg"
+  remove_alpha_ios: true
+
+flutter:
+  uses-material-design: true
+  generate: true
+
+  assets:
+    - assets/appicon.jpeg
+    - assets/images/
+  #  - assets/icons/
+  # Cairo font is loaded automatically via google_fonts package
+  # No need to include font files manually
