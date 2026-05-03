@@ -1,7 +1,8 @@
 import 'dart:developer';
-import 'package:educational_app/core/notification_service/app_lifecycle_notifications.dart';
 import 'package:educational_app/core/notification_service/notification_service.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:screen_protector/screen_protector.dart';
 import 'core/design/app_theme.dart';
@@ -12,20 +13,49 @@ import 'l10n/app_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 
+/// Release builds: pass `--dart-define=ALLOW_SCREENSHOT=true` when you need
+/// Play Store screenshots from a **release** APK/AAB. Otherwise release keeps
+/// protection on.
+const bool kAllowScreenshotsForStore =
+    bool.fromEnvironment('ALLOW_SCREENSHOT', defaultValue: false);
+
+/// Block capture only in **release** builds (not debug/profile), unless overridden.
+bool get _shouldEnableScreenProtection =>
+    kReleaseMode && !kAllowScreenshotsForStore;
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await SystemChrome.setPreferredOrientations(const [
+    DeviceOrientation.portraitUp,
+  ]);
+  try {
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    }
+  } on FirebaseException catch (e) {
+    if (e.code != 'duplicate-app') rethrow;
+  }
   await FirebaseNotification.initializeNotifications();
   log('FCM Token: ${FirebaseNotification.fcmToken}');
 
-  // Initialize screen protection (prevent screenshots and screen recording)
+  // Screen protection: ON for release only (debug always allows screenshots).
+  // Release + ALLOW_SCREENSHOT=true → off (for store listing captures).
   try {
-    await ScreenProtector.protectDataLeakageOn();
-    await ScreenProtector.preventScreenshotOn();
+    if (_shouldEnableScreenProtection) {
+      await ScreenProtector.protectDataLeakageOn();
+      await ScreenProtector.preventScreenshotOn();
+    } else {
+      await ScreenProtector.preventScreenshotOff();
+      await ScreenProtector.protectDataLeakageOff();
+      debugPrint(
+        kAllowScreenshotsForStore
+            ? 'Screen protection: OFF (ALLOW_SCREENSHOT release build)'
+            : 'Screen protection: OFF (non-release build)',
+      );
+    }
   } catch (e) {
-    // Log error but don't prevent app from running
     debugPrint('Screen protection initialization error: $e');
   }
 
@@ -61,32 +91,30 @@ class EducationalApp extends StatelessWidget {
         return ListenableBuilder(
           listenable: themeProvider,
           builder: (context, _) {
-            return AppLifecycleNotifier(
-              child: MaterialApp.router(
-                title: configProvider.config?.appName ?? 'A Plus',
-                debugShowCheckedModeBanner: false,
+            return MaterialApp.router(
+              title: configProvider.config?.appName ?? 'Dr Champions Academy',
+              debugShowCheckedModeBanner: false,
 
-                // RTL & Localization
-                locale: const Locale('en'),
-                supportedLocales: const [
-                  Locale('ar'),
-                  Locale('en'),
-                ],
-                localizationsDelegates: const [
-                  AppLocalizations.delegate,
-                  GlobalMaterialLocalizations.delegate,
-                  GlobalWidgetsLocalizations.delegate,
-                  GlobalCupertinoLocalizations.delegate,
-                ],
+              // RTL & Localization
+              locale: themeProvider.locale,
+              supportedLocales: const [
+                Locale('ar'),
+                Locale('en'),
+              ],
+              localizationsDelegates: const [
+                AppLocalizations.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
 
-                // Theme - use API config if available
-                theme: AppTheme.lightTheme(configProvider.config?.theme),
-                darkTheme: AppTheme.darkTheme(configProvider.config?.theme),
-                themeMode: themeProvider.themeMode,
+              // Theme - use API config if available
+              theme: AppTheme.lightTheme(configProvider.config?.theme),
+              darkTheme: AppTheme.darkTheme(configProvider.config?.theme),
+              themeMode: themeProvider.themeMode,
 
-                // Router
-                routerConfig: AppRouter.router,
-              ),
+              // Router
+              routerConfig: AppRouter.router,
             );
           },
         );

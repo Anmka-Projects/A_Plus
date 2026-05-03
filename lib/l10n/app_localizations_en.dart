@@ -9,7 +9,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get appName => 'A Plus';
+  String get appName => 'Dr Champions Academy';
 
   @override
   String get settings => 'Settings';
@@ -71,34 +71,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get enterEmailOrPhone => 'Enter your email or phone number';
 
   @override
-  String get studentCode => 'Student code';
-
-  @override
-  String get enterStudentCode => 'Enter your code';
-
-  @override
-  String get subcategory => 'Subcategory';
-
-  @override
-  String get selectCategoryFirst => 'Select a category first';
-
-  @override
-  String get tapToSelectCategory => 'Tap to select category';
-
-  @override
-  String get tapToSelectSubcategory => 'Tap to select subcategory';
-
-  @override
-  String get selectCategory => 'Please select a category';
-
-  @override
-  String get selectSubcategory => 'Please select a subcategory';
-
-  @override
-  String get noSubcategoriesForCategory =>
-      'No subcategories for this category — optional';
-
-  @override
   String get invalidEmailOrPhone => 'Invalid email or phone number';
 
   @override
@@ -126,110 +98,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcomeBack => 'Welcome back! 👋';
 
   @override
-  String get welcomeLabel => 'Welcome';
-
-  @override
-  String get homeMotivationalLine => 'Stay focused, your A+ is coming...';
-
-  @override
-  String get homeCoursesSectionTitle => 'Courses ..';
-
-  @override
-  String get homeDeptHeadsBooks => 'Books';
-
-  @override
-  String get homeQuizzesAssignments => 'Quizzes and assignments';
-
-  @override
-  String get homeBooksAssignmentsSection => 'Doctors books and assignments..';
-
-  @override
-  String get homeCohortContentLockedHint =>
-      'This content is locked until an administrator enables it for your class.';
-
-  @override
-  String get homeCohortLockedLabel => 'Locked';
-
-  @override
-  String get cohortLibraryMaterialsAppTitle => 'Books';
-
-  @override
-  String get cohortLibraryQuizzesAppTitle => 'Quizzes and assignments';
-
-  @override
-  String get cohortLibraryEmpty => 'No content for your class yet.';
-
-  @override
-  String get cohortLibraryLoadError => 'Could not load library. Pull to retry.';
-
-  @override
-  String get cohortLibrarySyntheticSubjectTitle => 'All materials';
-
-  @override
-  String get cohortGroupTypeSummary => 'Summaries';
-
-  @override
-  String get cohortGroupTypeBook => 'Books';
-
-  @override
-  String get cohortGroupTypeQuiz => 'Quizzes';
-
-  @override
-  String get cohortGroupTypeFile => 'Files';
-
-  @override
-  String get cohortGroupTypeVideo => 'Videos';
-
-  @override
-  String get cohortGroupTypeAssignment => 'Assignments';
-
-  @override
-  String get cohortGroupTypeOther => 'Other';
-
-  @override
-  String get cohortLibraryNoFileYet =>
-      'No file is available for this item yet.';
-
-  @override
-  String get trackDoctor => 'Doctor';
-
-  @override
-  String get trackDentist => 'Dentist';
-
-  @override
-  String get trackPhysiotherapist => 'Physiotherapist';
-
-  @override
-  String get trackPharmacist => 'Pharmacist';
-
-  @override
-  String get trackNurse => 'Nurse';
-
-  @override
-  String get trackScientist => 'Scientist';
-
-  @override
-  String get bottomNavCart => 'Cart';
-
-  @override
-  String get loginEnterCodeTitle => 'ENTER CODE';
-
-  @override
-  String get loginLogIn => 'Log in';
-
-  @override
-  String get codeActivation => 'Code activation';
-
-  @override
-  String get pleaseActivateCodeFirst => 'Please activate code first';
-
-  @override
-  String get contactUs => 'Contact us';
-
-  @override
-  String get chooseLanguage => 'Language';
-
-  @override
   String get enterEmail => 'Enter your email';
 
   @override
@@ -248,74 +116,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get apple => 'Apple';
 
   @override
-  String get register => 'Code verification';
+  String get register => 'Create New Account';
 
   @override
   String get joinUsMessage => 'Join us and start your learning journey 🎓';
-
-  @override
-  String get quadNameTitle => 'Full name (four parts)';
-
-  @override
-  String get namePartFirst => 'First';
-
-  @override
-  String get namePartFather => 'Father';
-
-  @override
-  String get namePartGrandfather => 'Grandfather';
-
-  @override
-  String get namePartFamily => 'Family';
-
-  @override
-  String get nationalId => 'National ID';
-
-  @override
-  String get nationalIdHint => 'Enter national ID number';
-
-  @override
-  String get invalidNationalId => 'Enter a valid national ID (digits only)';
-
-  @override
-  String get faculty => 'Faculty';
-
-  @override
-  String get section => 'Section';
-
-  @override
-  String get grade => 'Grade';
-
-  @override
-  String get tapToSelectFaculty => 'Tap to select faculty';
-
-  @override
-  String get tapToSelectSection => 'Tap to select section';
-
-  @override
-  String get tapToSelectGrade => 'Tap to select grade';
-
-  @override
-  String get selectFacultyFirst => 'Select a faculty first';
-
-  @override
-  String get selectSectionFirst => 'Select a section first';
-
-  @override
-  String get selectFaculty => 'Please select a faculty';
-
-  @override
-  String get selectSection => 'Please select a section';
-
-  @override
-  String get selectGrade => 'Please select a grade';
-
-  @override
-  String get academicDataLoading => 'Loading options…';
-
-  @override
-  String get academicDataUnavailable =>
-      'Could not load options. Try again later.';
 
   @override
   String get fullName => 'Full Name';
@@ -418,6 +222,183 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errorLoadingCourses => 'Error loading courses';
 
   @override
+  String get errorTitle => 'Error';
+
+  @override
+  String get unexpectedError => 'An unexpected error occurred';
+
+  @override
+  String get courseDetails => 'Course Details';
+
+  @override
+  String get about => 'About';
+
+  @override
+  String get popular => 'Most Popular';
+
+  @override
+  String continueLesson(String title) {
+    return 'Continue: $title';
+  }
+
+  @override
+  String get noLesson => 'No lesson';
+
+  @override
+  String get loadingVideo => 'Loading video...';
+
+  @override
+  String get cannotLoadVideo => 'Cannot load video';
+
+  @override
+  String get videoLoadFailedCheckInternet =>
+      'Failed to load video. Please check your internet connection.';
+
+  @override
+  String get videoFormatNotSupported => 'Video format is not supported';
+
+  @override
+  String get videoDecodeError => 'Video decode error';
+
+  @override
+  String get networkConnectionError => 'Network connection error';
+
+  @override
+  String get videoLoadError => 'Error loading video';
+
+  @override
+  String get normalSpeed => 'Normal';
+
+  @override
+  String minutesUnit(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'minutes',
+      one: 'minute',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String hoursUnitShort(num count) {
+    return '${count}h';
+  }
+
+  @override
+  String get continueToPayment => 'Continue to payment';
+
+  @override
+  String get subscriptionPlan => 'Subscription plan';
+
+  @override
+  String get chooseSubscriptionPlan => 'Choose a subscription plan';
+
+  @override
+  String monthsDuration(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Duration: $count months',
+      one: 'Duration: 1 month',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String planDurationDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days',
+      one: '1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String planDurationMonths(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count months',
+      one: '1 month',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String planDurationYears(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count years',
+      one: '1 year',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String planOfferEndsAt(String date) {
+    return 'Offer ends $date';
+  }
+
+  @override
+  String get notAvailableShort => '—';
+
+  @override
+  String bestScore(num score) {
+    return 'Best score: $score%';
+  }
+
+  @override
+  String attemptsUsedOutOf(num used, num max) {
+    return '$used/$max attempts';
+  }
+
+  @override
+  String get attemptsExhausted => 'Attempts exhausted';
+
+  @override
+  String get youAreInstructorOfCourse =>
+      'You are the instructor of this course';
+
+  @override
+  String get finishExamLabel => 'Finish Exam';
+
+  @override
+  String get tryAgain => 'Try again';
+
+  @override
+  String get wellDone => 'Well done! 🎉';
+
+  @override
+  String yourScore(num score) {
+    return 'Your score: $score%';
+  }
+
+  @override
+  String correctAnswersOutOf(num correct, num total) {
+    return '$correct of $total correct answers';
+  }
+
+  @override
+  String timeTakenMinutes(int minutes) {
+    String _temp0 = intl.Intl.pluralLogic(
+      minutes,
+      locale: localeName,
+      other: 'minutes',
+      one: 'minute',
+    );
+    return 'Time taken: $minutes $_temp0';
+  }
+
+  @override
+  String questionIndex(int index) {
+    return 'Question $index';
+  }
+
+  @override
   String get instructor => 'Instructor';
 
   @override
@@ -492,9 +473,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get downloads => 'Downloads';
-
-  @override
-  String get booksScreenAppBarTitle => 'Books';
 
   @override
   String get downloadLinkReceived =>
@@ -644,7 +622,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get total => 'Total';
 
   @override
-  String get editProfile => 'Student Profile';
+  String get editProfile => 'Edit Profile';
 
   @override
   String get errorLoadingProfile => 'Error loading profile';
@@ -671,10 +649,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get saveChanges => 'Save Changes';
-
-  @override
-  String get profileReadOnlyMessage =>
-      'This information is for viewing only and cannot be edited here.';
 
   @override
   String get selectImageSource => 'Select Image Source';
@@ -876,6 +850,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get enrollInCourse => 'Enroll in Course';
 
   @override
+  String get freePreview => 'Free preview';
+
+  @override
   String get loginRequired => 'Login required';
 
   @override
@@ -980,9 +957,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get myExams => 'My Exams';
-
-  @override
-  String get quizzesAssignmentsScreenTitle => 'Quizzes and Assignments';
 
   @override
   String get viewAllExams => 'View all completed exams';
@@ -1170,6 +1144,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String usdAmount(String amount) {
+    return 'USD $amount';
+  }
+
+  @override
   String get confirmPayment => 'Confirm Payment';
 
   @override
@@ -1254,6 +1233,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get smartLearningPlatform => 'Smart Learning Platform';
+
+  @override
+  String get learnWithUsFutureLanguage =>
+      'Learn with us in the language of the future';
 
   @override
   String get certifiedAndSecure => 'Certified and Secure Platform';
@@ -1415,17 +1398,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String availableBooks(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'Available books',
-      one: 'Available book',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String get storage => 'Storage';
 
   @override
@@ -1487,6 +1459,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get remindMe => 'Remind Me';
+
+  @override
+  String get enterTheSession => 'Enter the session';
 
   @override
   String get joinNow => 'Join Now';
@@ -1564,13 +1539,139 @@ class AppLocalizationsEn extends AppLocalizations {
   String get teacherCoursesTitle => 'Courses offered';
 
   @override
+  String get lessonDescriptionTitle => 'Lesson description';
+
+  @override
+  String get noLessonDescription => 'No description available';
+
+  @override
+  String get downloadForOffline => 'Download for offline viewing';
+
+  @override
+  String downloadingProgress(int progress) {
+    return 'Downloading: $progress%';
+  }
+
+  @override
+  String get videoDownloaded => 'Video downloaded';
+
+  @override
+  String get lessonFiles => 'Lesson files';
+
+  @override
+  String get lessonImages => 'Lesson images';
+
+  @override
+  String get audioFiles => 'Audio files';
+
+  @override
+  String get videoFiles => 'Video files';
+
+  @override
+  String get pdfFiles => 'PDF files';
+
+  @override
+  String get imageLoadFailed => 'Unable to load image';
+
+  @override
+  String get lessonDescriptionShownTop => 'Description is shown above.';
+
+  @override
+  String get imageGalleryShownTop => 'Image gallery is shown above.';
+
+  @override
+  String get downloadShownTop => 'Offline download panel is shown above.';
+
+  @override
+  String get lessonFilesShownTop => 'Lesson files are shown above.';
+
+  @override
+  String get tapToShowVideoTop => 'Tap to show the video above.';
+
+  @override
+  String get loadingAudioDuration => 'Loading audio duration...';
+
+  @override
+  String audioClipLabel(int index) {
+    return 'Audio clip $index';
+  }
+
+  @override
+  String videoLabel(int index) {
+    return 'Video $index';
+  }
+
+  @override
+  String pdfFileLabel(int index) {
+    return 'PDF file $index';
+  }
+
+  @override
+  String get nowPlaying => 'Now playing';
+
+  @override
+  String get noFilesAvailable => 'No files available';
+
+  @override
+  String get pdfLessonSummary => 'PDF file - lesson summary';
+
+  @override
+  String get attachmentFile => 'Attachment';
+
+  @override
+  String get video => 'Video';
+
+  @override
+  String get cannotLoadThisVideo => 'Cannot load this video';
+
+  @override
+  String get storagePermissionRequiredToDownloadVideos =>
+      'Storage permission is required to download videos';
+
+  @override
+  String get noVideoUrlToDownload => 'No video URL available for download';
+
+  @override
+  String courseWithId(String id) {
+    return 'Course $id';
+  }
+
+  @override
+  String get videoDownloadedSuccessfully => 'Video downloaded successfully';
+
+  @override
+  String get videoDownloadFailed => 'Video download failed';
+
+  @override
+  String videoDownloadError(String error) {
+    return 'Video download error: $error';
+  }
+
+  @override
   String studentsCount(int count) {
     return '$count students';
   }
 
   @override
-  String get appExitNotificationTitle => 'See you soon!';
+  String get noExamsAvailable => 'No exams available';
 
   @override
-  String get appExitNotificationBody => 'Open A Plus anytime to keep learning.';
+  String passingScoreToPass(num score) {
+    return '$score% to pass';
+  }
+
+  @override
+  String get courseDescriptionTitle => 'Course description';
+
+  @override
+  String get whatYouWillGet => 'What you will get';
+
+  @override
+  String get lifetimeAccess => 'Lifetime access to content';
+
+  @override
+  String get availableOnAllDevices => 'Available on all devices';
+
+  @override
+  String get downloadableFiles => 'Downloadable files';
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../core/course_pricing.dart';
 import '../../core/design/app_colors.dart';
 import '../../core/design/app_text_styles.dart';
 import '../../core/design/app_radius.dart';
@@ -27,10 +28,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   bool _isValidatingCoupon = false;
   String? _checkoutSessionId;
 
-  // Pricing from API
+  // Pricing from API (amount + currency from selected plan or course)
   double _originalPrice = 0.0;
   double _discountAmount = 0.0;
   double _finalPrice = 0.0;
+  String _checkoutCurrencyCode = 'EGP';
 
   // Payment methods - will be localized in build method
   List<Map<String, dynamic>> _getPaymentMethods(BuildContext context) {
@@ -64,21 +66,25 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   void _loadInitialPrice() {
-    final price = widget.course?['price'];
-    if (price == null) {
-      _originalPrice = 40.0;
-      _finalPrice = 40.0;
+    final course = widget.course;
+    if (course == null) {
+      _originalPrice = 0;
+      _finalPrice = 0;
+      _checkoutCurrencyCode = 'EGP';
       return;
     }
-    if (price is num) {
-      _originalPrice = price.toDouble();
-    } else if (price is String) {
-      final parsed = num.tryParse(price);
-      _originalPrice = parsed?.toDouble() ?? 40.0;
-    } else {
-      _originalPrice = 40.0;
+    final parsed = parseCheckoutPricing(course);
+    _checkoutCurrencyCode = parsed.currency;
+    _originalPrice = parsed.amount;
+    _finalPrice = parsed.amount;
+  }
+
+  String _formatCheckoutMoney(AppLocalizations l10n, double amount) {
+    final amt = amount.toStringAsFixed(2);
+    if (_checkoutCurrencyCode == 'USD') {
+      return l10n.usdAmount(amt);
     }
-    _finalPrice = _originalPrice;
+    return l10n.egyptianPoundAmount(amt);
   }
 
   Future<void> _handleApplyCoupon() async {
@@ -206,6 +212,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         courseId: courseId,
         paymentMethod: paymentMethod,
         couponCode: _couponApplied ? _couponCode : null,
+        planId:
+            widget.course?['checkout_selected_plan']?['id']?.toString(),
       );
 
       if (kDebugMode) {
@@ -436,6 +444,52 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
+                                  const SizedBox(height: 4), // mb-1
+                                  Text(
+                                    () {
+                                      final instructors =
+                                          course['instructors'] as List?;
+                                      if (instructors != null &&
+                                          instructors.isNotEmpty) {
+                                        final first = instructors.first;
+                                        if (first is Map) {
+                                          final name = first['name']?.toString();
+                                          if (name != null && name.isNotEmpty) {
+                                            return name;
+                                          }
+                                        }
+                                      }
+
+                                      if (course['instructor'] is Map) {
+                                        return (course['instructor'] as Map)[
+                                                    'name']
+                                                ?.toString() ??
+                                            l10n.instructor;
+                                      }
+                                      return course['instructor']?.toString() ??
+                                          l10n.instructor;
+                                    }(),
+                                    style: AppTextStyles.bodySmall(
+                                      color: AppColors.purple,
+                                    ),
+                                  ),
+                                  if (course['checkout_selected_plan'] != null &&
+                                      course['checkout_selected_plan'] is Map &&
+                                      (course['checkout_selected_plan']['name'] ??
+                                              '')
+                                          .toString()
+                                          .isNotEmpty) ...[
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      course['checkout_selected_plan']['name']
+                                          .toString(),
+                                      style: AppTextStyles.bodySmall(
+                                        color: AppColors.mutedForeground,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
                                   const SizedBox(height: 8), // mb-2
                                   Row(
                                     children: [
@@ -459,7 +513,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                       ),
                                       const SizedBox(width: 4), // gap-1
                                       Text(
-                                        '${course['hours'] ?? 48}س',
+                                        '${course['duration_hours'] ?? course['hours'] ?? 48}${l10n.hourShort}',
                                         style: AppTextStyles.labelSmall(
                                           color: AppColors.mutedForeground,
                                         ),
@@ -472,10 +526,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                       ),
                                       const SizedBox(width: 4), // gap-1
                                       Text(
-                                        l10n.lessonsCount(
-                                            (course['lessons'] as List?)
-                                                    ?.length ??
-                                                22),
+                                        l10n.lessonsCount(() {
+                                          final n = course['lessons_count'];
+                                          if (n is num) return n.toInt();
+                                          final list = course['lessons'];
+                                          if (list is List) return list.length;
+                                          return 22;
+                                        }()),
                                         style: AppTextStyles.labelSmall(
                                           color: AppColors.mutedForeground,
                                         ),
@@ -546,8 +603,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                         isDense: true,
                                         contentPadding: EdgeInsets.zero,
                                         hintStyle: const TextStyle(
-                                          fontFamily:
-                                              AppTextStyles.indigoFamily,
                                           color: AppColors.mutedForeground,
                                         ),
                                       ),
@@ -793,8 +848,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                   ),
                                 ),
                                 Text(
-                                  l10n.egyptianPoundAmount(
-                                      _originalPrice.toStringAsFixed(2)),
+                                  _formatCheckoutMoney(l10n, _originalPrice),
                                   style: AppTextStyles.bodyMedium(
                                     color: AppColors.foreground,
                                   ).copyWith(fontWeight: FontWeight.w500),
@@ -814,7 +868,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                     ),
                                   ),
                                   Text(
-                                    '-${l10n.egyptianPoundAmount(_discountAmount.toStringAsFixed(2))}',
+                                    '-${_formatCheckoutMoney(l10n, _discountAmount)}',
                                     style: AppTextStyles.bodyMedium(
                                       color: Colors.green[600],
                                     ),
@@ -838,8 +892,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                   ).copyWith(fontWeight: FontWeight.bold),
                                 ),
                                 Text(
-                                  l10n.egyptianPoundAmount(
-                                      _finalPrice.toStringAsFixed(2)),
+                                  _formatCheckoutMoney(l10n, _finalPrice),
                                   style: AppTextStyles.h2(
                                     color: AppColors.purple,
                                   ),

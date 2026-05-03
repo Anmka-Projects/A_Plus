@@ -1,151 +1,109 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-/// App Text Styles - unified Cairo family
+/// App Text Styles - Using Cairo font (Arabic)
+/// Matches React font configuration
 class AppTextStyles {
   AppTextStyles._();
 
-  static const String indigoFamily = 'Cairo';
-  static const String radlushFamily = 'Cairo';
-
-  /// Base TextTheme used by the app
-  static TextTheme textTheme = const TextTheme(
-    displayLarge: TextStyle(
-      fontFamily: indigoFamily,
-      fontWeight: FontWeight.w400,
-    ),
-    displayMedium: TextStyle(
-      fontFamily: indigoFamily,
-      fontWeight: FontWeight.w400,
-    ),
-    titleLarge: TextStyle(
-      fontFamily: radlushFamily,
-      fontWeight: FontWeight.w900,
-    ),
-    titleMedium: TextStyle(
-      fontFamily: radlushFamily,
-      fontWeight: FontWeight.w700,
-    ),
-    titleSmall: TextStyle(
-      fontFamily: radlushFamily,
-      fontWeight: FontWeight.w500,
-    ),
-    bodyMedium: TextStyle(
-      fontFamily: radlushFamily,
-      fontWeight: FontWeight.w400,
-    ),
-    bodySmall: TextStyle(
-      fontFamily: radlushFamily,
-      fontWeight: FontWeight.w400,
-    ),
-    labelLarge: TextStyle(
-      fontFamily: radlushFamily,
-      fontWeight: FontWeight.w700,
-    ),
-  );
-
-  /// Helper to apply color while keeping the shared structure
-  static TextTheme themed(TextTheme base, {Color? color}) {
-    if (color == null) return base;
-    return base.apply(
-      bodyColor: color,
-      displayColor: color,
+  // Cairo font family - matches React: "Cairo", "Cairo Fallback", sans-serif
+  static TextStyle _base({
+    double? fontSize,
+    FontWeight? fontWeight,
+    Color? color,
+    double? height,
+    double? letterSpacing,
+  }) {
+    return GoogleFonts.cairo(
+      fontSize: fontSize,
+      fontWeight: fontWeight ?? FontWeight.w400,
+      color: color,
+      height: height,
+      letterSpacing: letterSpacing,
     );
   }
 
-  // Convenience styles for direct usage in widgets
-
-  // Headings (map to Indigo display styles)
-  static TextStyle h1({Color? color}) => TextStyle(
-        fontFamily: indigoFamily,
-        fontWeight: FontWeight.w400,
+  // Headings
+  static TextStyle h1({Color? color}) => _base(
         fontSize: 32,
+        fontWeight: FontWeight.bold,
         color: color,
       );
 
-  static TextStyle h2({Color? color}) => TextStyle(
-        fontFamily: indigoFamily,
-        fontWeight: FontWeight.w400,
+  static TextStyle h2({Color? color}) => _base(
         fontSize: 24,
+        fontWeight: FontWeight.bold,
         color: color,
       );
 
-  static TextStyle h3({Color? color}) => TextStyle(
-        fontFamily: indigoFamily,
-        fontWeight: FontWeight.w400,
+  static TextStyle h3({Color? color}) => _base(
         fontSize: 20,
+        fontWeight: FontWeight.bold,
         color: color,
       );
 
-  static TextStyle h4({Color? color}) => TextStyle(
-        fontFamily: indigoFamily,
-        fontWeight: FontWeight.w400,
+  static TextStyle h4({Color? color}) => _base(
         fontSize: 18,
+        fontWeight: FontWeight.bold,
         color: color,
       );
 
-  // Body text (Radlush)
-  static TextStyle bodyLarge({Color? color}) => TextStyle(
-        fontFamily: radlushFamily,
-        fontWeight: FontWeight.w400,
+  // Body text
+  static TextStyle bodyLarge({Color? color}) => _base(
         fontSize: 16,
-        color: color,
-      );
-
-  static TextStyle bodyMedium({Color? color}) => TextStyle(
-        fontFamily: radlushFamily,
         fontWeight: FontWeight.w400,
-        fontSize: 14,
         color: color,
       );
 
-  static TextStyle bodySmall({Color? color}) => TextStyle(
-        fontFamily: radlushFamily,
+  static TextStyle bodyMedium({Color? color}) => _base(
+        fontSize: 14,
         fontWeight: FontWeight.w400,
-        fontSize: 12,
         color: color,
       );
 
-  // Labels (Radlush)
-  static TextStyle labelLarge({Color? color}) => TextStyle(
-        fontFamily: radlushFamily,
-        fontWeight: FontWeight.w700,
+  static TextStyle bodySmall({Color? color}) => _base(
+        fontSize: 12,
+        fontWeight: FontWeight.w400,
+        color: color,
+      );
+
+  // Labels
+  static TextStyle labelLarge({Color? color}) => _base(
         fontSize: 14,
+        fontWeight: FontWeight.w500,
         color: color,
       );
 
-  static TextStyle labelMedium({Color? color}) => TextStyle(
-        fontFamily: radlushFamily,
-        fontWeight: FontWeight.w500,
+  static TextStyle labelMedium({Color? color}) => _base(
         fontSize: 12,
+        fontWeight: FontWeight.w500,
         color: color,
       );
 
-  static TextStyle labelSmall({Color? color}) => TextStyle(
-        fontFamily: radlushFamily,
-        fontWeight: FontWeight.w500,
+  static TextStyle labelSmall({Color? color}) => _base(
         fontSize: 10,
+        fontWeight: FontWeight.w500,
         color: color,
       );
 
-  // Buttons (Radlush)
-  static TextStyle buttonLarge({Color? color}) => TextStyle(
-        fontFamily: radlushFamily,
-        fontWeight: FontWeight.w700,
+  // Buttons
+  static TextStyle buttonLarge({Color? color}) => _base(
         fontSize: 18,
+        fontWeight: FontWeight.bold,
         color: color,
       );
 
-  static TextStyle buttonMedium({Color? color}) => TextStyle(
-        fontFamily: radlushFamily,
-        fontWeight: FontWeight.w600,
+  static TextStyle buttonMedium({Color? color}) => _base(
         fontSize: 16,
+        fontWeight: FontWeight.w600,
         color: color,
       );
 
-  static TextStyle buttonSmall({Color? color}) => TextStyle(
-        fontFamily: radlushFamily,
-        fontWeight: FontWeight.w600,
+  static TextStyle buttonSmall({Color? color}) => _base(
         fontSize: 14,
+        fontWeight: FontWeight.w600,
         color: color,
       );
 }
+
+

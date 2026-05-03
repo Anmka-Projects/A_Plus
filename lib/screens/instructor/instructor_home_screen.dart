@@ -283,7 +283,7 @@ class _InstructorHomeScreenState extends State<InstructorHomeScreen>
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [AppColors.berkeleyBlue, AppColors.pureWhite],
+          colors: [Color(0xFF0C52B3), Color(0xFF093F8A)],
         ),
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(AppRadius.largeCard),
@@ -505,14 +505,15 @@ class _InstructorHomeScreenState extends State<InstructorHomeScreen>
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                AppColors.primary,
-                AppColors.secondary,
+                Color(0xFF0C52B3),
+                Color(0xFF093F8A),
+                Color(0xFF072F68),
               ],
             ),
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withOpacity(0.4),
+                color: const Color(0xFF0C52B3).withOpacity(0.4),
                 blurRadius: 25,
                 offset: const Offset(0, 12),
               ),
@@ -1138,7 +1139,7 @@ class _InstructorHomeScreenState extends State<InstructorHomeScreen>
             isAr ? 'مستخدمون حديثون' : 'Recent users',
             recentUsers,
             Icons.people_rounded,
-            const Color(0xFF8B5CF6),
+            const Color(0xFF1D6FD6),
             null,
             (m) =>
                 m['name']?.toString() ??
@@ -1539,7 +1540,7 @@ class _InstructorHomeScreenState extends State<InstructorHomeScreen>
                             Row(
                               children: [
                                 Icon(Icons.category_rounded,
-                                    size: 14, color: AppColors.primary),
+                                    size: 14, color: AppColors.purple),
                                 const SizedBox(width: 5),
                                 Flexible(
                                   child: Text(
@@ -1547,7 +1548,7 @@ class _InstructorHomeScreenState extends State<InstructorHomeScreen>
                                     style: GoogleFonts.cairo(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w600,
-                                      color: AppColors.primary,
+                                      color: AppColors.purple,
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -1567,7 +1568,7 @@ class _InstructorHomeScreenState extends State<InstructorHomeScreen>
                                   context,
                                   Icons.payments_rounded,
                                   '${price.toInt()} ${isAr ? 'ريال' : 'SAR'}',
-                                  AppColors.primary,
+                                  const Color(0xFF0C52B3),
                                   isAr,
                                 ),
                               if (durationStr.isNotEmpty)

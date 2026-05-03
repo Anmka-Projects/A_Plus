@@ -36,10 +36,7 @@ class SubjectChip extends StatelessWidget {
           children: [
             Text(
               icon,
-              style: const TextStyle(
-                fontSize: 16,
-                fontFamily: AppTextStyles.indigoFamily,
-              ),
+              style: const TextStyle(fontSize: 16),
             ),
             const SizedBox(width: 8), // gap-2
             Text(

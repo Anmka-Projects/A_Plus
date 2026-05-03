@@ -4,20 +4,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import '../../services/token_storage_service.dart';
-
-/// Normalize backend `message` / `error` fields (string, list of validation errors, etc.).
-String? _coerceApiBodyMessage(dynamic value) {
-  if (value == null) return null;
-  if (value is String) return value.isEmpty ? null : value;
-  if (value is List) {
-    final parts =
-        value.map((e) => e.toString()).where((s) => s.isNotEmpty).toList();
-    if (parts.isEmpty) return null;
-    return parts.join('\n');
-  }
-  final s = value.toString();
-  return s.isEmpty ? null : s;
-}
+import 'api_endpoints.dart';
 
 /// API Client for making HTTP requests
 class ApiClient {
@@ -25,26 +12,115 @@ class ApiClient {
 
   static final ApiClient instance = ApiClient._();
 
-  String _normalizeBearerToken(String rawToken) {
-    final trimmed = rawToken.trim();
+  bool _isRefreshing = false;
+
+  String _normalizeBearerToken(String token) {
+    final trimmed = token.trim();
     if (trimmed.toLowerCase().startsWith('bearer ')) {
       return trimmed.substring(7).trim();
     }
     return trimmed;
   }
 
-  bool _looksLikeAuthenticationError(Map<String, dynamic>? errorData) {
-    if (errorData == null) return false;
-    final message = errorData['message']?.toString().toLowerCase() ?? '';
-    return message.contains('token') ||
-        message.contains('jwt') ||
-        message.contains('unauthenticated') ||
-        message.contains('authentication') ||
-        message.contains('bearer') ||
-        message.contains('please login') ||
-        message.contains('please log in') ||
-        message.contains('login required') ||
-        message.contains('يرجى تسجيل الدخول');
+  /// Attempt to refresh the access token using the stored refresh token.
+  Future<bool> _tryRefreshToken() async {
+    if (_isRefreshing) return false;
+    _isRefreshing = true;
+    try {
+      final refreshToken =
+          await TokenStorageService.instance.getRefreshToken();
+      if (refreshToken == null || refreshToken.isEmpty) return false;
+
+      if (kDebugMode) {
+        print('🔄 Attempting automatic token refresh...');
+      }
+
+      final response = await http
+          .post(
+            Uri.parse(ApiEndpoints.refreshToken),
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: jsonEncode({'refreshToken': refreshToken}),
+          )
+          .timeout(const Duration(seconds: 30));
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        if (data['success'] == true) {
+          final responseData =
+              data['data'] as Map<String, dynamic>? ?? {};
+          final newToken = (responseData['accessToken'] ??
+                  responseData['token'] ??
+                  responseData['access_token'])
+              ?.toString();
+          final newRefresh = (responseData['refreshToken'] ??
+                  responseData['refresh_token'])
+              ?.toString();
+
+          if (newToken != null && newToken.isNotEmpty) {
+            await TokenStorageService.instance.saveTokens(
+              accessToken: newToken,
+              refreshToken:
+                  (newRefresh != null && newRefresh.isNotEmpty)
+                      ? newRefresh
+                      : refreshToken,
+            );
+            if (kDebugMode) {
+              print('✅ Token refreshed automatically');
+            }
+            return true;
+          }
+        }
+      }
+
+      if (kDebugMode) {
+        print('❌ Token refresh failed (status: ${response.statusCode})');
+      }
+      return false;
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Token refresh error: $e');
+      }
+      return false;
+    } finally {
+      _isRefreshing = false;
+    }
+  }
+
+  Map<String, dynamic> _sanitizeBodyForLogs(Map<String, dynamic> body) {
+    dynamic sanitize(dynamic v, {String? key}) {
+      final lowerKey = key?.toLowerCase();
+      final isSensitiveKey = lowerKey != null &&
+          (lowerKey.contains('password') ||
+              lowerKey.contains('token') ||
+              lowerKey == 'authorization' ||
+              lowerKey == 'id_token' ||
+              lowerKey == 'access_token' ||
+              lowerKey == 'refresh_token' ||
+              lowerKey == 'refreshtoken');
+
+      if (v is Map) {
+        return v.map((k, val) =>
+            MapEntry(k.toString(), sanitize(val, key: k.toString())));
+      }
+      if (v is List) {
+        return v.map((e) => sanitize(e, key: key)).toList();
+      }
+      if (v is String) {
+        if (!isSensitiveKey) return v;
+        if (v.isEmpty) return v;
+        final previewLen = v.length >= 12 ? 12 : v.length;
+        return '${v.substring(0, previewLen)}...<redacted>';
+      }
+      if (isSensitiveKey && v != null) {
+        return '<redacted>';
+      }
+      return v;
+    }
+
+    return sanitize(body) as Map<String, dynamic>;
   }
 
   /// Log API request (optionally via dart:developer for filterable logs)
@@ -62,9 +138,8 @@ class ApiClient {
       sb.writeln('Headers:');
       headers.forEach((key, value) {
         if (key.toLowerCase() == 'authorization') {
-          final masked = value.length > 20 ? "${value.substring(0, 20)}..." : value;
           sb.writeln(
-              '  $key: $masked');
+              '  $key: Bearer ${value.length > 20 ? "${value.substring(0, 20)}..." : value}');
         } else {
           sb.writeln('  $key: $value');
         }
@@ -78,7 +153,8 @@ class ApiClient {
     if (body != null && body.isNotEmpty) {
       sb.writeln('Body:');
       try {
-        sb.writeln(const JsonEncoder.withIndent('  ').convert(body));
+        sb.writeln(const JsonEncoder.withIndent('  ')
+            .convert(_sanitizeBodyForLogs(body)));
       } catch (e) {
         sb.writeln('  $body');
       }
@@ -214,11 +290,30 @@ class ApiClient {
             logTag: logTag);
       }
       return responseData;
+    } on ApiException catch (e) {
+      if (e.statusCode == 401 && requireAuth && !_isRefreshing) {
+        final refreshed = await _tryRefreshToken();
+        if (refreshed) {
+          final retryHeaders = await _getHeaders(
+            additionalHeaders: headers,
+            requireAuth: requireAuth,
+          );
+          final retryResponse = await http
+              .get(Uri.parse(url), headers: retryHeaders)
+              .timeout(const Duration(seconds: 45));
+          return _handleResponse(retryResponse);
+        }
+        await TokenStorageService.instance.clearTokens();
+      }
+      if (logTag != null) {
+        _logResponse('GET', url, e.statusCode ?? 0, null, e.toString(),
+            logTag: logTag);
+      }
+      rethrow;
     } catch (e) {
       if (logTag != null) {
         _logResponse('GET', url, 0, null, e.toString(), logTag: logTag);
       }
-      if (e is ApiException) rethrow;
       throw ApiException('Network error: ${e.toString()}');
     }
   }
@@ -251,9 +346,30 @@ class ApiClient {
       _logResponse('POST', url, response.statusCode, responseData, null,
           logTag: logTag);
       return responseData;
+    } on ApiException catch (e) {
+      if (e.statusCode == 401 && requireAuth && !_isRefreshing) {
+        final refreshed = await _tryRefreshToken();
+        if (refreshed) {
+          final retryHeaders = await _getHeaders(
+            additionalHeaders: headers,
+            requireAuth: requireAuth,
+          );
+          final retryResponse = await http
+              .post(
+                Uri.parse(url),
+                headers: retryHeaders,
+                body: body != null ? jsonEncode(body) : null,
+              )
+              .timeout(const Duration(seconds: 45));
+          return _handleResponse(retryResponse);
+        }
+        await TokenStorageService.instance.clearTokens();
+      }
+      _logResponse('POST', url, e.statusCode ?? 0, null, e.toString(),
+          logTag: logTag);
+      rethrow;
     } catch (e) {
       _logResponse('POST', url, 0, null, e.toString(), logTag: logTag);
-      if (e is ApiException) rethrow;
       throw ApiException('Network error: ${e.toString()}');
     }
   }
@@ -286,9 +402,30 @@ class ApiClient {
       _logResponse('PUT', url, response.statusCode, responseData, null,
           logTag: logTag);
       return responseData;
+    } on ApiException catch (e) {
+      if (e.statusCode == 401 && requireAuth && !_isRefreshing) {
+        final refreshed = await _tryRefreshToken();
+        if (refreshed) {
+          final retryHeaders = await _getHeaders(
+            additionalHeaders: headers,
+            requireAuth: requireAuth,
+          );
+          final retryResponse = await http
+              .put(
+                Uri.parse(url),
+                headers: retryHeaders,
+                body: body != null ? jsonEncode(body) : null,
+              )
+              .timeout(const Duration(seconds: 45));
+          return _handleResponse(retryResponse);
+        }
+        await TokenStorageService.instance.clearTokens();
+      }
+      _logResponse('PUT', url, e.statusCode ?? 0, null, e.toString(),
+          logTag: logTag);
+      rethrow;
     } catch (e) {
       _logResponse('PUT', url, 0, null, e.toString(), logTag: logTag);
-      if (e is ApiException) rethrow;
       throw ApiException('Network error: ${e.toString()}');
     }
   }
@@ -321,9 +458,30 @@ class ApiClient {
       _logResponse('PATCH', url, response.statusCode, responseData, null,
           logTag: logTag);
       return responseData;
+    } on ApiException catch (e) {
+      if (e.statusCode == 401 && requireAuth && !_isRefreshing) {
+        final refreshed = await _tryRefreshToken();
+        if (refreshed) {
+          final retryHeaders = await _getHeaders(
+            additionalHeaders: headers,
+            requireAuth: requireAuth,
+          );
+          final retryResponse = await http
+              .patch(
+                Uri.parse(url),
+                headers: retryHeaders,
+                body: body != null ? jsonEncode(body) : null,
+              )
+              .timeout(const Duration(seconds: 45));
+          return _handleResponse(retryResponse);
+        }
+        await TokenStorageService.instance.clearTokens();
+      }
+      _logResponse('PATCH', url, e.statusCode ?? 0, null, e.toString(),
+          logTag: logTag);
+      rethrow;
     } catch (e) {
       _logResponse('PATCH', url, 0, null, e.toString(), logTag: logTag);
-      if (e is ApiException) rethrow;
       throw ApiException('Network error: ${e.toString()}');
     }
   }
@@ -354,9 +512,26 @@ class ApiClient {
       _logResponse('DELETE', url, response.statusCode, responseData, null,
           logTag: logTag);
       return responseData;
+    } on ApiException catch (e) {
+      if (e.statusCode == 401 && requireAuth && !_isRefreshing) {
+        final refreshed = await _tryRefreshToken();
+        if (refreshed) {
+          final retryHeaders = await _getHeaders(
+            additionalHeaders: headers,
+            requireAuth: requireAuth,
+          );
+          final retryResponse = await http
+              .delete(Uri.parse(url), headers: retryHeaders)
+              .timeout(const Duration(seconds: 45));
+          return _handleResponse(retryResponse);
+        }
+        await TokenStorageService.instance.clearTokens();
+      }
+      _logResponse('DELETE', url, e.statusCode ?? 0, null, e.toString(),
+          logTag: logTag);
+      rethrow;
     } catch (e) {
       _logResponse('DELETE', url, 0, null, e.toString(), logTag: logTag);
-      if (e is ApiException) rethrow;
       throw ApiException('Network error: ${e.toString()}');
     }
   }
@@ -440,13 +615,14 @@ class ApiClient {
           'POST (Multipart)', url, response.statusCode, responseData, null,
           logTag: logTag);
       return responseData;
+    } on ApiException {
+      rethrow;
     } catch (e) {
       _logResponse('POST (Multipart)', url, 0, null, e.toString(),
           logTag: logTag);
       if (kDebugMode) {
         print('❌ Avatar Upload Error: $e');
       }
-      if (e is ApiException) rethrow;
       throw ApiException('Network error: ${e.toString()}');
     }
   }
@@ -469,43 +645,39 @@ class ApiClient {
 
       try {
         errorData = jsonDecode(response.body) as Map<String, dynamic>;
-        errorMessage = _coerceApiBodyMessage(errorData['message']) ??
-            _coerceApiBodyMessage(errorData['error']) ??
-            errorMessage;
+        errorMessage = errorData['message'] as String? ?? errorMessage;
       } catch (e) {
         // Not JSON, use raw body
       }
 
       if (kDebugMode) {
-        print('❌ Error Response Body: ${response.body}');
+        final body = response.body;
+        final trimmed = body.trimLeft();
+        final looksLikeHtml = trimmed.startsWith('<!') ||
+            trimmed.startsWith('<html') ||
+            body.contains('DOCTYPE html');
+        if (looksLikeHtml) {
+          print(
+            '❌ Error Response: HTTP ${response.statusCode} — body is HTML '
+            '(likely frontend 404; API route missing or wrong URL). '
+            'First 120 chars: ${body.length > 120 ? body.substring(0, 120) : body}…',
+          );
+        } else {
+          print('❌ Error Response Body: $body');
+        }
       }
 
-      // Handle 401 Unauthorized - token expired or invalid (like Dio onError interceptor)
       if (response.statusCode == 401) {
         if (kDebugMode) {
           print('🔒 401 Unauthorized - Token may be expired or invalid');
         }
-
-        // Check if it's a real token/auth error (not authorization/validation error)
-        final isAuthError = _looksLikeAuthenticationError(errorData);
-        if (!isAuthError && kDebugMode) {
-          // Common case: 401 used for "not enrolled / not allowed" – keep tokens.
-          print(
-              '  ℹ️ 401 appears to be authorization/validation error, not token expiry. Tokens will NOT be cleared.');
-        }
-
-        if (isAuthError) {
-          // Clear cached tokens (like Dio _handleTokenExpiry)
-          TokenStorageService.instance.clearTokens().then((_) {
-            if (kDebugMode) {
-              print(
-                  '🗑️ Cleared cached tokens due to 401 authentication error');
-            }
-          });
-        }
       }
 
-      throw ApiException(errorMessage);
+      throw ApiException(
+        errorMessage,
+        statusCode: response.statusCode,
+        errorData: errorData,
+      );
     }
   }
 }
@@ -513,8 +685,14 @@ class ApiClient {
 /// API Exception class
 class ApiException implements Exception {
   final String message;
+  final int? statusCode;
+  final Map<String, dynamic>? errorData;
 
-  ApiException(this.message);
+  ApiException(
+    this.message, {
+    this.statusCode,
+    this.errorData,
+  });
 
   @override
   String toString() => message;

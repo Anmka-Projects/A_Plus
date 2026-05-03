@@ -274,32 +274,15 @@ class _ChatMessagesScreenState extends State<ChatMessagesScreen> {
               child: Text(
                 name.toString(),
                 style: GoogleFonts.cairo(
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.bold,
                   fontSize: 18,
-                  color: Colors.white,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
         ),
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: AppColors.brandGradient,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.brandBlue.withOpacity(0.28),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-        ),
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppColors.purple,
         foregroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
@@ -356,14 +339,7 @@ class _ChatMessagesScreenState extends State<ChatMessagesScreen> {
         ),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          gradient: isMe
-              ? const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: AppColors.brandGradient,
-                )
-              : null,
-          color: isMe ? null : Colors.white,
+          color: isMe ? AppColors.purple : Colors.white,
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(16),
             topRight: const Radius.circular(16),
@@ -451,26 +427,17 @@ class _ChatMessagesScreenState extends State<ChatMessagesScreen> {
             ),
             const SizedBox(width: 8),
             Material(
-              color: Colors.transparent,
+              color: AppColors.purple,
+              borderRadius: BorderRadius.circular(24),
               child: InkWell(
                 onTap: _sending ? null : _sendMessage,
                 borderRadius: BorderRadius.circular(24),
-                child: Ink(
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: AppColors.brandGradient,
-                    ),
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  child: const Padding(
-                    padding: EdgeInsets.all(12),
-                    child: Icon(
-                      Icons.send_rounded,
-                      color: Colors.white,
-                      size: 24,
-                    ),
+                child: const Padding(
+                  padding: EdgeInsets.all(12),
+                  child: Icon(
+                    Icons.send_rounded,
+                    color: Colors.white,
+                    size: 24,
                   ),
                 ),
               ),

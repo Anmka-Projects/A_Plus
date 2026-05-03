@@ -1,15 +1,18 @@
 import 'dart:convert';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import '../../core/course_pricing.dart';
 import '../../core/design/app_colors.dart';
 import '../../core/design/app_radius.dart';
 import '../../core/localization/localization_helper.dart';
 import '../../core/navigation/route_names.dart';
 import '../../widgets/bottom_nav.dart';
 import '../../services/courses_service.dart';
+import '../../services/lesson_bookmark_service.dart';
 
 /// Enrolled Screen - My Courses with Modern Design
 class EnrolledScreen extends StatefulWidget {
@@ -22,58 +25,18 @@ class EnrolledScreen extends StatefulWidget {
 class _EnrolledScreenState extends State<EnrolledScreen> {
   bool _isLoading = true;
   List<Map<String, dynamic>> _enrolledCourses = [];
+  List<Map<String, dynamic>> _bookmarkedLessons = [];
   Map<String, dynamic>? _meta;
-
-  Map<String, dynamic>? _asMap(dynamic value) {
-    if (value is Map<String, dynamic>) return value;
-    if (value is Map) return Map<String, dynamic>.from(value);
-    return null;
-  }
-
-  List<Map<String, dynamic>> _extractEnrollmentRows(dynamic data) {
-    if (data is List) {
-      return data
-          .map(_asMap)
-          .whereType<Map<String, dynamic>>()
-          .toList();
-    }
-    final dataMap = _asMap(data);
-    if (dataMap == null) return <Map<String, dynamic>>[];
-    for (final key in ['enrollments', 'items', 'results', 'courses', 'data']) {
-      final nested = dataMap[key];
-      if (nested is List) {
-        return nested
-            .map(_asMap)
-            .whereType<Map<String, dynamic>>()
-            .toList();
-      }
-    }
-    return <Map<String, dynamic>>[];
-  }
-
-  Map<String, dynamic> _normalizeEnrollment(Map<String, dynamic> row) {
-    final course = _asMap(row['course']);
-    if (course != null) return row;
-    // Some backends return course object directly in list.
-    if (row.containsKey('title') || row.containsKey('thumbnail')) {
-      return {
-        'course': row,
-        'progress': row['progress'] ?? 0,
-        'completed_lessons': row['completed_lessons'] ?? 0,
-        'total_lessons': row['total_lessons'] ?? row['lessons_count'] ?? 0,
-        'enrolled_at': row['enrolled_at'] ?? row['created_at'],
-      };
-    }
-    return row;
-  }
 
   @override
   void initState() {
     super.initState();
     _loadEnrollments();
+    _loadBookmarks();
   }
 
   Future<void> _loadEnrollments() async {
+    if (!mounted) return;
     setState(() => _isLoading = true);
     try {
       final response = await CoursesService.instance.getEnrollments(
@@ -81,6 +44,7 @@ class _EnrolledScreenState extends State<EnrolledScreen> {
         page: 1,
         perPage: 20,
       );
+      if (!mounted) return;
 
       if (kDebugMode) {
         print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -149,10 +113,49 @@ class _EnrolledScreenState extends State<EnrolledScreen> {
       }
 
       setState(() {
-        final rows = _extractEnrollmentRows(response['data']);
-        _enrolledCourses = rows.map(_normalizeEnrollment).toList();
-        final dataMap = _asMap(response['data']);
-        _meta = _asMap(response['meta']) ?? _asMap(dataMap?['meta']);
+        if (response['data'] != null) {
+          if (response['data'] is List) {
+            final dataList = response['data'] as List;
+            _enrolledCourses = dataList
+                .whereType<Map<String, dynamic>>()
+                .map((item) => Map<String, dynamic>.from(item as Map))
+                .toList();
+
+            if (kDebugMode) {
+              print('✅ Loaded ${_enrolledCourses.length} enrolled courses');
+            }
+          } else if (response['data'] is Map<String, dynamic>) {
+            // Try to extract from Map structure
+            final dataMap = response['data'] as Map<String, dynamic>;
+            if (dataMap['courses'] != null && dataMap['courses'] is List) {
+              _enrolledCourses = List<Map<String, dynamic>>.from(
+                dataMap['courses']!,
+              );
+              if (kDebugMode) {
+                print(
+                    '✅ Loaded ${_enrolledCourses.length} courses from Map structure');
+              }
+            } else {
+              _enrolledCourses = [];
+              if (kDebugMode) {
+                print('⚠️ Data is Map but no courses found');
+              }
+            }
+          } else {
+            _enrolledCourses = [];
+            if (kDebugMode) {
+              print(
+                  '⚠️ Data is not List or Map: ${response['data']?.runtimeType}');
+            }
+          }
+        } else {
+          _enrolledCourses = [];
+          if (kDebugMode) {
+            print('⚠️ Response data is null');
+          }
+        }
+
+        _meta = response['meta'] as Map<String, dynamic>?;
         _isLoading = false;
       });
     } catch (e) {
@@ -160,12 +163,21 @@ class _EnrolledScreenState extends State<EnrolledScreen> {
         print('❌ Error loading enrollments: $e');
         print('  Error type: ${e.runtimeType}');
       }
+      if (!mounted) return;
       setState(() {
         _enrolledCourses = [];
         _meta = null;
         _isLoading = false;
       });
     }
+  }
+
+  Future<void> _loadBookmarks() async {
+    final items = await LessonBookmarkService.instance.getBookmarks();
+    if (!mounted) return;
+    setState(() {
+      _bookmarkedLessons = items;
+    });
   }
 
   void _handleOpenCourse(
@@ -177,7 +189,7 @@ class _EnrolledScreenState extends State<EnrolledScreen> {
     final courseData = {
       ...course,
       'id': course['id']?.toString(),
-      'isFree': course['is_free'] == true || course['isFree'] == true,
+      'isFree': courseIsEffectivelyFree(course),
       'price': course['price'] ?? 0.0,
       'progress': enrollment['progress'] ?? 0,
       'completed_lessons': enrollment['completed_lessons'] ?? 0,
@@ -186,6 +198,31 @@ class _EnrolledScreenState extends State<EnrolledScreen> {
       'is_enrolled': true,
     };
     context.push(RouteNames.courseDetails, extra: courseData);
+  }
+
+  Future<void> _refreshPage() async {
+    await Future.wait([
+      _loadEnrollments(),
+      _loadBookmarks(),
+    ]);
+  }
+
+  void _openBookmarkedLesson(BuildContext context, Map<String, dynamic> item) {
+    final lessonId = item['lessonId']?.toString() ?? '';
+    final courseId = item['courseId']?.toString() ?? '';
+    if (lessonId.isEmpty || courseId.isEmpty) return;
+    final lesson = item['lesson'];
+    final lessonMap = lesson is Map<String, dynamic>
+        ? lesson
+        : <String, dynamic>{
+            'id': lessonId,
+            'title': item['lessonTitle']?.toString() ?? 'Lesson',
+            'course_id': courseId,
+          };
+    context.push(RouteNames.lessonViewer, extra: {
+      'lesson': lessonMap,
+      'courseId': courseId,
+    });
   }
 
   String _formatTimeAgo(BuildContext context, String? dateString) {
@@ -229,14 +266,18 @@ class _EnrolledScreenState extends State<EnrolledScreen> {
                     : _enrolledCourses.isEmpty
                         ? _buildEmptyState(context)
                         : RefreshIndicator(
-                            onRefresh: _loadEnrollments,
+                            onRefresh: _refreshPage,
                             child: ListView.builder(
                               padding:
                                   const EdgeInsets.fromLTRB(20, 0, 20, 140),
                               physics: const AlwaysScrollableScrollPhysics(),
-                              itemCount: _enrolledCourses.length,
+                              itemCount: _enrolledCourses.length + 1,
                               itemBuilder: (context, index) {
-                                final enrollment = _enrolledCourses[index];
+                                if (index == 0) {
+                                  return _buildBookmarkedLessonsEntry(context);
+                                }
+                                final courseIndex = index - 1;
+                                final enrollment = _enrolledCourses[courseIndex];
                                 return TweenAnimationBuilder<double>(
                                   tween: Tween(begin: 0.0, end: 1.0),
                                   duration: Duration(
@@ -260,7 +301,7 @@ class _EnrolledScreenState extends State<EnrolledScreen> {
             ],
           ),
           // Bottom Navigation
-          const BottomNav(activeTab: ''),
+          const BottomNav(activeTab: 'enrolled'),
         ],
       ),
     );
@@ -270,7 +311,7 @@ class _EnrolledScreenState extends State<EnrolledScreen> {
     final totalProgress = _enrolledCourses.isEmpty
         ? 0
         : (_enrolledCourses
-                    .map((c) => _parseInt(c['progress']))
+                    .map((c) => _enrollmentProgress(c))
                     .reduce((a, b) => a + b) /
                 _enrolledCourses.length)
             .round();
@@ -280,7 +321,7 @@ class _EnrolledScreenState extends State<EnrolledScreen> {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: AppColors.brandGradient,
+          colors: [Color(0xFF0C52B3), Color(0xFF093F8A)],
         ),
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(AppRadius.largeCard),
@@ -288,7 +329,7 @@ class _EnrolledScreenState extends State<EnrolledScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.brandBlue.withOpacity(0.3),
+            color: AppColors.purple.withOpacity(0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -386,7 +427,7 @@ class _EnrolledScreenState extends State<EnrolledScreen> {
                       child: _buildStatItem(
                         icon: Icons.emoji_events_rounded,
                         value:
-                            '${_meta?['completed'] ?? _enrolledCourses.where((c) => _parseInt(c['progress']) >= 100).length}',
+                            '${_meta?['completed'] ?? _enrolledCourses.where((c) => _enrollmentProgress(c) >= 100).length}',
                         label: context.l10n.completed,
                       ),
                     ),
@@ -430,7 +471,8 @@ class _EnrolledScreenState extends State<EnrolledScreen> {
     if (value == null) return defaultValue;
     if (value is num) return value;
     if (value is String) {
-      final parsed = num.tryParse(value);
+      final cleaned = value.replaceAll('%', '').trim();
+      final parsed = num.tryParse(cleaned);
       return parsed ?? defaultValue;
     }
     return defaultValue;
@@ -446,18 +488,214 @@ class _EnrolledScreenState extends State<EnrolledScreen> {
     return _parseNum(value, defaultValue).toDouble();
   }
 
+  int _enrollmentProgress(Map<String, dynamic> enrollment) {
+    final status = enrollment['status']?.toString().toLowerCase();
+    if (status == 'completed') return 100;
+
+    final course = enrollment['course'] is Map<String, dynamic>
+        ? enrollment['course'] as Map<String, dynamic>
+        : const <String, dynamic>{};
+
+    final courseProgress = enrollment['course_progress'];
+    if (courseProgress is Map) {
+      final p = courseProgress['percentage'] ?? courseProgress['progress'];
+      if (p != null) return _parseInt(p).clamp(0, 100);
+    }
+
+    final completed = _enrollmentCompletedLessons(enrollment);
+    final total = _enrollmentTotalLessons(enrollment, course);
+    if (total > 0 && completed >= total) return 100;
+
+    final direct = enrollment['progress'] ??
+        enrollment['progress_percentage'] ??
+        enrollment['completion_percentage'] ??
+        course['progress'] ??
+        course['progress_percentage'] ??
+        course['completion_percentage'];
+    if (direct != null) {
+      final raw = _parseDouble(direct);
+      // Some APIs return progress as 0..1 fraction.
+      final normalized = raw > 0 && raw <= 1 ? raw * 100 : raw;
+      return normalized.round().clamp(0, 100);
+    }
+    return 0;
+  }
+
+  int _enrollmentCompletedLessons(Map<String, dynamic> enrollment) {
+    final courseProgress = enrollment['course_progress'];
+    if (courseProgress is Map) {
+      final v =
+          courseProgress['completed_lessons'] ?? courseProgress['completed'];
+      if (v != null) return _parseInt(v);
+    }
+    return _parseInt(
+      enrollment['completed_lessons'] ??
+          enrollment['completed_lessons_count'] ??
+          enrollment['completed'],
+    );
+  }
+
+  int _enrollmentTotalLessons(
+      Map<String, dynamic> enrollment, Map<String, dynamic> course) {
+    final courseProgress = enrollment['course_progress'];
+    if (courseProgress is Map) {
+      final v = courseProgress['total_lessons'] ?? courseProgress['total'];
+      if (v != null) return _parseInt(v);
+    }
+    final value = enrollment['total_lessons'] ??
+        enrollment['lessons_count'] ??
+        enrollment['total_lessons_count'] ??
+        course['lessons_count'];
+    return _parseInt(value);
+  }
+
+  Widget _buildBookmarkedLessonsEntry(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 18),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFF59E0B).withOpacity(0.25)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF59E0B).withOpacity(0.14),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.bookmark_rounded,
+                  color: Color(0xFFF59E0B),
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Bookmarked Lessons',
+                      style: GoogleFonts.cairo(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.foreground,
+                      ),
+                    ),
+                    Text(
+                      '${_bookmarkedLessons.length} saved lessons',
+                      style: GoogleFonts.cairo(
+                        fontSize: 12,
+                        color: AppColors.mutedForeground,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (_bookmarkedLessons.isEmpty)
+            Text(
+              'No bookmarked lessons yet.',
+              style: GoogleFonts.cairo(
+                fontSize: 12,
+                color: AppColors.mutedForeground,
+              ),
+            )
+          else
+            SizedBox(
+              height: 84,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: _bookmarkedLessons.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 10),
+                itemBuilder: (context, index) {
+                  final item = _bookmarkedLessons[index];
+                  final lessonTitle =
+                      item['lessonTitle']?.toString() ?? 'Lesson';
+                  return GestureDetector(
+                    onTap: () => _openBookmarkedLesson(context, item),
+                    child: Container(
+                      width: 220,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFFBF2),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: const Color(0xFFF59E0B).withOpacity(0.2),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.play_circle_fill_rounded,
+                            color: Color(0xFFF59E0B),
+                            size: 26,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  lessonTitle,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.cairo(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.foreground,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            size: 12,
+                            color: Color(0xFFF59E0B),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildCourseCard(
       BuildContext context, Map<String, dynamic> enrollment) {
     // Extract course data from enrollment
     final course = enrollment['course'] as Map<String, dynamic>?;
     if (course == null) return const SizedBox.shrink();
 
-    final progress = _parseInt(enrollment['progress']);
-    final completedLessons = _parseInt(enrollment['completed_lessons']);
-    final totalLessons = _parseInt(enrollment['total_lessons']) != 0
-        ? _parseInt(enrollment['total_lessons'])
-        : _parseInt(course['lessons_count']);
+    final progress = _enrollmentProgress(enrollment);
+    final completedLessons = _enrollmentCompletedLessons(enrollment);
+    final totalLessons = _enrollmentTotalLessons(enrollment, course);
     final courseTitle = course['title']?.toString() ?? '';
+    final instructor = course['instructor'] is Map
+        ? (course['instructor'] as Map)['name']?.toString() ?? ''
+        : course['instructor']?.toString() ?? '';
     final rating = _parseDouble(course['rating'], 0.0);
     final durationHours = _parseNum(course['duration_hours']);
     final thumbnail = course['thumbnail']?.toString();
@@ -636,8 +874,26 @@ class _EnrolledScreenState extends State<EnrolledScreen> {
                   ),
                   const SizedBox(height: 8),
 
+                  // Instructor & Rating
                   Row(
                     children: [
+                      Icon(Icons.person_outline_rounded,
+                          size: 14, color: Colors.grey[400]),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          instructor.isNotEmpty
+                              ? instructor
+                              : context.l10n.instructor,
+                          style: GoogleFonts.cairo(
+                            fontSize: 12,
+                            color: AppColors.mutedForeground,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const Spacer(),
                       const Icon(Icons.star_rounded,
                           size: 14, color: Colors.amber),
                       const SizedBox(width: 2),
@@ -845,31 +1101,11 @@ class _EnrolledScreenState extends State<EnrolledScreen> {
             width: 120,
             height: 120,
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppColors.brandBlue.withOpacity(0.14),
-                  AppColors.brandPurple.withOpacity(0.14),
-                ],
-              ),
+              color: AppColors.purple.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
-            child: Center(
-              child: ShaderMask(
-                blendMode: BlendMode.srcIn,
-                shaderCallback: (bounds) => const LinearGradient(
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                  colors: AppColors.brandGradient,
-                ).createShader(bounds),
-                child: const Icon(
-                  Icons.school_rounded,
-                  size: 60,
-                  color: Colors.white,
-                ),
-              ),
-            ),
+            child: const Icon(Icons.school_rounded,
+                size: 60, color: AppColors.purple),
           ),
           const SizedBox(height: 24),
           Text(
@@ -895,14 +1131,12 @@ class _EnrolledScreenState extends State<EnrolledScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                  colors: AppColors.brandGradient,
+                  colors: [Color(0xFF0C52B3), Color(0xFF093F8A)],
                 ),
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.brandPurple.withOpacity(0.28),
+                    color: AppColors.purple.withOpacity(0.3),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),

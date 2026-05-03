@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import '../core/api/api_client.dart';
 import '../core/api/api_endpoints.dart';
@@ -8,6 +9,81 @@ class ProfileService {
   ProfileService._();
   
   static final ProfileService instance = ProfileService._();
+
+  String _resolveFirebaseEmail(User firebaseUser) {
+    final directEmail = firebaseUser.email?.trim() ?? '';
+    if (directEmail.isNotEmpty) {
+      return directEmail;
+    }
+
+    for (final provider in firebaseUser.providerData) {
+      final providerEmail = provider.email?.trim() ?? '';
+      if (providerEmail.isNotEmpty) {
+        return providerEmail;
+      }
+    }
+
+    return '';
+  }
+
+  String _resolveFirebaseName(User firebaseUser) {
+    final displayName = firebaseUser.displayName?.trim() ?? '';
+    if (displayName.isNotEmpty) {
+      return displayName;
+    }
+
+    final email = _resolveFirebaseEmail(firebaseUser);
+    if (email.isNotEmpty && email.contains('@')) {
+      final localPart = email.split('@').first;
+      if (localPart.isNotEmpty) {
+        return localPart;
+      }
+    }
+
+    return 'User';
+  }
+
+  String _resolveFirebaseProvider(User firebaseUser) {
+    if (firebaseUser.providerData.isNotEmpty) {
+      return firebaseUser.providerData.first.providerId;
+    }
+    return 'firebase';
+  }
+
+  Map<String, dynamic>? _firebaseProfileFallback() {
+    final firebaseUser = FirebaseAuth.instance.currentUser;
+    if (firebaseUser == null) return null;
+    final resolvedEmail = _resolveFirebaseEmail(firebaseUser);
+
+    return {
+      'id': firebaseUser.uid,
+      'name': _resolveFirebaseName(firebaseUser),
+      'email': resolvedEmail,
+      'phone': firebaseUser.phoneNumber ?? '',
+      'avatar': firebaseUser.photoURL ?? '',
+      'provider': _resolveFirebaseProvider(firebaseUser),
+    };
+  }
+
+  Map<String, dynamic> _mergeProfileWithFirebase(
+    Map<String, dynamic> profile,
+  ) {
+    final firebaseUser = FirebaseAuth.instance.currentUser;
+    if (firebaseUser == null) {
+      return profile;
+    }
+
+    final merged = Map<String, dynamic>.from(profile);
+    merged['name'] = _resolveFirebaseName(firebaseUser);
+    merged['email'] = _resolveFirebaseEmail(firebaseUser);
+
+    final firebaseAvatar = firebaseUser.photoURL?.trim() ?? '';
+    if (firebaseAvatar.isNotEmpty) {
+      merged['avatar'] = firebaseAvatar;
+    }
+
+    return merged;
+  }
 
   /// Get user profile
   Future<Map<String, dynamic>> getProfile() async {
@@ -43,13 +119,14 @@ class ProfileService {
       
       if (response['success'] == true && response['data'] != null) {
         final profileData = response['data'] as Map<String, dynamic>;
+        final mergedProfile = _mergeProfileWithFirebase(profileData);
         if (kDebugMode) {
           print('✅ Profile data extracted successfully');
-          print('  Profile keys: ${profileData.keys.toList()}');
-          print('  Profile name: ${profileData['name']}');
-          print('  Profile email: ${profileData['email']}');
+          print('  Profile keys: ${mergedProfile.keys.toList()}');
+          print('  Profile name: ${mergedProfile['name']}');
+          print('  Profile email: ${mergedProfile['email']}');
         }
-        return profileData;
+        return mergedProfile;
       } else {
         if (kDebugMode) {
           print('❌ Profile response failed');
@@ -57,6 +134,14 @@ class ProfileService {
           print('  Message: ${response['message']}');
           print('  Data: ${response['data']}');
         }
+        final firebaseFallback = _firebaseProfileFallback();
+        if (firebaseFallback != null) {
+          if (kDebugMode) {
+            print('ℹ️ Using Firebase profile fallback');
+          }
+          return firebaseFallback;
+        }
+
         throw Exception(response['message'] ?? 'Failed to fetch profile');
       }
     } catch (e) {
@@ -65,6 +150,14 @@ class ProfileService {
         print('  Error: $e');
         print('  Error type: ${e.runtimeType}');
       }
+      final firebaseFallback = _firebaseProfileFallback();
+      if (firebaseFallback != null) {
+        if (kDebugMode) {
+          print('ℹ️ Using Firebase profile fallback after error');
+        }
+        return firebaseFallback;
+      }
+
       rethrow;
     }
   }

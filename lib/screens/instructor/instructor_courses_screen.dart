@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import '../../core/course_pricing.dart';
 import '../../core/design/app_colors.dart';
 import '../../core/design/app_radius.dart';
 import '../../core/navigation/route_names.dart';
@@ -201,7 +202,7 @@ class _InstructorCoursesScreenState extends State<InstructorCoursesScreen> {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [AppColors.primary, AppColors.pureWhite],
+          colors: [Color(0xFF0C52B3), Color(0xFF093F8A)],
         ),
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(AppRadius.largeCard),
@@ -699,8 +700,7 @@ class _InstructorCoursesScreenState extends State<InstructorCoursesScreen> {
             ''
         : c['categoryName']?.toString() ?? c['category']?.toString() ?? '';
     final price = (c['price'] as num?)?.toDouble();
-    final isFreeFlag =
-        c['isFree'] == true || c['is_free'] == true || c['free'] == true;
+    final hasPaidCourse = courseHasPaidAmount(c);
     final durationRaw =
         c['duration'] ?? c['durationHours'] ?? c['durationMinutes'];
     final durationStr = _formatDurationAsHoursMinutes(durationRaw, isAr);
@@ -850,7 +850,7 @@ class _InstructorCoursesScreenState extends State<InstructorCoursesScreen> {
                               }(),
                               isAr,
                             ),
-                          if (price == null || price == 0 || isFreeFlag)
+                          if (!hasPaidCourse)
                             _buildStatChip(
                               context,
                               Icons.workspace_premium_rounded,
@@ -858,12 +858,20 @@ class _InstructorCoursesScreenState extends State<InstructorCoursesScreen> {
                               const Color(0xFF22C55E),
                               isAr,
                             ),
-                          if (price != null && price > 0 && !isFreeFlag)
+                          if (hasPaidCourse && price != null && price > 0)
                             _buildStatChip(
                               context,
                               Icons.payments_rounded,
                               '${price.toInt()} ${isAr ? 'ج.م' : 'EGP'}',
-                              AppColors.primary,
+                              const Color(0xFF0C52B3),
+                              isAr,
+                            ),
+                          if (hasPaidCourse && (price == null || price == 0))
+                            _buildStatChip(
+                              context,
+                              Icons.payments_rounded,
+                              isAr ? 'مدفوع' : 'Paid',
+                              const Color(0xFF0C52B3),
                               isAr,
                             ),
                           if (durationStr.isNotEmpty)

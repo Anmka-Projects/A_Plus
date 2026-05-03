@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../core/design/app_text_styles.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../core/design/app_colors.dart';
 import '../../core/design/app_radius.dart';
@@ -114,8 +113,7 @@ class _CenterAttendanceScreenState extends State<CenterAttendanceScreen> {
         child: Column(
           children: [
             // Header with Profile and Stats
-            _buildHeader(
-                context, l10n, enrolledCourses, certificates, totalHours),
+            _buildHeader(context, l10n, enrolledCourses, certificates, totalHours),
 
             // Content
             Expanded(
@@ -128,17 +126,17 @@ class _CenterAttendanceScreenState extends State<CenterAttendanceScreen> {
                           const SizedBox(height: 16),
                           Text(
                             l10n.loadingQrCode,
-                            style: AppTextStyles.bodySmall(
+                            style: GoogleFonts.cairo(
+                              fontSize: 14,
                               color: AppColors.mutedForeground,
-                            ).copyWith(fontSize: 14),
+                            ),
                           ),
                         ],
                       ),
                     )
                   : _error != null
                       ? _buildErrorState(context, l10n)
-                      : _buildContent(context, l10n, enrolledCourses,
-                          certificates, totalHours),
+                      : _buildContent(context, l10n, enrolledCourses, certificates, totalHours),
             ),
           ],
         ),
@@ -158,7 +156,7 @@ class _CenterAttendanceScreenState extends State<CenterAttendanceScreen> {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [AppColors.primary, AppColors.pureWhite],
+          colors: [Color(0xFF0C52B3), Color(0xFF093F8A)],
         ),
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(AppRadius.largeCard),
@@ -199,11 +197,10 @@ class _CenterAttendanceScreenState extends State<CenterAttendanceScreen> {
                 Expanded(
                   child: Text(
                     l10n.centerAttendance,
-                    style: AppTextStyles.h3(
-                      color: Colors.white,
-                    ).copyWith(
+                    style: GoogleFonts.cairo(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
                   ),
                 ),
@@ -283,19 +280,19 @@ class _CenterAttendanceScreenState extends State<CenterAttendanceScreen> {
                     children: [
                       Text(
                         _profile?['name']?.toString() ?? l10n.user,
-                        style: AppTextStyles.h3(
-                          color: Colors.white,
-                        ).copyWith(
+                        style: GoogleFonts.cairo(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
+                          color: Colors.white,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         _profile?['email']?.toString() ?? '',
-                        style: AppTextStyles.bodySmall(
+                        style: GoogleFonts.cairo(
+                          fontSize: 13,
                           color: Colors.white.withOpacity(0.8),
-                        ).copyWith(fontSize: 13),
+                        ),
                       ),
                     ],
                   ),
@@ -359,11 +356,10 @@ class _CenterAttendanceScreenState extends State<CenterAttendanceScreen> {
             const SizedBox(width: 4),
             Text(
               value,
-              style: AppTextStyles.bodyMedium(
-                color: Colors.white,
-              ).copyWith(
+              style: GoogleFonts.cairo(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
+                color: Colors.white,
               ),
             ),
           ],
@@ -371,9 +367,10 @@ class _CenterAttendanceScreenState extends State<CenterAttendanceScreen> {
         const SizedBox(height: 2),
         Text(
           label,
-          style: AppTextStyles.bodySmall(
+          style: GoogleFonts.cairo(
+            fontSize: 11,
             color: Colors.white.withOpacity(0.8),
-          ).copyWith(fontSize: 11),
+          ),
         ),
       ],
     );
@@ -402,27 +399,27 @@ class _CenterAttendanceScreenState extends State<CenterAttendanceScreen> {
             const SizedBox(height: 24),
             Text(
               l10n.errorLoadingQrCode,
-              style: AppTextStyles.h3(
-                color: AppColors.foreground,
-              ).copyWith(
+              style: GoogleFonts.cairo(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
+                color: AppColors.foreground,
               ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
               _error ?? l10n.unknownError,
-              style: AppTextStyles.bodySmall(
+              style: GoogleFonts.cairo(
+                fontSize: 14,
                 color: AppColors.mutedForeground,
-              ).copyWith(fontSize: 14),
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: _loadData,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryLight,
+                backgroundColor: AppColors.purple,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 32,
@@ -434,7 +431,7 @@ class _CenterAttendanceScreenState extends State<CenterAttendanceScreen> {
               ),
               child: Text(
                 l10n.retry,
-                style: AppTextStyles.buttonSmall().copyWith(
+                style: GoogleFonts.cairo(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
                 ),
@@ -482,9 +479,10 @@ class _CenterAttendanceScreenState extends State<CenterAttendanceScreen> {
                 const SizedBox(height: 12),
                 Text(
                   l10n.centerAttendanceDescription,
-                  style: AppTextStyles.bodySmall(
+                  style: GoogleFonts.cairo(
+                    fontSize: 14,
                     color: AppColors.mutedForeground,
-                  ).copyWith(fontSize: 14),
+                  ),
                   textAlign: TextAlign.center,
                 ),
               ],
@@ -535,9 +533,10 @@ class _CenterAttendanceScreenState extends State<CenterAttendanceScreen> {
                 // Instructions
                 Text(
                   l10n.scanQrCodeInstruction,
-                  style: AppTextStyles.bodySmall(
+                  style: GoogleFonts.cairo(
+                    fontSize: 13,
                     color: AppColors.mutedForeground,
-                  ).copyWith(fontSize: 13),
+                  ),
                   textAlign: TextAlign.center,
                 ),
               ],
@@ -552,7 +551,7 @@ class _CenterAttendanceScreenState extends State<CenterAttendanceScreen> {
             icon: const Icon(Icons.refresh_rounded, size: 20),
             label: Text(
               l10n.refreshQrCode,
-              style: AppTextStyles.buttonSmall().copyWith(
+              style: GoogleFonts.cairo(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
               ),

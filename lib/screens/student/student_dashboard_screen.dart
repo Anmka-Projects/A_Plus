@@ -10,6 +10,10 @@ import '../../core/navigation/route_names.dart';
 import '../../core/api/api_endpoints.dart';
 import '../../widgets/bottom_nav.dart';
 import '../../services/auth_service.dart';
+import '../../services/certificates_service.dart';
+import '../../services/courses_service.dart';
+import '../../services/exams_service.dart';
+import '../../services/live_courses_service.dart';
 import '../../services/profile_service.dart';
 import '../../l10n/app_localizations.dart';
 
@@ -25,6 +29,10 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
   bool _isLoading = true;
   Map<String, dynamic>? _profile;
   Map<String, dynamic>? _statistics;
+  int _myEnteredExamsCount = 0;
+  int? _enrolledCoursesCountOverride;
+  int? _certificatesCountOverride;
+  int? _liveSessionsCountOverride;
 
   @override
   void initState() {
@@ -35,7 +43,41 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
   Future<void> _loadProfile() async {
     setState(() => _isLoading = true);
     try {
-      final profile = await ProfileService.instance.getProfile();
+      final profileFuture = ProfileService.instance.getProfile();
+      final myExamsFuture = ExamsService.instance.getMyExams();
+      final enrollmentsFuture = CoursesService.instance.getEnrollments(
+        status: 'all',
+        page: 1,
+        perPage: 1,
+      );
+      final certificatesFuture = CertificatesService.instance.getCertificates();
+      final liveSessionsFuture =
+          LiveCoursesService.instance.getLiveCourses(requireAuth: true);
+      final profile = await profileFuture;
+      Map<String, dynamic>? myExamsResponse;
+      Map<String, dynamic>? enrollmentsResponse;
+      Map<String, dynamic>? certificatesResponse;
+      Map<String, dynamic>? liveSessionsResponse;
+      try {
+        myExamsResponse = await myExamsFuture;
+      } catch (_) {
+        myExamsResponse = null;
+      }
+      try {
+        enrollmentsResponse = await enrollmentsFuture;
+      } catch (_) {
+        enrollmentsResponse = null;
+      }
+      try {
+        certificatesResponse = await certificatesFuture;
+      } catch (_) {
+        certificatesResponse = null;
+      }
+      try {
+        liveSessionsResponse = await liveSessionsFuture;
+      } catch (_) {
+        liveSessionsResponse = null;
+      }
       if (kDebugMode) {
         print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         print('🖼️ STUDENT DASHBOARD - PROFILE AVATAR');
@@ -54,9 +96,69 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
         print('✅ Profile loaded: ${profile['name']}');
         print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       }
+      int enteredExamsCount = 0;
+      if (myExamsResponse != null) {
+        final completed = myExamsResponse['completed'];
+        if (completed is List) {
+          enteredExamsCount = completed.length;
+        } else if (myExamsResponse['results'] is List) {
+          enteredExamsCount = (myExamsResponse['results'] as List).length;
+        } else if (myExamsResponse['items'] is List) {
+          enteredExamsCount = (myExamsResponse['items'] as List).length;
+        }
+      }
+
+      int? enrolledCoursesCount;
+      if (enrollmentsResponse != null) {
+        final meta = enrollmentsResponse['meta'];
+        if (meta is Map<String, dynamic>) {
+          final total = meta['total'] ??
+              meta['total_enrolled'] ??
+              meta['total_courses'] ??
+              meta['count'];
+          if (total is num) enrolledCoursesCount = total.toInt();
+          if (total is String) enrolledCoursesCount = int.tryParse(total);
+        }
+        if (enrolledCoursesCount == null) {
+          final data = enrollmentsResponse['data'];
+          if (data is List) {
+            enrolledCoursesCount = data.length;
+          } else if (data is Map<String, dynamic>) {
+            final courses = data['courses'];
+            if (courses is List) enrolledCoursesCount = courses.length;
+          }
+        }
+      }
+
+      int? certificatesCount;
+      if (certificatesResponse != null) {
+        final data = certificatesResponse['data'];
+        if (data is List) {
+          certificatesCount = data.length;
+        } else if (data is Map<String, dynamic>) {
+          final nested = data['certificates'] ?? data['items'] ?? data['data'];
+          if (nested is List) certificatesCount = nested.length;
+        }
+      }
+
+      int? liveSessionsCount;
+      if (liveSessionsResponse != null) {
+        final upcoming = liveSessionsResponse['upcoming'];
+        final liveNow = liveSessionsResponse['live_now'];
+        final past = liveSessionsResponse['past'];
+        final upcomingCount = upcoming is List ? upcoming.length : 0;
+        final liveNowCount = liveNow is List ? liveNow.length : 0;
+        final pastCount = past is List ? past.length : 0;
+        liveSessionsCount = upcomingCount + liveNowCount + pastCount;
+      }
+
       setState(() {
         _profile = profile;
         _statistics = profile['statistics'] as Map<String, dynamic>?;
+        _myEnteredExamsCount = enteredExamsCount;
+        _enrolledCoursesCountOverride = enrolledCoursesCount;
+        _certificatesCountOverride = certificatesCount;
+        _liveSessionsCountOverride = liveSessionsCount;
         _isLoading = false;
       });
     } catch (e) {
@@ -187,8 +289,11 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
       ),
     );
 
-    final enrolledCourses = _statistics?['enrolled_courses'] ?? 0;
-    final certificates = _statistics?['certificates_earned'] ?? 0;
+    final enrolledCourses =
+        _enrolledCoursesCountOverride ?? (_statistics?['enrolled_courses'] ?? 0);
+    final certificates =
+        _certificatesCountOverride ?? (_statistics?['certificates_earned'] ?? 0);
+    final totalHours = _statistics?['total_learning_hours'] ?? 0;
     final l10n = AppLocalizations.of(context)!;
 
     // Get student type from profile
@@ -198,29 +303,30 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
     // Build all menu items
     final allMenuItems = [
       {
-        'icon': Icons.menu_book_rounded,
-        'label': l10n.enrolledLessons,
-        'subtitle': l10n.activeCourse(enrolledCourses),
-        'color': AppColors.primary,
-        'bgColor': AppColors.primary.withOpacity(0.12),
-        'onTap': () => context.push(RouteNames.enrolled),
-        'showFor': ['online', 'offline'], // Show for both
-      },
-      {
         'icon': Icons.assignment_rounded,
         'label': l10n.myExams,
-        'subtitle': l10n.viewAllExams,
-        'color': AppColors.brandPurple,
-        'bgColor': AppColors.brandBlue.withOpacity(0.08),
+        'subtitle': _myEnteredExamsCount > 0
+            ? (Localizations.localeOf(context).languageCode == 'ar'
+                ? 'دخلت $_myEnteredExamsCount امتحان'
+                : 'You entered $_myEnteredExamsCount exams')
+            : l10n.viewAllExams,
+        'color': const Color(0xFFF97316),
+        'bgColor': const Color(0xFFFFF7ED),
         'onTap': () => context.push(RouteNames.myExams),
         'showFor': ['online', 'offline'], // Show for both
       },
       {
         'icon': Icons.videocam_rounded,
         'label': l10n.liveCourses,
-        'subtitle': l10n.comingSoon,
-        'color': AppColors.brandBlue,
-        'bgColor': AppColors.brandPurple.withOpacity(0.08),
+        'subtitle': _liveSessionsCountOverride != null
+            ? (_liveSessionsCountOverride == 0
+                ? l10n.comingSoon
+                : (_liveSessionsCountOverride == 1
+                    ? '1 live session'
+                    : '${_liveSessionsCountOverride!} live sessions'))
+            : l10n.comingSoon,
+        'color': const Color(0xFF10B981),
+        'bgColor': const Color(0xFFD1FAE5),
         'onTap': () => context.push(RouteNames.liveCourses),
         'showFor': ['online'], // Only for online
       },
@@ -228,22 +334,27 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
         'icon': Icons.emoji_events_rounded,
         'label': l10n.certificates,
         'subtitle': '$certificates ${l10n.certificates}',
-        'color': AppColors.brandPurple,
-        'bgColor': AppColors.brandBlue.withOpacity(0.08),
+        'color': const Color(0xFFEAB308),
+        'bgColor': const Color(0xFFFEF9C3),
         'onTap': () => context.push(RouteNames.certificates),
         'showFor': ['online', 'offline'], // Show for both
       },
       {
-        'icon': Icons.chat_bubble_rounded,
-        'label': Localizations.localeOf(context).languageCode == 'ar'
-            ? 'المحادثات'
-            : 'Chat',
-        'subtitle': Localizations.localeOf(context).languageCode == 'ar'
-            ? 'تواصل مع المعلمين'
-            : 'Message teachers',
-        'color': AppColors.brandPurple,
-        'bgColor': AppColors.brandBlue.withOpacity(0.1),
-        'onTap': () => context.push(RouteNames.chatConversations),
+        'icon': Icons.download_rounded,
+        'label': l10n.downloads,
+        'subtitle': l10n.savedFiles,
+        'color': const Color(0xFF3B82F6),
+        'bgColor': const Color(0xFFDBEAFE),
+        'onTap': () => context.push(RouteNames.downloads),
+        'showFor': ['online'], // Only for online
+      },
+      {
+        'icon': Icons.settings_rounded,
+        'label': l10n.settings,
+        'subtitle': l10n.customizeApp,
+        'color': const Color(0xFF6B7280),
+        'bgColor': const Color(0xFFF3F4F6),
+        'onTap': () => context.push(RouteNames.settings),
         'showFor': ['online', 'offline'], // Show for both
       },
     ];
@@ -263,7 +374,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
           Column(
             children: [
               // Header
-              _buildHeader(context),
+              _buildHeader(context, enrolledCourses, certificates, totalHours),
 
               // Content
               Expanded(
@@ -343,6 +454,20 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
                                 ),
                               ),
                             ),
+
+                            const SizedBox(height: 12),
+
+                            // Delete Account
+                            Center(
+                              child: TextButton(
+                                onPressed: () {},
+                                child: Text(
+                                  AppLocalizations.of(context)!.deleteAccount,
+                                  style: GoogleFonts.cairo(
+                                      fontSize: 13, color: Colors.red[300]),
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -357,13 +482,14 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(BuildContext context, int enrolledCourses,
+      int certificates, int totalHours) {
     return Container(
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: AppColors.brandGradient,
+          colors: [Color(0xFF0C52B3), Color(0xFF093F8A)],
         ),
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(AppRadius.largeCard),
@@ -371,7 +497,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.brandBlue.withOpacity(0.3),
+            color: AppColors.purple.withOpacity(0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -411,7 +537,19 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
                       color: Colors.white,
                     ),
                   ),
-                  const SizedBox(width: 44),
+                  GestureDetector(
+                    onTap: () => context.push(RouteNames.settings),
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Icon(Icons.edit_outlined,
+                          color: Colors.white, size: 20),
+                    ),
+                  ),
                 ],
               ),
 
@@ -449,7 +587,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
                               child: const Center(
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  color: AppColors.primary,
+                                  color: AppColors.purple,
                                 ),
                               ),
                             );
@@ -470,7 +608,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
                                 child: const Icon(
                                   Icons.person,
                                   size: 45,
-                                  color: AppColors.primary,
+                                  color: AppColors.purple,
                                 ),
                               ),
                             );
@@ -484,7 +622,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
                             child: const Icon(
                               Icons.person,
                               size: 45,
-                              color: AppColors.primary,
+                              color: AppColors.purple,
                             ),
                           ),
                         ),
@@ -509,10 +647,76 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
                   color: Colors.white.withOpacity(0.7),
                 ),
               ),
+
+              const SizedBox(height: 16),
+
+              // Stats Row
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildStat(
+                        '$enrolledCourses',
+                        AppLocalizations.of(context)!.course,
+                        Icons.play_circle_fill_rounded),
+                    Container(
+                      width: 1,
+                      height: 25,
+                      margin: const EdgeInsets.symmetric(horizontal: 16),
+                      color: Colors.white.withOpacity(0.3),
+                    ),
+                    _buildStat(
+                        '$certificates',
+                        AppLocalizations.of(context)!.certificates,
+                        Icons.emoji_events_rounded),
+                    Container(
+                      width: 1,
+                      height: 25,
+                      margin: const EdgeInsets.symmetric(horizontal: 16),
+                      color: Colors.white.withOpacity(0.3),
+                    ),
+                    _buildStat(
+                        '$totalHours',
+                        AppLocalizations.of(context)!.hour,
+                        Icons.access_time_filled_rounded),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildStat(String value, String label, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: Colors.white.withOpacity(0.8)),
+        const SizedBox(width: 4),
+        Text(
+          value,
+          style: GoogleFonts.cairo(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        const SizedBox(width: 3),
+        Text(
+          label,
+          style: GoogleFonts.cairo(
+            fontSize: 11,
+            color: Colors.white.withOpacity(0.8),
+          ),
+        ),
+      ],
     );
   }
 
@@ -529,24 +733,8 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color.alphaBlend(
-                AppColors.brandBlue.withOpacity(0.06),
-                Colors.white,
-              ),
-              Color.alphaBlend(
-                AppColors.brandPurple.withOpacity(0.05),
-                Colors.white,
-              ),
-            ],
-          ),
+          color: Colors.white,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: AppColors.brandBlue.withOpacity(0.08),
-          ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.04),
@@ -570,6 +758,8 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
             const Spacer(),
             Text(
               label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: GoogleFonts.cairo(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
@@ -579,6 +769,8 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
             const SizedBox(height: 2),
             Text(
               subtitle,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: GoogleFonts.cairo(
                 fontSize: 11,
                 color: AppColors.mutedForeground,

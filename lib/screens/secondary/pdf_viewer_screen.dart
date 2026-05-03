@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
@@ -8,7 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 import '../../core/design/app_colors.dart';
-import '../../core/api/api_endpoints.dart';
+import '../../core/resource_url_utils.dart';
 import '../../services/token_storage_service.dart';
 
 /// PDF Viewer Screen - Display PDF files using flutter_pdfview
@@ -35,6 +36,8 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
   int _totalPages = 0;
   bool _isReady = false;
   File? _tempPdfFile;
+  bool _showPageScrubber = false;
+  Timer? _scrubberAutoHideTimer;
 
   @override
   void initState() {
@@ -42,117 +45,211 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     _loadPdf();
   }
 
-  List<String> _pdfUrlCandidates(String rawUrl) {
-    final input = rawUrl.trim();
-    if (input.isEmpty) return const [];
-    final candidates = <String>[];
-
-    // Ensure absolute URL when backend sends relative media path.
-    if (input.startsWith('http://') || input.startsWith('https://')) {
-      candidates.add(input);
-    } else {
-      candidates.add(ApiEndpoints.getImageUrl(input));
-    }
-
-    // Some backends store files at /uploads, while app paths use /api/uploads.
-    final normalized = candidates.first;
-    if (normalized.contains('/api/uploads/')) {
-      candidates.add(normalized.replaceFirst('/api/uploads/', '/uploads/'));
-    }
-
-    // Remove duplicates while preserving order.
-    return candidates.toSet().toList();
-  }
-
   Future<void> _loadPdf() async {
     try {
       // Get authorization token for PDF access
       final token = await TokenStorageService.instance.getAccessToken();
 
-      final pdfUrls = _pdfUrlCandidates(widget.pdfUrl);
-      if (pdfUrls.isEmpty) {
-        throw Exception('PDF URL is empty');
-      }
-      final pdfUrl = pdfUrls.first;
+      String pdfUrl = widget.pdfUrl;
 
       if (kDebugMode) {
         print('📄 Loading PDF: $pdfUrl');
         print('🔑 Token exists: ${token != null && token.isNotEmpty}');
       }
 
+      // Local file (e.g. saved from in-app Downloads)
+      final uriTry = Uri.tryParse(pdfUrl);
+      if (uriTry != null && uriTry.isScheme('file')) {
+        final path = uriTry.toFilePath();
+        final f = File(path);
+        if (await f.exists()) {
+          if (mounted) {
+            setState(() {
+              _localPath = path;
+              _isLoading = false;
+            });
+          }
+          return;
+        }
+      }
+      if (!pdfUrl.startsWith('http://') && !pdfUrl.startsWith('https://')) {
+        final f = File(pdfUrl);
+        if (await f.exists()) {
+          if (mounted) {
+            setState(() {
+              _localPath = f.path;
+              _isLoading = false;
+            });
+          }
+          return;
+        }
+      }
+
+      // Build PDF URL with token as query parameter (for fallback)
+      String pdfUrlWithToken = pdfUrl;
+      if (token != null && token.isNotEmpty) {
+        final uri = Uri.parse(pdfUrl);
+        pdfUrlWithToken = uri.replace(queryParameters: {
+          ...uri.queryParameters,
+          'token': token,
+        }).toString();
+      }
+
       // Try to download PDF with Authorization header first
       File? pdfFile;
       if (token != null && token.isNotEmpty) {
-        for (final candidate in pdfUrls) {
-          // Method 1: Try with Authorization header
+        // Method 1: Try with Authorization header
+        try {
+          if (kDebugMode) {
+            print(
+                '📥 Downloading PDF via Flutter HTTP request with Authorization header...');
+          }
+
+          final headers = <String, String>{
+            'Authorization': 'Bearer $token',
+          };
+
+          final response = await http
+              .get(
+                Uri.parse(pdfUrl),
+                headers: headers,
+              )
+              .timeout(const Duration(seconds: 30));
+
+          if (response.statusCode == 200) {
+            if (kDebugMode) {
+              print(
+                  '✅ PDF downloaded successfully via HTTP (${response.bodyBytes.length} bytes)');
+            }
+
+            // Check if response is actually a PDF
+            final contentType = response.headers['content-type'] ?? '';
+            if (contentType.contains('pdf') ||
+                response.bodyBytes.length > 100 &&
+                    String.fromCharCodes(response.bodyBytes.take(4)) ==
+                        '%PDF') {
+              pdfFile = await _savePdfToFile(response.bodyBytes);
+            } else {
+              if (kDebugMode) {
+                print('⚠️ Response is not a PDF file');
+              }
+            }
+          } else {
+            if (kDebugMode) {
+              print(
+                  '❌ HTTP request failed with status: ${response.statusCode}');
+              if (response.statusCode == 404) {
+                print('⚠️ PDF file not found with Authorization header');
+                print('   Will try with token as query parameter...');
+              }
+            }
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            print(
+                '⚠️ Failed to download PDF via HTTP with Authorization header: $e');
+            print('   Will try with token as query parameter...');
+          }
+        }
+
+        // Method 2: If Authorization header failed, try with token as query parameter
+        if (pdfFile == null) {
           try {
             if (kDebugMode) {
-              print('📥 Trying PDF (auth header): $candidate');
+              print(
+                  '📥 Trying PDF download via Flutter HTTP request with token as query parameter...');
             }
-            final response = await http.get(
-              Uri.parse(candidate),
-              headers: {'Authorization': 'Bearer $token'},
-            ).timeout(const Duration(seconds: 30));
+
+            final response = await http
+                .get(
+                  Uri.parse(pdfUrlWithToken),
+                )
+                .timeout(const Duration(seconds: 30));
+
             if (response.statusCode == 200) {
+              if (kDebugMode) {
+                print(
+                    '✅ PDF downloaded successfully via HTTP with token param (${response.bodyBytes.length} bytes)');
+              }
+
+              // Check if response is actually a PDF
               final contentType = response.headers['content-type'] ?? '';
               if (contentType.contains('pdf') ||
                   response.bodyBytes.length > 100 &&
                       String.fromCharCodes(response.bodyBytes.take(4)) ==
                           '%PDF') {
                 pdfFile = await _savePdfToFile(response.bodyBytes);
-                break;
+              }
+            } else {
+              if (kDebugMode) {
+                print(
+                    '❌ HTTP request with token param failed with status: ${response.statusCode}');
               }
             }
-          } catch (_) {}
-
-          // Method 2: token query parameter
-          if (pdfFile == null) {
-            try {
-              final uri = Uri.parse(candidate);
-              final withToken = uri.replace(queryParameters: {
-                ...uri.queryParameters,
-                'token': token,
-              }).toString();
-              if (kDebugMode) {
-                print('📥 Trying PDF (token query): $withToken');
-              }
-              final response = await http
-                  .get(Uri.parse(withToken))
-                  .timeout(const Duration(seconds: 30));
-              if (response.statusCode == 200) {
-                final contentType = response.headers['content-type'] ?? '';
-                if (contentType.contains('pdf') ||
-                    response.bodyBytes.length > 100 &&
-                        String.fromCharCodes(response.bodyBytes.take(4)) ==
-                            '%PDF') {
-                  pdfFile = await _savePdfToFile(response.bodyBytes);
-                  break;
-                }
-              }
-            } catch (_) {}
+          } catch (e) {
+            if (kDebugMode) {
+              print('⚠️ Failed to download PDF via HTTP with token param: $e');
+            }
           }
         }
       } else {
         // Try without authentication
-        for (final candidate in pdfUrls) {
+        try {
+          if (kDebugMode) {
+            print('📥 Trying PDF download without authentication...');
+          }
+
+          final response = await http
+              .get(
+                Uri.parse(pdfUrl),
+              )
+              .timeout(const Duration(seconds: 30));
+
+          if (response.statusCode == 200) {
+            final contentType = response.headers['content-type'] ?? '';
+            if (contentType.contains('pdf') ||
+                response.bodyBytes.length > 100 &&
+                    String.fromCharCodes(response.bodyBytes.take(4)) ==
+                        '%PDF') {
+              pdfFile = await _savePdfToFile(response.bodyBytes);
+            }
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            print('⚠️ Failed to download PDF without authentication: $e');
+          }
+        }
+      }
+
+      // Google Drive share links often need the `uc?export=download` endpoint for raw bytes.
+      if (pdfFile == null) {
+        final driveDl = googleDriveDirectDownloadUrl(pdfUrl);
+        if (driveDl != null) {
           try {
             if (kDebugMode) {
-              print('📥 Trying PDF without auth: $candidate');
+              print('📥 Trying Google Drive uc export for PDF bytes...');
+            }
+            final headers = <String, String>{};
+            if (token != null && token.isNotEmpty) {
+              headers['Authorization'] = 'Bearer $token';
             }
             final response = await http
-                .get(Uri.parse(candidate))
-                .timeout(const Duration(seconds: 30));
+                .get(Uri.parse(driveDl), headers: headers)
+                .timeout(const Duration(seconds: 45));
             if (response.statusCode == 200) {
               final contentType = response.headers['content-type'] ?? '';
               if (contentType.contains('pdf') ||
-                  response.bodyBytes.length > 100 &&
+                  (response.bodyBytes.length > 100 &&
                       String.fromCharCodes(response.bodyBytes.take(4)) ==
-                          '%PDF') {
+                          '%PDF')) {
                 pdfFile = await _savePdfToFile(response.bodyBytes);
-                break;
               }
             }
-          } catch (_) {}
+          } catch (e) {
+            if (kDebugMode) {
+              print('⚠️ Google Drive PDF download failed: $e');
+            }
+          }
         }
       }
 
@@ -203,8 +300,21 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     return file;
   }
 
+  void _showScrubberTemporarily({Duration hideAfter = const Duration(seconds: 2)}) {
+    if (!mounted || !_isReady || _totalPages <= 1) return;
+    _scrubberAutoHideTimer?.cancel();
+    if (!_showPageScrubber) {
+      setState(() => _showPageScrubber = true);
+    }
+    _scrubberAutoHideTimer = Timer(hideAfter, () {
+      if (!mounted) return;
+      setState(() => _showPageScrubber = false);
+    });
+  }
+
   @override
   void dispose() {
+    _scrubberAutoHideTimer?.cancel();
     _pdfViewController?.dispose();
     // Clean up temporary PDF file
     if (_tempPdfFile != null) {
@@ -290,7 +400,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                         ),
                         if (_isReady && _totalPages > 0)
                           Text(
-                            'صفحة $_currentPage من $_totalPages',
+                            'صفحة ${_currentPage + 1} من $_totalPages',
                             style: GoogleFonts.cairo(
                               fontSize: 12,
                               color: AppColors.mutedForeground,
@@ -336,8 +446,11 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
 
             // PDF Viewer
             Expanded(
-              child: _isLoading
-                  ? Container(
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: _isLoading
+                        ? Container(
                       color: const Color(0xFFF5F5F5),
                       child: Center(
                         child: Column(
@@ -358,8 +471,8 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                         ),
                       ),
                     )
-                  : _errorMessage != null
-                      ? Container(
+                        : _errorMessage != null
+                            ? Container(
                           color: const Color(0xFFF5F5F5),
                           child: Center(
                             child: Column(
@@ -396,7 +509,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                                         _loadPdf();
                                       },
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: AppColors.primaryLight,
+                                        backgroundColor: AppColors.purple,
                                         padding: const EdgeInsets.symmetric(
                                           horizontal: 24,
                                           vertical: 12,
@@ -421,8 +534,8 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                             ),
                           ),
                         )
-                      : _localPath != null
-                          ? PDFView(
+                            : _localPath != null
+                                ? PDFView(
                               filePath: _localPath!,
                               enableSwipe: true,
                               swipeHorizontal: false,
@@ -438,6 +551,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                                     _totalPages = pages ?? 0;
                                     _isReady = true;
                                   });
+                                  _showScrubberTemporarily();
                                 }
                               },
                               onError: (error) {
@@ -474,7 +588,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                                 }
                               },
                             )
-                          : Container(
+                                : Container(
                               color: const Color(0xFFF5F5F5),
                               child: Center(
                                 child: Text(
@@ -486,6 +600,101 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                                 ),
                               ),
                             ),
+                  ),
+                  Positioned.fill(
+                    child: Listener(
+                      behavior: HitTestBehavior.translucent,
+                      onPointerDown: (_) => _showScrubberTemporarily(),
+                      child: const SizedBox.expand(),
+                    ),
+                  ),
+                  if (_isReady && _totalPages > 1)
+                    Positioned(
+                      top: 16,
+                      bottom: 16,
+                      right: 8,
+                      child: IgnorePointer(
+                        ignoring: !_showPageScrubber,
+                        child: AnimatedOpacity(
+                          opacity: _showPageScrubber ? 1 : 0,
+                          duration: const Duration(milliseconds: 180),
+                          curve: Curves.easeOut,
+                          child: AnimatedSlide(
+                            duration: const Duration(milliseconds: 180),
+                            curve: Curves.easeOut,
+                            offset: _showPageScrubber
+                                ? Offset.zero
+                                : const Offset(0.18, 0),
+                            child: Container(
+                              width: 22,
+                              padding: const EdgeInsets.symmetric(vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.transparent,
+                                borderRadius: BorderRadius.circular(18),
+                              ),
+                              child: Column(
+                                children: [
+                                  Expanded(
+                                    child: RotatedBox(
+                                      quarterTurns: 1,
+                                      child: SliderTheme(
+                                        data: SliderTheme.of(context).copyWith(
+                                          trackHeight: 0,
+                                          overlayShape:
+                                              SliderComponentShape.noOverlay,
+                                          activeTrackColor: Colors.transparent,
+                                          inactiveTrackColor:
+                                              Colors.transparent,
+                                          disabledActiveTrackColor:
+                                              Colors.transparent,
+                                          disabledInactiveTrackColor:
+                                              Colors.transparent,
+                                          activeTickMarkColor:
+                                              Colors.transparent,
+                                          inactiveTickMarkColor:
+                                              Colors.transparent,
+                                          thumbColor: AppColors.purple,
+                                          thumbShape:
+                                              const RoundSliderThumbShape(
+                                            enabledThumbRadius: 7,
+                                          ),
+                                        ),
+                                        child: Slider(
+                                          min: 0,
+                                          max: (_totalPages - 1).toDouble(),
+                                          value: _currentPage
+                                              .clamp(0, _totalPages - 1)
+                                              .toDouble(),
+                                          activeColor: AppColors.purple,
+                                          inactiveColor: AppColors.purple
+                                              .withOpacity(0.2),
+                                          onChangeStart: (_) {
+                                            _scrubberAutoHideTimer?.cancel();
+                                            if (!_showPageScrubber) {
+                                              setState(() =>
+                                                  _showPageScrubber = true);
+                                            }
+                                          },
+                                          onChanged: (value) {
+                                            final page = value.round();
+                                            _pdfViewController?.setPage(page);
+                                            setState(() => _currentPage = page);
+                                          },
+                                          onChangeEnd: (_) =>
+                                              _showScrubberTemporarily(),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
           ],
         ),

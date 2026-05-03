@@ -56,10 +56,7 @@ class CourseCardCourses extends StatelessWidget {
                       if (icon != null) ...[
                         Text(
                           icon!,
-                          style: const TextStyle(
-                            fontSize: 24, // text-2xl
-                            fontFamily: AppTextStyles.indigoFamily,
-                          ),
+                          style: const TextStyle(fontSize: 24), // text-2xl
                         ),
                         const SizedBox(height: 8), // mb-2
                       ],
@@ -86,41 +83,37 @@ class CourseCardCourses extends StatelessWidget {
                       Row(
                         children: [
                           // Avatars - matches React: -space-x-2
-                          SizedBox(
-                            width: 80,
-                            height: 32,
-                            child: Stack(
-                              clipBehavior: Clip.none,
-                              children: List.generate(3, (index) {
-                                return Positioned(
-                                  right: index *
-                                      24.0, // -space-x-2 = negative spacing
-                                  child: Container(
-                                    width: 32, // w-8
-                                    height: 32, // h-8
-                                    decoration: BoxDecoration(
-                                      color: AppColors.orangeLight,
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: Colors.white,
-                                        width: 2,
-                                      ),
+                          Stack(
+                            clipBehavior: Clip.none,
+                            children: List.generate(3, (index) {
+                              return Positioned(
+                                right: index *
+                                    24.0, // -space-x-2 = negative spacing
+                                child: Container(
+                                  width: 32, // w-8
+                                  height: 32, // h-8
+                                  decoration: BoxDecoration(
+                                    color: AppColors.orangeLight,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 2,
                                     ),
-                                    child: ClipOval(
-                                      child: Image.asset(
-                                        'assets/images/avatar-person.png',
-                                        fit: BoxFit.cover,
-                                        errorBuilder:
-                                            (context, error, stackTrace) =>
-                                                Container(
-                                          color: AppColors.orangeLight,
-                                        ),
+                                  ),
+                                  child: ClipOval(
+                                    child: Image.asset(
+                                      'assets/images/avatar-person.png',
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) =>
+                                              Container(
+                                        color: AppColors.orangeLight,
                                       ),
                                     ),
                                   ),
-                                );
-                              }),
-                            ),
+                                ),
+                              );
+                            }),
                           ),
                           const SizedBox(width: 8), // gap-2
                           Text(

@@ -1,12 +1,14 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
-import 'package:flutter_pdfview/flutter_pdfview.dart';
 import '../../core/design/app_colors.dart';
+import '../../core/navigation/route_names.dart';
+import '../../core/design/app_text_styles.dart';
+import '../../core/design/app_radius.dart';
 import '../../core/localization/localization_helper.dart';
 import '../../services/video_download_service.dart';
 import '../../models/download_model.dart';
@@ -24,8 +26,10 @@ class DownloadsScreen extends StatefulWidget {
 class _DownloadsScreenState extends State<DownloadsScreen> {
   bool _isLoading = true;
   List<DownloadedVideoModel> _downloadedVideos = [];
+  double _storageUsedMB = 0;
+  double _storageLimitMB = 500;
+  double _storagePercentage = 0;
   final VideoDownloadService _downloadService = VideoDownloadService();
-  List<_LocalPdfFile> _localPdfFiles = [];
 
   @override
   void initState() {
@@ -35,94 +39,46 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
 
   Future<void> _initializeAndLoad() async {
     await _downloadService.initialize();
-    await _loadDownloads();
-    await _loadLocalPdfFiles();
+    _loadDownloads();
   }
 
   Future<void> _loadDownloads() async {
-    if (!mounted) return;
     setState(() => _isLoading = true);
     try {
       // تحميل الفيديوهات المحملة محلياً
       final videos = await _downloadService.getDownloadedVideosWithManager();
 
+      // حساب إجمالي المساحة المستخدمة
+      double totalSize = 0;
+      for (var video in videos) {
+        totalSize += video.fileSizeMb;
+      }
+
       if (kDebugMode) {
         print('✅ Downloaded videos loaded:');
         print('  videos count: ${videos.length}');
+        print('  total size: ${totalSize.toStringAsFixed(2)} MB');
       }
 
-      if (!mounted) return;
       setState(() {
         _downloadedVideos = videos;
+        _storageUsedMB = totalSize;
+        _storageLimitMB = 500; // يمكن جلبها من API لاحقاً
+        _storagePercentage =
+            (_storageLimitMB > 0) ? (totalSize / _storageLimitMB * 100) : 0;
         _isLoading = false;
       });
     } catch (e) {
       if (kDebugMode) {
         print('❌ Error loading downloads: $e');
       }
-      if (!mounted) return;
       setState(() {
         _downloadedVideos = [];
+        _storageUsedMB = 0;
+        _storageLimitMB = 500;
+        _storagePercentage = 0;
         _isLoading = false;
       });
-    }
-  }
-
-  Future<Directory> _pdfStorageDirectory() async {
-    final appDir = await getApplicationDocumentsDirectory();
-    final dir = Directory('${appDir.path}${Platform.pathSeparator}pdf_downloads');
-    if (!await dir.exists()) {
-      await dir.create(recursive: true);
-    }
-    return dir;
-  }
-
-  Future<void> _loadLocalPdfFiles() async {
-    try {
-      final dir = await _pdfStorageDirectory();
-      final entities = await dir.list().toList();
-      final pdfs = <_LocalPdfFile>[];
-      for (final entity in entities) {
-        if (entity is! File) continue;
-        if (!entity.path.toLowerCase().endsWith('.pdf')) continue;
-        final stat = await entity.stat();
-        pdfs.add(
-          _LocalPdfFile(
-            path: entity.path,
-            name: entity.uri.pathSegments.last,
-            sizeBytes: stat.size,
-          ),
-        );
-      }
-      pdfs.sort((a, b) => b.name.compareTo(a.name));
-      if (!mounted) return;
-      setState(() => _localPdfFiles = pdfs);
-    } catch (e) {
-      if (kDebugMode) {
-        print('❌ Error loading local pdf files: $e');
-      }
-    }
-  }
-
-  Future<void> _deleteLocalPdf(_LocalPdfFile file) async {
-    try {
-      final f = File(file.path);
-      if (await f.exists()) {
-        await f.delete();
-      }
-      if (!mounted) return;
-      await _loadLocalPdfFiles();
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            e.toString().replaceFirst('Exception: ', ''),
-            style: GoogleFonts.cairo(),
-          ),
-          backgroundColor: AppColors.destructive,
-        ),
-      );
     }
   }
 
@@ -134,95 +90,82 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
     }
   }
 
+  bool _isAssignmentPdf(DownloadedVideoModel video) {
+    final src = video.videoSource.toLowerCase();
+    final ft = video.fileType.toLowerCase();
+    return src == 'assignment_pdf' || ft.contains('pdf');
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F6F7),
+      backgroundColor: AppColors.beige,
       body: SafeArea(
         top: false,
         child: Column(
           children: [
+            // Header - Purple gradient like Home
             Container(
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: AppColors.brandGradient,
+                  colors: [Color(0xFF0C52B3), Color(0xFF093F8A)],
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.brandTealDark.withValues(alpha: 0.25),
-                    blurRadius: 16,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(AppRadius.largeCard),
+                  bottomRight: Radius.circular(AppRadius.largeCard),
+                ),
               ),
               padding: EdgeInsets.only(
-                top: MediaQuery.of(context).padding.top + 12,
-                bottom: 28,
-                left: 16,
+                top: MediaQuery.of(context).padding.top + 16, // pt-4
+                bottom: 32, // pb-8
+                left: 16, // px-4
                 right: 16,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Back button and title - matches React: gap-4 mb-4
                   Row(
                     children: [
-                      Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: () => context.pop(),
-                          borderRadius: BorderRadius.circular(14),
-                          child: Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: AppColors.whiteOverlay20,
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            child: Icon(
-                              Directionality.of(context) == TextDirection.rtl
-                                  ? Icons.arrow_forward_ios_rounded
-                                  : Icons.arrow_back_ios_new_rounded,
-                              color: Colors.white,
-                              size: 18,
-                            ),
+                      GestureDetector(
+                        onTap: () => context.pop(),
+                        child: Container(
+                          width: 40, // w-10
+                          height: 40, // h-10
+                          decoration: const BoxDecoration(
+                            color: AppColors.whiteOverlay20, // bg-white/20
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.chevron_right,
+                            color: Colors.white,
+                            size: 20, // w-5 h-5
                           ),
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          context.l10n.booksScreenAppBarTitle,
-                          style: GoogleFonts.cairo(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                            height: 1.2,
-                          ),
-                        ),
+                      const SizedBox(width: 16), // gap-4
+                      Text(
+                        context.l10n.downloads,
+                        style: AppTextStyles.h3(color: Colors.white),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 16), // mb-4
+                  // Download count - matches React: gap-2
                   Row(
                     children: [
                       Icon(
-                        Icons.menu_book_rounded,
-                        size: 20,
-                        color: Colors.white.withValues(alpha: 0.88),
+                        Icons.download,
+                        size: 20, // w-5 h-5
+                        color: Colors.white.withOpacity(0.7), // white/70
                       ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          context.l10n.availableBooks(
-                            _downloadedVideos.length + _localPdfFiles.length,
-                          ),
-                          style: GoogleFonts.cairo(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white.withValues(alpha: 0.88),
-                          ),
+                      const SizedBox(width: 8), // gap-2
+                      Text(
+                        context.l10n.downloadedFiles(_downloadedVideos.length),
+                        style: AppTextStyles.bodyMedium(
+                          color: Colors.white.withOpacity(0.7), // white/70
                         ),
                       ),
                     ],
@@ -245,6 +188,9 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                           physics: const AlwaysScrollableScrollPhysics(),
                           child: Column(
                             children: [
+                              // Storage Card - matches React: bg-white rounded-3xl p-5 shadow-lg
+                              _buildStorageCard(),
+
                               // Downloaded Videos List
                               if (_downloadedVideos.isEmpty)
                                 _buildEmptyState()
@@ -272,10 +218,6 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                                     child: _buildVideoCard(context, video),
                                   );
                                 }),
-                              if (_localPdfFiles.isNotEmpty) ...[
-                                const SizedBox(height: 8),
-                                ..._localPdfFiles.map(_buildPdfCard),
-                              ],
 
                               const SizedBox(height: 32),
                             ],
@@ -290,12 +232,106 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
     );
   }
 
+  Widget _buildStorageCard() {
+    final usedGB = _storageUsedMB / 1024;
+    final limitGB = _storageLimitMB / 1024;
+    final percentage = _storagePercentage / 100;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16), // space-y-4
+      padding: const EdgeInsets.all(20), // p-5
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24), // rounded-3xl
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Storage icon and info - matches React: gap-3 mb-4
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16), // mb-4
+            child: Row(
+              children: [
+                Container(
+                  width: 48, // w-12
+                  height: 48, // h-12
+                  decoration: BoxDecoration(
+                    color: AppColors.purple.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12), // rounded-xl
+                  ),
+                  child: const Icon(
+                    Icons.storage,
+                    size: 24, // w-6 h-6
+                    color: AppColors.purple,
+                  ),
+                ),
+                const SizedBox(width: 12), // gap-3
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        context.l10n.storage,
+                        style: AppTextStyles.bodyMedium(
+                          color: AppColors.foreground,
+                        ).copyWith(fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        context.l10n.storageUsed(
+                          usedGB.toStringAsFixed(1),
+                          limitGB.toStringAsFixed(1),
+                        ),
+                        style: AppTextStyles.bodySmall(
+                          color: AppColors.mutedForeground,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Progress bar - matches React: h-3 bg-gray-100 rounded-full
+          Container(
+            height: 12, // h-3
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(999), // rounded-full
+            ),
+            child: FractionallySizedBox(
+              alignment: Alignment.centerRight,
+              widthFactor:
+                  percentage > 1 ? 1 : (percentage < 0 ? 0 : percentage),
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [AppColors.purple, AppColors.orange],
+                  ),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildVideoCard(BuildContext context, DownloadedVideoModel video) {
     final title = video.title;
     final courseTitle = video.courseTitle;
     final sizeStr = _formatSize(video.fileSizeMb);
-    final durationText =
-        video.durationText.isNotEmpty ? video.durationText : 'غير محدد';
+    final isPdf = _isAssignmentPdf(video);
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
+    final durationText = isPdf
+        ? (isAr ? 'ملف PDF' : 'PDF file')
+        : (video.durationText.isNotEmpty ? video.durationText : 'غير محدد');
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12), // space-y-3
@@ -305,9 +341,9 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
         borderRadius: BorderRadius.circular(16), // rounded-2xl
         boxShadow: [
           BoxShadow(
-            color: AppColors.brandTeal.withValues(alpha: 0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -321,12 +357,12 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                 width: 64, // w-16
                 height: 64, // h-16
                 decoration: BoxDecoration(
-                  color: AppColors.brandTeal.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
+                  color: AppColors.purple.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12), // rounded-xl
                 ),
-                child: const Icon(
-                  Icons.video_library_rounded,
-                  color: AppColors.brandTeal,
+                child: Icon(
+                  isPdf ? Icons.picture_as_pdf_rounded : Icons.video_library,
+                  color: isPdf ? Colors.red.shade700 : AppColors.purple,
                   size: 32,
                 ),
               ),
@@ -339,20 +375,16 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                   children: [
                     Text(
                       title,
-                      style: GoogleFonts.cairo(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
+                      style: AppTextStyles.bodyMedium(
                         color: AppColors.foreground,
-                      ),
+                      ).copyWith(fontWeight: FontWeight.bold),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 4), // mb-1
                     Text(
                       courseTitle,
-                      style: GoogleFonts.cairo(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
+                      style: AppTextStyles.labelSmall(
                         color: AppColors.mutedForeground,
                       ),
                       maxLines: 1,
@@ -363,26 +395,21 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                       children: [
                         Text(
                           durationText,
-                          style: GoogleFonts.cairo(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
+                          style: AppTextStyles.labelSmall(
                             color: AppColors.mutedForeground,
                           ),
                         ),
                         const SizedBox(width: 8),
                         Text(
                           '•',
-                          style: GoogleFonts.cairo(
-                            fontSize: 11,
+                          style: AppTextStyles.labelSmall(
                             color: AppColors.mutedForeground,
                           ),
                         ),
                         const SizedBox(width: 8),
                         Text(
                           sizeStr,
-                          style: GoogleFonts.cairo(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
+                          style: AppTextStyles.labelSmall(
                             color: AppColors.mutedForeground,
                           ),
                         ),
@@ -416,38 +443,31 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
 
           // Play button - matches React: w-full py-3 rounded-xl bg-[var(--purple)]
           GestureDetector(
-            onTap: () => _handlePlayOffline(video),
+            onTap: () => _handleOpenDownload(context, video),
             child: Container(
               alignment: Alignment.center,
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 12),
+              padding: const EdgeInsets.symmetric(vertical: 12), // py-3
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                  colors: [
-                    Color(0xFF102027),
-                    Color(0xFF4DD0E1),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(12),
+                color: AppColors.purple,
+                borderRadius: BorderRadius.circular(12), // rounded-xl
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
-                    Icons.play_arrow_rounded,
-                    size: 22,
+                  Icon(
+                    isPdf ? Icons.open_in_new_rounded : Icons.play_arrow,
+                    size: 20, // w-5 h-5
                     color: Colors.white,
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 8), // gap-2
                   Text(
-                    context.l10n.watchOffline,
-                    style: GoogleFonts.cairo(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
+                    isPdf
+                        ? (isAr ? 'فتح PDF' : 'Open PDF')
+                        : context.l10n.watchOffline,
+                    style: AppTextStyles.bodyMedium(
                       color: Colors.white,
-                    ),
+                    ).copyWith(fontWeight: FontWeight.w500),
                   ),
                 ],
               ),
@@ -458,7 +478,32 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
     );
   }
 
-  void _handlePlayOffline(DownloadedVideoModel video) {
+  void _handleOpenDownload(BuildContext context, DownloadedVideoModel video) {
+    if (_isAssignmentPdf(video)) {
+      final path = video.localPath;
+      if (!File(path).existsSync()) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              Localizations.localeOf(context).languageCode == 'ar'
+                  ? 'الملف غير موجود على الجهاز'
+                  : 'File not found on device',
+              style: GoogleFonts.cairo(),
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+      context.push(
+        RouteNames.pdfViewer,
+        extra: {
+          'pdfUrl': Uri.file(path).toString(),
+          'title': video.title,
+        },
+      );
+      return;
+    }
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -472,49 +517,30 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
 
   Future<void> _handleDelete(DownloadedVideoModel video) async {
     // Show confirmation dialog
-    final l10n = context.l10n;
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      builder: (context) => AlertDialog(
         title: Text(
-          l10n.deleteFile,
-          style: GoogleFonts.cairo(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: AppColors.foreground,
-          ),
+          'حذف الفيديو',
+          style: GoogleFonts.cairo(),
         ),
         content: Text(
-          l10n.confirmDeleteFile,
-          style: GoogleFonts.cairo(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: AppColors.mutedForeground,
-            height: 1.4,
-          ),
+          'هل أنت متأكد من حذف هذا الفيديو؟',
+          style: GoogleFonts.cairo(),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
+            onPressed: () => Navigator.of(context).pop(false),
             child: Text(
-              l10n.cancel,
-              style: GoogleFonts.cairo(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: AppColors.mutedForeground,
-              ),
+              'إلغاء',
+              style: GoogleFonts.cairo(),
             ),
           ),
           TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
+            onPressed: () => Navigator.of(context).pop(true),
             child: Text(
-              l10n.delete,
-              style: GoogleFonts.cairo(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: AppColors.destructive,
-              ),
+              'حذف',
+              style: GoogleFonts.cairo(color: Colors.red),
             ),
           ),
         ],
@@ -527,19 +553,13 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
       final success = await _downloadService.deleteDownloadedVideo(video.id);
 
       if (mounted) {
-        final l10n = context.l10n;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              success ? l10n.fileDeleted : l10n.unknownError,
-              style: GoogleFonts.cairo(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: Colors.white,
-              ),
+              success ? 'تم حذف الفيديو بنجاح' : 'فشل حذف الفيديو',
+              style: GoogleFonts.cairo(),
             ),
-            backgroundColor:
-                success ? AppColors.success : AppColors.destructive,
+            backgroundColor: success ? const Color(0xFF10B981) : Colors.red,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
@@ -559,14 +579,10 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              '${context.l10n.unknownError}: ${e.toString().replaceFirst('Exception: ', '')}',
-              style: GoogleFonts.cairo(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: Colors.white,
-              ),
+              'خطأ في حذف الفيديو: ${e.toString().replaceFirst('Exception: ', '')}',
+              style: GoogleFonts.cairo(),
             ),
-            backgroundColor: AppColors.destructive,
+            backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
@@ -617,148 +633,33 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
           Container(
             width: 96, // w-24
             height: 96, // h-24
-            decoration: BoxDecoration(
-              color: AppColors.brandTeal.withValues(alpha: 0.12),
+            decoration: const BoxDecoration(
+              color: AppColors.lavenderLight,
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              Icons.download_rounded,
-              size: 48,
-              color: AppColors.brandTeal,
+            child: const Icon(
+              Icons.download,
+              size: 48, // w-12 h-12
+              color: AppColors.purple,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 16), // mb-4
           Text(
             context.l10n.noDownloads,
-            style: GoogleFonts.cairo(
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
+            style: AppTextStyles.h4(
               color: AppColors.foreground,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 8), // mb-2
           Text(
             context.l10n.downloadCoursesToWatchOffline,
-            style: GoogleFonts.cairo(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
+            style: AppTextStyles.bodyMedium(
               color: AppColors.mutedForeground,
-              height: 1.45,
             ),
             textAlign: TextAlign.center,
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildPdfCard(_LocalPdfFile file) {
-    final sizeMb = file.sizeBytes / (1024 * 1024);
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.brandTeal.withValues(alpha: 0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: Colors.red.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(
-              Icons.picture_as_pdf_rounded,
-              color: Colors.red,
-              size: 28,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  file.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.cairo(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.foreground,
-                  ),
-                ),
-                Text(
-                  _formatSize(sizeMb),
-                  style: GoogleFonts.cairo(
-                    fontSize: 12,
-                    color: AppColors.mutedForeground,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          IconButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => _LocalPdfViewerScreen(
-                    filePath: file.path,
-                    title: file.name,
-                  ),
-                ),
-              );
-            },
-            icon: const Icon(Icons.visibility_rounded, color: AppColors.purple),
-          ),
-          IconButton(
-            onPressed: () => _deleteLocalPdf(file),
-            icon: const Icon(Icons.delete_outline_rounded,
-                color: AppColors.destructive),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _LocalPdfFile {
-  final String path;
-  final String name;
-  final int sizeBytes;
-
-  const _LocalPdfFile({
-    required this.path,
-    required this.name,
-    required this.sizeBytes,
-  });
-}
-
-class _LocalPdfViewerScreen extends StatelessWidget {
-  final String filePath;
-  final String title;
-
-  const _LocalPdfViewerScreen({
-    required this.filePath,
-    required this.title,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: PDFView(filePath: filePath),
     );
   }
 }

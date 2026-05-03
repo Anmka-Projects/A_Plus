@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'package:crypto/crypto.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
@@ -9,51 +10,107 @@ import '../core/api/api_client.dart';
 import '../core/api/api_endpoints.dart';
 import '../core/notification_service/notification_service.dart';
 import '../models/auth_response.dart';
-import 'device_id_service.dart';
 import 'token_storage_service.dart';
-
-/// [ApiClient] already puts the server `message` in [ApiException.message] for non-2xx
-/// responses. Use that text for the user; only parse JSON when the message is a raw body.
-String _userMessageFromApiException(ApiException e, String fallback) {
-  final raw = e.message.trim();
-  if (raw.isEmpty) return fallback;
-  if (raw.startsWith('{')) {
-    try {
-      final decoded = jsonDecode(raw);
-      if (decoded is Map<String, dynamic>) {
-        final m = decoded['message'] ?? decoded['error'];
-        if (m != null) {
-          if (m is String && m.isNotEmpty) return m;
-          if (m is List && m.isNotEmpty) {
-            return m
-                .map((x) => x.toString())
-                .where((s) => s.isNotEmpty)
-                .join('\n');
-          }
-        }
-      }
-    } catch (_) {}
-    return fallback;
-  }
-  return raw;
-}
 
 /// Authentication Service
 class AuthService {
   AuthService._();
 
   static final AuthService instance = AuthService._();
+  static final GoogleSignIn _googleSignIn = GoogleSignIn(
+    scopes: ['email', 'profile'],
+    // Web client id from Firebase (google-services.json client_type: 3).
+    // Needed on some Android devices to avoid Google sign-in failures.
+    serverClientId:
+        '322915697-tav8lgdjc4b8g6lm5r72gfa3gi38ovte.apps.googleusercontent.com',
+  );
 
-  /// Login with unique learner [code] only.
+  /// Check if input is email or phone
+  bool _isEmail(String input) {
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    return emailRegex.hasMatch(input);
+  }
+
+  String _buildDeviceLimitMessage(Map<String, dynamic>? errorData) {
+    if (errorData == null) {
+      return 'تم تجاوز الحد الأقصى لعدد الأجهزة المسموح بها لهذا الحساب';
+    }
+
+    final message = errorData['message']?.toString();
+    final data = errorData['data'] as Map<String, dynamic>?;
+    final maxDevices = data?['max_devices']?.toString();
+    final currentDevices = data?['current_devices']?.toString();
+
+    if (maxDevices != null &&
+        maxDevices.isNotEmpty &&
+        currentDevices != null &&
+        currentDevices.isNotEmpty) {
+      final prefix = (message != null && message.isNotEmpty)
+          ? message
+          : 'تم تجاوز الحد الأقصى لعدد الأجهزة المسموح بها';
+      return '$prefix (الأقصى: $maxDevices - الحالي: $currentDevices)';
+    }
+
+    return (message != null && message.isNotEmpty)
+        ? message
+        : 'تم تجاوز الحد الأقصى لعدد الأجهزة المسموح بها لهذا الحساب';
+  }
+
+  String _extractApiErrorMessage(
+    ApiException e, {
+    required String fallbackMessage,
+  }) {
+    final errorData = e.errorData;
+    if (errorData != null) {
+      final message = errorData['message']?.toString();
+      if (message != null && message.isNotEmpty) {
+        final errors = errorData['errors'];
+        if (errors is Map && errors.isNotEmpty) {
+          final fieldErrors = <String>[];
+          for (final value in errors.values) {
+            if (value is List) {
+              for (final item in value) {
+                final text = item?.toString().trim() ?? '';
+                if (text.isNotEmpty) fieldErrors.add(text);
+              }
+            } else {
+              final text = value?.toString().trim() ?? '';
+              if (text.isNotEmpty) fieldErrors.add(text);
+            }
+          }
+
+          if (fieldErrors.isNotEmpty) {
+            return '$message\n${fieldErrors.join('\n')}';
+          }
+        }
+        return message;
+      }
+    }
+
+    final directMessage = e.message.trim();
+    if (directMessage.isNotEmpty) return directMessage;
+    return fallbackMessage;
+  }
+
+  /// Login user with email or phone
   Future<AuthResponse> login({
-    required String code,
+    required String emailOrPhone,
+    required String password,
   }) async {
     try {
-      final deviceId = await DeviceIdService.getOrCreateDeviceId();
+      // Determine if input is email or phone
+      final isEmail = _isEmail(emailOrPhone.trim());
+
+      // Build request body with appropriate key
       final Map<String, dynamic> requestBody = {
-        'code': code.trim(),
-        'device_id': deviceId,
+        'password': password,
       };
+
+      if (isEmail) {
+        requestBody['email'] = emailOrPhone.trim();
+      } else {
+        requestBody['phone'] = emailOrPhone.trim();
+      }
 
       final response = await ApiClient.instance.post(
         ApiEndpoints.login,
@@ -112,7 +169,6 @@ class AuthService {
           refreshToken: authResponse.refreshToken,
         );
         await TokenStorageService.instance.saveUserRole(authResponse.user.role);
-        await FirebaseNotification.syncFcmTokenWithBackend();
 
         // Verify token was saved to cache
         print('🔍 Verifying token was saved to cache...');
@@ -142,49 +198,68 @@ class AuthService {
       }
     } catch (e) {
       if (e is ApiException) {
-        throw Exception(_userMessageFromApiException(
-          e,
-          'فشل تسجيل الدخول. تحقق من بيانات الاعتماد',
-        ));
+        final errorData = e.errorData;
+        final errorCode = errorData?['error_code']?.toString();
+        final isDeviceLimit = e.statusCode == 403 &&
+            errorCode != null &&
+            errorCode.toUpperCase() == 'DEVICE_LIMIT_EXCEEDED';
+        if (isDeviceLimit) {
+          throw Exception(_buildDeviceLimitMessage(errorData));
+        }
+
+        // Try to parse error message from response body
+        try {
+          if (errorData != null) {
+            final message =
+                errorData['message'] ?? errorData['error'] ?? 'Login failed';
+            throw Exception(message);
+          }
+        } catch (_) {}
+        throw Exception('فشل تسجيل الدخول. تحقق من بيانات الاعتماد');
       }
       rethrow;
     }
   }
 
-  /// Register student: quad name, national ID, code, phone, faculty → section → grade, device binding.
+  /// Register user
   Future<AuthResponse> register({
-    required String fullName,
-    required String nationalId,
-    required String code,
-    required String phone,
-    required String facultyId,
-    required String sectionId,
-    required String gradeId,
+    required String name,
+    required String email,
+    String? phone,
+    required String password,
+    required String passwordConfirmation,
+    required bool acceptTerms,
+    String role = 'student', // Default to student, can be 'instructor'
+    String? studentType, // Only required for students
   }) async {
     try {
-      final normalizedFullName = fullName.trim();
-      String? currentFcmToken = FirebaseNotification.fcmToken;
-      if (currentFcmToken == null || currentFcmToken.isEmpty) {
-        try {
-          currentFcmToken = await FirebaseNotification.messaging.getToken();
-        } catch (_) {
-          // Keep null/empty; backend registration still proceeds.
-        }
+      // Build request body
+      final body = <String, dynamic>{
+        'name': name,
+        'email': email,
+        'password': password,
+        'role': role,
+      };
+
+      // Add phone if provided
+      if (phone != null && phone.isNotEmpty) {
+        body['phone'] = phone;
       }
 
-      final body = <String, dynamic>{
-        'name': normalizedFullName,
-        'national_id': nationalId.trim(),
-        'code': code.trim(),
-        // Registration now sends local phone number only (without country code).
-        'phone': phone.trim(),
-        'faculty_id': facultyId,
-        'section_id': sectionId,
-        'grade_id': gradeId,
-        'device_id': await DeviceIdService.getOrCreateDeviceId(),
-        if (currentFcmToken != null && currentFcmToken.isNotEmpty)
-          'fcm_token': currentFcmToken,
-      };
+      // Add student_type for students and default it to online
+      if (role == 'student') {
+        // Map student_type values to API format
+        // API expects: "online" or "offline"
+        String mappedStudentType = (studentType == null || studentType.isEmpty)
+            ? 'online'
+            : studentType;
+        if (studentType == 'in_person') {
+          mappedStudentType = 'offline';
+        } else if (studentType == 'both') {
+          mappedStudentType = 'online'; // Default to online for "both"
+        }
+        body['student_type'] = mappedStudentType;
+      }
 
       final response = await ApiClient.instance.post(
         ApiEndpoints.register,
@@ -261,7 +336,6 @@ class AuthService {
           refreshToken: authResponse.refreshToken,
         );
         await TokenStorageService.instance.saveUserRole(authResponse.user.role);
-        await FirebaseNotification.syncFcmTokenWithBackend();
 
         // Verify token was saved to cache
         print('🔍 Verifying token was saved to cache...');
@@ -291,10 +365,12 @@ class AuthService {
       }
     } catch (e) {
       if (e is ApiException) {
-        throw Exception(_userMessageFromApiException(
-          e,
-          'فشل إنشاء الحساب. يرجى المحاولة مرة أخرى',
-        ));
+        throw Exception(
+          _extractApiErrorMessage(
+            e,
+            fallbackMessage: 'فشل إنشاء الحساب. يرجى المحاولة مرة أخرى',
+          ),
+        );
       }
       rethrow;
     }
@@ -312,7 +388,6 @@ class AuthService {
         ApiEndpoints.refreshToken,
         body: {
           'refreshToken': refreshToken,
-          'device_id': await DeviceIdService.getOrCreateDeviceId(),
         },
         requireAuth: false, // Refresh doesn't need access token
       );
@@ -341,10 +416,20 @@ class AuthService {
       }
     } catch (e) {
       if (e is ApiException) {
-        throw Exception(_userMessageFromApiException(
-          e,
-          'فشل تجديد الـ access token. يرجى تسجيل الدخول مرة أخرى',
-        ));
+        // Try to parse error message from response body
+        try {
+          final errorBody = e.message;
+          final match = RegExp(r'\{.*\}').firstMatch(errorBody);
+          if (match != null) {
+            final errorJson = jsonDecode(match.group(0)!);
+            final message = errorJson['message'] ??
+                errorJson['error'] ??
+                'فشل تجديد الـ access token';
+            throw Exception(message);
+          }
+        } catch (_) {}
+        throw Exception(
+            'فشل تجديد الـ access token. يرجى تسجيل الدخول مرة أخرى');
       }
       rethrow;
     }
@@ -353,6 +438,10 @@ class AuthService {
   /// Logout user
   Future<void> logout() async {
     try {
+      // Clear Firebase social sessions too.
+      await FirebaseAuth.instance.signOut();
+      await _googleSignIn.signOut();
+
       // Use requireAuth: true to automatically add token from cache
       await ApiClient.instance.post(
         ApiEndpoints.logout,
@@ -388,10 +477,20 @@ class AuthService {
       }
     } catch (e) {
       if (e is ApiException) {
-        throw Exception(_userMessageFromApiException(
-          e,
-          'فشل إرسال رابط إعادة تعيين كلمة المرور. يرجى المحاولة مرة أخرى',
-        ));
+        // Try to parse error message from response body
+        try {
+          final errorBody = e.message;
+          final match = RegExp(r'\{.*\}').firstMatch(errorBody);
+          if (match != null) {
+            final errorJson = jsonDecode(match.group(0)!);
+            final message = errorJson['message'] ??
+                errorJson['error'] ??
+                'فشل إرسال رابط إعادة تعيين كلمة المرور';
+            throw Exception(message);
+          }
+        } catch (_) {}
+        throw Exception(
+            'فشل إرسال رابط إعادة تعيين كلمة المرور. يرجى المحاولة مرة أخرى');
       }
       rethrow;
     }
@@ -402,60 +501,63 @@ class AuthService {
     return await TokenStorageService.instance.isLoggedIn();
   }
 
-  /// Google sign-in with API integration
+  /// Google sign-in with Firebase Auth + backend social-login API
   Future<AuthResponse> signInWithGoogle() async {
     try {
+      // Clear stale session before new attempt (helps with transient failures).
+      await _googleSignIn.signOut();
+
       // Step 1: Get Google credentials
-      GoogleSignIn googleSignIn;
-
-      // Try to initialize GoogleSignIn - on Android it requires OAuth client ID
-      // If oauth_client is empty in google-services.json, this will fail
-      try {
-        googleSignIn = GoogleSignIn(
-          scopes: ['email', 'profile'],
-        );
-      } catch (e) {
-        if (kDebugMode) {
-          print('❌ GoogleSignIn initialization error: $e');
-        }
-        throw Exception(
-            'خطأ في إعدادات Google Sign-In. يرجى التحقق من إعدادات Firebase Console وإضافة OAuth Client ID');
-      }
-
-      final googleUser = await googleSignIn.signIn();
+      final googleUser = await _googleSignIn.signIn();
       if (googleUser == null) {
         throw Exception('تم إلغاء تسجيل الدخول بواسطة المستخدم');
       }
 
       final googleAuth = await googleUser.authentication;
-      if (googleAuth.idToken == null || googleAuth.accessToken == null) {
+      if (googleAuth.idToken == null) {
         throw Exception('فشل الحصول على بيانات المصادقة من جوجل');
       }
 
-      // Step 2: Get FCM token
+      // Step 2: Sign in to Firebase Auth.
+      final firebaseCredential = GoogleAuthProvider.credential(
+        idToken: googleAuth.idToken,
+        accessToken: googleAuth.accessToken,
+      );
+      final userCredential =
+          await FirebaseAuth.instance.signInWithCredential(firebaseCredential);
+
+      if (kDebugMode) {
+        print('✅ Google Firebase Sign-In successful');
+        print('  uid: ${userCredential.user?.uid}');
+        print('  email: ${userCredential.user?.email}');
+      }
+
+      // Step 3: Get Firebase ID token to send to backend
+      final firebaseIdToken =
+          await userCredential.user?.getIdToken() ?? googleAuth.idToken!;
+
+      // Step 4: Get FCM token
       String? fcmToken = FirebaseNotification.fcmToken;
       if (fcmToken == null || fcmToken.isEmpty) {
-        // Try to get token if not available
         await FirebaseNotification.getFcmToken();
         fcmToken = FirebaseNotification.fcmToken ?? '';
       }
 
-      // Step 3: Get device info
+      // Step 5: Get device info
       final platform = Platform.isAndroid
           ? 'android'
           : Platform.isIOS
               ? 'ios'
               : 'unknown';
 
-      // Step 4: Build request body
+      // Step 6: Build request body
       final requestBody = {
         'provider': 'google',
-        'id_token': googleAuth.idToken,
-        'access_token': googleAuth.accessToken,
+        'id_token': firebaseIdToken,
         'fcm_token': fcmToken,
         'device': {
           'platform': platform,
-          'model': 'Unknown', // Can be enhanced with device_info_plus package
+          'model': 'Unknown',
           'app_version': '1.0.0',
         },
       };
@@ -463,18 +565,18 @@ class AuthService {
       if (kDebugMode) {
         print('🔐 Google Social Login Request:');
         print('  provider: google');
-        print('  id_token: ${googleAuth.idToken?.substring(0, 20)}...');
-        print('  access_token: ${googleAuth.accessToken?.substring(0, 20)}...');
         print(
-            '  fcm_token: ${fcmToken.isNotEmpty ? "${fcmToken.substring(0, 20)}..." : "EMPTY"}');
+            '  id_token: ${firebaseIdToken.substring(0, firebaseIdToken.length > 20 ? 20 : firebaseIdToken.length)}...');
+        print(
+            '  fcm_token: ${fcmToken.isNotEmpty ? "${fcmToken.substring(0, fcmToken.length > 20 ? 20 : fcmToken.length)}..." : "EMPTY"}');
         print('  platform: $platform');
       }
 
-      // Step 5: Send request to API
+      // Step 7: Send request to backend API
       final response = await ApiClient.instance.post(
         ApiEndpoints.socialLogin,
         body: requestBody,
-        requireAuth: false, // Social login doesn't need auth
+        requireAuth: false,
       );
 
       if (response['success'] == true) {
@@ -492,7 +594,6 @@ class AuthService {
           refreshToken: authResponse.refreshToken,
         );
         await TokenStorageService.instance.saveUserRole(authResponse.user.role);
-        await FirebaseNotification.syncFcmTokenWithBackend();
 
         // Verify token was cached
         final savedToken = await TokenStorageService.instance.getAccessToken();
@@ -511,10 +612,29 @@ class AuthService {
 
         return authResponse;
       } else {
-        throw Exception(response['message'] ?? 'فشل تسجيل الدخول عبر جوجل');
+        throw Exception(response['message'] ?? 'فشل تسجيل الدخول عبر Google');
       }
     } catch (e) {
-      // Handle PlatformException specifically for Google Sign-In errors
+      if (kDebugMode) {
+        print('❌ Google Sign-In Exception: $e');
+      }
+
+      if (e is ApiException) {
+        try {
+          final errorBody = e.message;
+          final match = RegExp(r'\{.*\}').firstMatch(errorBody);
+          if (match != null) {
+            final errorJson = jsonDecode(match.group(0)!);
+            final message = errorJson['message'] ??
+                errorJson['error'] ??
+                'فشل تسجيل الدخول عبر Google';
+            throw Exception(message);
+          }
+        } catch (_) {}
+        throw Exception('فشل تسجيل الدخول عبر Google. يرجى المحاولة مرة أخرى');
+      }
+
+      // Handle Google Play Services / plugin sign-in exceptions.
       if (e.toString().contains('PlatformException') ||
           e.toString().contains('sign_in_failed') ||
           e.toString().contains('ApiException')) {
@@ -522,10 +642,32 @@ class AuthService {
           print('❌ Google Sign-In PlatformException: $e');
         }
 
-        // Check for common OAuth configuration errors
+        if (e.toString().contains('network_error') ||
+            e.toString().contains('ApiException: 7') ||
+            e.toString().contains('7:')) {
+          throw Exception('تعذر الاتصال بخدمات Google (ApiException: 7).\n'
+              'يرجى التحقق من:\n'
+              '1. اتصال الإنترنت على الهاتف\n'
+              '2. تحديث Google Play Services\n'
+              '3. إيقاف VPN/Proxy (إن وجد)\n'
+              '4. التاريخ والوقت التلقائي في الجهاز');
+        }
+
+        if (e.toString().contains('ApiException: 12500') ||
+            e.toString().contains('12500:')) {
+          throw Exception('فشل مصادقة Google (ApiException: 12500).\n'
+              'السبب غالبا إعدادات Firebase/OAuth غير متطابقة.\n'
+              'يرجى التأكد من:\n'
+              '1. package name = com.anmka.drchampion\n'
+              '2. إضافة SHA-1 الصحيحة لهذا الجهاز في Firebase\n'
+              '3. عدم وجود تعارض لنفس package+SHA في مشروع Google آخر\n'
+              '4. تنزيل google-services.json الجديد بعد الحفظ');
+        }
+
         if (e.toString().contains('oauth_client') ||
             e.toString().contains('Api10') ||
-            e.toString().contains('SIGN_IN_REQUIRED') ||
+            e.toString().contains('ApiException: 10') ||
+            e.toString().contains('10:') ||
             e.toString().contains('DEVELOPER_ERROR')) {
           throw Exception('خطأ في إعدادات Google Sign-In:\n'
               'يرجى التأكد من:\n'
@@ -535,21 +677,12 @@ class AuthService {
               '4. التأكد من تطابق package_name مع applicationId');
         }
 
-        // Generic Google Sign-In error
         throw Exception('فشل تسجيل الدخول عبر Google. يرجى التحقق من:\n'
             '- اتصال الإنترنت\n'
             '- إعدادات Google Sign-In في Firebase Console\n'
             '- ملف google-services.json يحتوي على OAuth Client IDs');
       }
 
-      if (e is ApiException) {
-        throw Exception(_userMessageFromApiException(
-          e,
-          'فشل تسجيل الدخول عبر جوجل. يرجى المحاولة مرة أخرى',
-        ));
-      }
-
-      // Re-throw if it's already a user-friendly Exception
       final errorString = e.toString();
       if (e is Exception &&
           (errorString.contains('خطأ') ||
@@ -558,7 +691,6 @@ class AuthService {
         rethrow;
       }
 
-      // Generic error fallback
       throw Exception('فشل تسجيل الدخول عبر Google: ${e.toString()}');
     }
   }
@@ -644,7 +776,6 @@ class AuthService {
           refreshToken: authResponse.refreshToken,
         );
         await TokenStorageService.instance.saveUserRole(authResponse.user.role);
-        await FirebaseNotification.syncFcmTokenWithBackend();
 
         // Verify token was cached
         final savedToken = await TokenStorageService.instance.getAccessToken();
@@ -667,10 +798,19 @@ class AuthService {
       }
     } catch (e) {
       if (e is ApiException) {
-        throw Exception(_userMessageFromApiException(
-          e,
-          'فشل تسجيل الدخول عبر Apple. يرجى المحاولة مرة أخرى',
-        ));
+        // Try to parse error message from response body
+        try {
+          final errorBody = e.message;
+          final match = RegExp(r'\{.*\}').firstMatch(errorBody);
+          if (match != null) {
+            final errorJson = jsonDecode(match.group(0)!);
+            final message = errorJson['message'] ??
+                errorJson['error'] ??
+                'فشل تسجيل الدخول عبر Apple';
+            throw Exception(message);
+          }
+        } catch (_) {}
+        throw Exception('فشل تسجيل الدخول عبر Apple. يرجى المحاولة مرة أخرى');
       }
       rethrow;
     }

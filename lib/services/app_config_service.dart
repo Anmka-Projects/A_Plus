@@ -44,8 +44,8 @@ class AppConfigService {
   /// Get default configuration (fallback)
   AppConfig _getDefaultConfig() {
     return AppConfig(
-      appName: 'A Plus',
-      appNameAr: 'A Plus',
+      appName: 'Dr Champions Academy',
+      appNameAr: 'Dr Champions Academy',
       tagline: 'منصة التعليم الذكية',
       version: '1.0.0',
       forceUpdate: false,

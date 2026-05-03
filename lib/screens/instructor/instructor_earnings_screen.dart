@@ -334,7 +334,7 @@ class _InstructorEarningsScreenState extends State<InstructorEarningsScreen> {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [AppColors.primary, AppColors.pureWhite],
+          colors: [Color(0xFF0C52B3), Color(0xFF093F8A)],
         ),
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(AppRadius.largeCard),
@@ -2000,7 +2000,7 @@ class _InstructorEarningsScreenState extends State<InstructorEarningsScreen> {
             child: ElevatedButton.icon(
               onPressed: _isLoading ? null : _calculateSalary,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryLight,
+                backgroundColor: AppColors.purple,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
@@ -2237,7 +2237,7 @@ class _InstructorEarningsScreenState extends State<InstructorEarningsScreen> {
                             isAr ? 'طلاب' : 'Students',
                             studentsCount.toDouble(),
                             Icons.people_rounded,
-                            const Color(0xFF8B5CF6),
+                            const Color(0xFF1D6FD6),
                             isCount: true,
                           ),
                         ),

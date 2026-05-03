@@ -89,16 +89,16 @@ class ThemeConfig {
 
   factory ThemeConfig.fromJson(Map<String, dynamic> json) {
     return ThemeConfig(
-      primaryColor: json['primary_color'] as String? ?? '#139487',
-      secondaryColor: json['secondary_color'] as String? ?? '#083B3E',
-      accentColor: json['accent_color'] as String? ?? '#21D4C3',
-      successColor: json['success_color'] as String? ?? '#0D9488',
+      primaryColor: json['primary_color'] as String? ?? '#7C3AED',
+      secondaryColor: json['secondary_color'] as String? ?? '#5B21B6',
+      accentColor: json['accent_color'] as String? ?? '#F97316',
+      successColor: json['success_color'] as String? ?? '#10B981',
       warningColor: json['warning_color'] as String? ?? '#EAB308',
       errorColor: json['error_color'] as String? ?? '#EF4444',
-      backgroundColor: json['background_color'] as String? ?? '#F5FBFA',
+      backgroundColor: json['background_color'] as String? ?? '#FDF8F3',
       cardColor: json['card_color'] as String? ?? '#FFFFFF',
-      textColor: json['text_color'] as String? ?? '#042D30',
-      mutedTextColor: json['muted_text_color'] as String? ?? '#5C7A76',
+      textColor: json['text_color'] as String? ?? '#1A1A2E',
+      mutedTextColor: json['muted_text_color'] as String? ?? '#64748B',
     );
   }
 

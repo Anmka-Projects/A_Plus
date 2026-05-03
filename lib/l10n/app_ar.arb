@@ -1,6 +1,6 @@
 {
   "@@locale": "ar",
-  "appName": "A Plus",
+  "appName": "Dr Champions Academy",
   "@appName": {
     "description": "اسم التطبيق"
   },
@@ -87,42 +87,6 @@
   "@enterEmailOrPhone": {
     "description": "نص placeholder البريد الإلكتروني أو رقم الهاتف"
   },
-  "studentCode": "الكود",
-  "@studentCode": {
-    "description": "كود الطالب أو المتدرب لتسجيل الدخول"
-  },
-  "enterStudentCode": "أدخل الكود",
-  "@enterStudentCode": {
-    "description": "نص حقل الكود"
-  },
-  "subcategory": "التصنيف الفرعي",
-  "@subcategory": {
-    "description": "عنوان التصنيف الفرعي في التسجيل"
-  },
-  "selectCategoryFirst": "اختر التصنيف أولاً",
-  "@selectCategoryFirst": {
-    "description": "عند فتح الفرعي قبل التصنيف الرئيسي"
-  },
-  "tapToSelectCategory": "اضغط لاختيار التصنيف",
-  "@tapToSelectCategory": {
-    "description": "نص اختيار التصنيف"
-  },
-  "tapToSelectSubcategory": "اضغط لاختيار التصنيف الفرعي",
-  "@tapToSelectSubcategory": {
-    "description": "نص اختيار التصنيف الفرعي"
-  },
-  "selectCategory": "يرجى اختيار التصنيف",
-  "@selectCategory": {
-    "description": "تحقق عند غياب التصنيف"
-  },
-  "selectSubcategory": "يرجى اختيار التصنيف الفرعي",
-  "@selectSubcategory": {
-    "description": "تحقق عند غياب الفرعي"
-  },
-  "noSubcategoriesForCategory": "لا يوجد تصنيف فرعي لهذا التصنيف — اختياري",
-  "@noSubcategoriesForCategory": {
-    "description": "عندما لا يملك التصنيف فرعياً في التسجيل"
-  },
   "invalidEmailOrPhone": "البريد الإلكتروني أو رقم الهاتف غير صحيح",
   "@invalidEmailOrPhone": {
     "description": "رسالة خطأ البريد الإلكتروني أو رقم الهاتف"
@@ -159,116 +123,6 @@
   "@welcomeBack": {
     "description": "رسالة الترحيب في تسجيل الدخول"
   },
-  "welcomeLabel": "مرحباً",
-  "@welcomeLabel": {
-    "description": "ترحيب قصير فوق الاسم في الرئيسية"
-  },
-  "homeMotivationalLine": "ركز درجة ال A+ في طريقها اليك",
-  "@homeMotivationalLine": {
-    "description": "شعار تحت هيدر الرئيسية"
-  },
-  "homeCoursesSectionTitle": "الكورسات ..",
-  "@homeCoursesSectionTitle": {
-    "description": "عنوان شبكة التخصصات"
-  },
-  "homeDeptHeadsBooks": "الكتب",
-  "@homeDeptHeadsBooks": {
-    "description": "عنوان بطاقة الكتب"
-  },
-  "homeQuizzesAssignments": "الاختبارات والواجبات",
-  "@homeQuizzesAssignments": {
-    "description": "عنوان بطاقة الواجبات"
-  },
-  "homeBooksAssignmentsSection": "كتب الأطباء والواجبات..",
-  "@homeBooksAssignmentsSection": {
-    "description": "عنوان القسم الثاني"
-  },
-  "homeCohortContentLockedHint": "المحتوى مقفول لحد ما الإدارة تفتحه لفرقتك.",
-  "@homeCohortContentLockedHint": {
-    "description": "تنبيه عند قفل كتب/اختبارات المجموعة"
-  },
-  "homeCohortLockedLabel": "مقفول",
-  "@homeCohortLockedLabel": {
-    "description": "شارة قصيرة على بطاقة الرئيسية عند القفل"
-  },
-  "cohortLibraryMaterialsAppTitle": "الكتب",
-  "@cohortLibraryMaterialsAppTitle": {
-    "description": "عنوان شاشة مكتبة المواد"
-  },
-  "cohortLibraryQuizzesAppTitle": "الاختبارات والواجبات",
-  "@cohortLibraryQuizzesAppTitle": {
-    "description": "عنوان شاشة الاختبارات من المكتبة"
-  },
-  "cohortLibraryEmpty": "لا يوجد محتوى لفرقتك بعد.",
-  "@cohortLibraryEmpty": {
-    "description": "مكتبة فارغة"
-  },
-  "cohortLibraryLoadError": "تعذر تحميل المكتبة. اسحب للتحديث.",
-  "@cohortLibraryLoadError": {
-    "description": "فشل طلب المكتبة"
-  },
-  "cohortLibrarySyntheticSubjectTitle": "كل المواد",
-  "@cohortLibrarySyntheticSubjectTitle": {
-    "description": "عنوان مادة افتراضية عند قائمة مسطحة"
-  },
-  "cohortGroupTypeSummary": "تلخيصات",
-  "@cohortGroupTypeSummary": { "description": "نوع مجموعة" },
-  "cohortGroupTypeBook": "كتب",
-  "@cohortGroupTypeBook": { "description": "نوع مجموعة" },
-  "cohortGroupTypeQuiz": "اختبارات",
-  "@cohortGroupTypeQuiz": { "description": "نوع مجموعة" },
-  "cohortGroupTypeFile": "ملفات",
-  "@cohortGroupTypeFile": { "description": "نوع مجموعة" },
-  "cohortGroupTypeVideo": "فيديوهات",
-  "@cohortGroupTypeVideo": { "description": "نوع مجموعة" },
-  "cohortGroupTypeAssignment": "واجبات",
-  "@cohortGroupTypeAssignment": { "description": "نوع مجموعة" },
-  "cohortGroupTypeOther": "أخرى",
-  "@cohortGroupTypeOther": { "description": "نوع مجموعة" },
-  "cohortLibraryNoFileYet": "لا يوجد ملف متاح لهذا العنصر بعد.",
-  "@cohortLibraryNoFileYet": {
-    "description": "عنصر مفتوح بدون رابط ملف"
-  },
-  "trackDoctor": "طبيب",
-  "@trackDoctor": { "description": "مسار طبي" },
-  "trackDentist": "طبيب أسنان",
-  "@trackDentist": { "description": "مسار طبي" },
-  "trackPhysiotherapist": "علاج طبيعي",
-  "@trackPhysiotherapist": { "description": "مسار طبي" },
-  "trackPharmacist": "صيدلي",
-  "@trackPharmacist": { "description": "مسار طبي" },
-  "trackNurse": "تمريض",
-  "@trackNurse": { "description": "مسار طبي" },
-  "trackScientist": "عالم",
-  "@trackScientist": { "description": "مسار طبي" },
-  "bottomNavCart": "السلة",
-  "@bottomNavCart": {
-    "description": "تبويب السلة"
-  },
-  "loginEnterCodeTitle": "أدخل الكود",
-  "@loginEnterCodeTitle": {
-    "description": "عنوان حقل الكود في تسجيل الدخول"
-  },
-  "loginLogIn": "تسجيل الدخول",
-  "@loginLogIn": {
-    "description": "زر تسجيل الدخول"
-  },
-  "codeActivation": "تفعيل الكود",
-  "@codeActivation": {
-    "description": "زر التسجيل وتفعيل الكود"
-  },
-  "pleaseActivateCodeFirst": "يرجى تفعيل الكود أولاً من شاشة التفعيل",
-  "@pleaseActivateCodeFirst": {
-    "description": "تلميح تحت حقل الكود"
-  },
-  "contactUs": "تواصل معنا",
-  "@contactUs": {
-    "description": "رابط الدعم في تسجيل الدخول"
-  },
-  "chooseLanguage": "اللغة",
-  "@chooseLanguage": {
-    "description": "عنوان اختيار اللغة"
-  },
   "enterEmail": "أدخل بريدك الإلكتروني",
   "@enterEmail": {
     "description": "نص placeholder البريد الإلكتروني"
@@ -294,97 +148,13 @@
     "description": "Apple"
   },
   
-  "register": "تفعيل الحساب",
+  "register": "إنشاء حساب جديد",
   "@register": {
     "description": "عنوان شاشة التسجيل"
   },
   "joinUsMessage": "انضم إلينا وابدأ رحلة التعلم 🎓",
   "@joinUsMessage": {
     "description": "رسالة الترحيب في التسجيل"
-  },
-  "quadNameTitle": "الاسم الرباعي",
-  "@quadNameTitle": {
-    "description": "عنوان حقول الاسم الرباعي"
-  },
-  "namePartFirst": "الاسم",
-  "@namePartFirst": {
-    "description": "الجزء الأول من الاسم"
-  },
-  "namePartFather": "الأب",
-  "@namePartFather": {
-    "description": "اسم الأب"
-  },
-  "namePartGrandfather": "الجد",
-  "@namePartGrandfather": {
-    "description": "اسم الجد"
-  },
-  "namePartFamily": "العائلة",
-  "@namePartFamily": {
-    "description": "اسم العائلة"
-  },
-  "nationalId": "الرقم القومي",
-  "@nationalId": {
-    "description": "حقل الرقم القومي"
-  },
-  "nationalIdHint": "أدخل الرقم القومي",
-  "@nationalIdHint": {
-    "description": "نص توضيحي للرقم القومي"
-  },
-  "invalidNationalId": "أدخل رقماً قومياً صحيحاً (أرقام فقط)",
-  "@invalidNationalId": {
-    "description": "التحقق من الرقم القومي"
-  },
-  "faculty": "الكلية",
-  "@faculty": {
-    "description": "اختيار الكلية"
-  },
-  "section": "الفرقة / القسم",
-  "@section": {
-    "description": "اختيار الفرقة أو القسم"
-  },
-  "grade": "السنة الدراسية",
-  "@grade": {
-    "description": "اختيار السنة الدراسية"
-  },
-  "tapToSelectFaculty": "اضغط لاختيار الكلية",
-  "@tapToSelectFaculty": {
-    "description": "نص اختيار الكلية"
-  },
-  "tapToSelectSection": "اضغط لاختيار الفرقة",
-  "@tapToSelectSection": {
-    "description": "نص اختيار الفرقة"
-  },
-  "tapToSelectGrade": "اضغط لاختيار السنة",
-  "@tapToSelectGrade": {
-    "description": "نص اختيار السنة"
-  },
-  "selectFacultyFirst": "اختر الكلية أولاً",
-  "@selectFacultyFirst": {
-    "description": "تعطيل الفرقة حتى تختار الكلية"
-  },
-  "selectSectionFirst": "اختر الفرقة أولاً",
-  "@selectSectionFirst": {
-    "description": "تعطيل السنة حتى تختار الفرقة"
-  },
-  "selectFaculty": "يرجى اختيار الكلية",
-  "@selectFaculty": {
-    "description": "تحقق الكلية"
-  },
-  "selectSection": "يرجى اختيار الفرقة",
-  "@selectSection": {
-    "description": "تحقق الفرقة"
-  },
-  "selectGrade": "يرجى اختيار السنة الدراسية",
-  "@selectGrade": {
-    "description": "تحقق السنة"
-  },
-  "academicDataLoading": "جاري تحميل الخيارات…",
-  "@academicDataLoading": {
-    "description": "تحميل بيانات الكليات"
-  },
-  "academicDataUnavailable": "تعذر تحميل الخيارات. حاول لاحقاً.",
-  "@academicDataUnavailable": {
-    "description": "فشل API الكليات"
   },
   "fullName": "الاسم الكامل",
   "@fullName": {
@@ -521,6 +291,233 @@
   "@errorLoadingCourses": {
     "description": "رسالة خطأ تحميل الدورات"
   },
+
+  "errorTitle": "حدث خطأ",
+  "@errorTitle": {
+    "description": "عنوان خطأ عام"
+  },
+  "unexpectedError": "حدث خطأ غير متوقع",
+  "@unexpectedError": {
+    "description": "رسالة خطأ افتراضية غير متوقعة"
+  },
+  "courseDetails": "تفاصيل الدورة",
+  "@courseDetails": {
+    "description": "عنوان صفحة تفاصيل الدورة"
+  },
+  "about": "نبذة",
+  "@about": {
+    "description": "عنوان تبويب النبذة"
+  },
+  "popular": "الأكثر شيوعًا",
+  "@popular": {
+    "description": "شارة الأكثر شيوعًا"
+  },
+  "continueLesson": "استكمل: {title}",
+  "@continueLesson": {
+    "description": "استكمل التعلم مع عنوان آخر درس",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "noLesson": "لا يوجد درس",
+  "@noLesson": {
+    "description": "لا يوجد درس"
+  },
+  "loadingVideo": "جاري تحميل الفيديو...",
+  "@loadingVideo": {
+    "description": "نص تحميل الفيديو"
+  },
+  "cannotLoadVideo": "لا يمكن تحميل الفيديو",
+  "@cannotLoadVideo": {
+    "description": "خطأ عدم القدرة على تحميل الفيديو"
+  },
+  "videoLoadFailedCheckInternet": "فشل تحميل الفيديو. يرجى التحقق من الاتصال بالإنترنت.",
+  "@videoLoadFailedCheckInternet": {
+    "description": "فشل تحميل الفيديو بسبب الاتصال"
+  },
+  "videoFormatNotSupported": "تنسيق الفيديو غير مدعوم",
+  "@videoFormatNotSupported": {
+    "description": "تنسيق الفيديو غير مدعوم"
+  },
+  "videoDecodeError": "خطأ في فك تشفير الفيديو",
+  "@videoDecodeError": {
+    "description": "خطأ فك تشفير الفيديو"
+  },
+  "networkConnectionError": "خطأ في الاتصال بالشبكة",
+  "@networkConnectionError": {
+    "description": "خطأ اتصال بالشبكة"
+  },
+  "videoLoadError": "خطأ في تحميل الفيديو",
+  "@videoLoadError": {
+    "description": "خطأ تحميل الفيديو"
+  },
+  "normalSpeed": "عادي",
+  "@normalSpeed": {
+    "description": "سرعة تشغيل عادية"
+  },
+  "minutesUnit": "{count, plural, =1 {دقيقة} other {دقائق}}",
+  "@minutesUnit": {
+    "description": "وحدة الدقائق",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "hoursUnitShort": "{count}س",
+  "@hoursUnitShort": {
+    "description": "وحدة الساعات مختصرة (مثل 3س)",
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "continueToPayment": "متابعة للدفع",
+  "@continueToPayment": {
+    "description": "زر متابعة للدفع"
+  },
+  "subscriptionPlan": "خطة اشتراك",
+  "@subscriptionPlan": {
+    "description": "عنوان خطة الاشتراك"
+  },
+  "chooseSubscriptionPlan": "اختر خطة الاشتراك",
+  "@chooseSubscriptionPlan": {
+    "description": "عنوان اختيار خطة الاشتراك"
+  },
+  "monthsDuration": "{count, plural, =1 {مدة 1 شهر} other {مدة {count} شهور}}",
+  "@monthsDuration": {
+    "description": "مدة الاشتراك بالأشهر",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
+  "planDurationDays": "{count, plural, =1 {1 يوم} other {{count} أيام}}",
+  "@planDurationDays": {
+    "description": "مدة خطة الاشتراك بالأيام (بدون بادئة)",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "planDurationMonths": "{count, plural, =1 {1 شهر} other {{count} أشهر}}",
+  "@planDurationMonths": {
+    "description": "مدة خطة الاشتراك بالأشهر (بدون بادئة)",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "planDurationYears": "{count, plural, =1 {1 سنة} other {{count} سنوات}}",
+  "@planDurationYears": {
+    "description": "مدة خطة الاشتراك بالسنوات (بدون بادئة)",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "planOfferEndsAt": "ينتهي العرض في {date}",
+  "@planOfferEndsAt": {
+    "description": "تاريخ انتهاء عرض سعر خطة الاشتراك",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+
+  "notAvailableShort": "—",
+  "@notAvailableShort": {
+    "description": "علامة قصيرة لعدم توفر البيانات"
+  },
+  "bestScore": "أفضل نتيجة: {score}%",
+  "@bestScore": {
+    "description": "أفضل نتيجة في الاختبار",
+    "placeholders": {
+      "score": {
+        "type": "num"
+      }
+    }
+  },
+  "attemptsUsedOutOf": "{used}/{max} محاولات",
+  "@attemptsUsedOutOf": {
+    "description": "عدد المحاولات المستخدمة من الإجمالي",
+    "placeholders": {
+      "used": {
+        "type": "num"
+      },
+      "max": {
+        "type": "num"
+      }
+    }
+  },
+  "attemptsExhausted": "تم استنفاد المحاولات",
+  "@attemptsExhausted": {
+    "description": "تم استنفاد المحاولات"
+  },
+  "youAreInstructorOfCourse": "أنت مدرب هذه الدورة",
+  "@youAreInstructorOfCourse": {
+    "description": "نص عندما يكون المستخدم مدرب هذه الدورة"
+  },
+  "finishExamLabel": "إنهاء الامتحان",
+  "@finishExamLabel": {
+    "description": "نص إنهاء الامتحان"
+  },
+  "tryAgain": "حاول مرة أخرى",
+  "@tryAgain": {
+    "description": "حاول مرة أخرى"
+  },
+  "wellDone": "أحسنت! 🎉",
+  "@wellDone": {
+    "description": "نص أحسنت"
+  },
+  "yourScore": "نتيجتك: {score}%",
+  "@yourScore": {
+    "description": "نتيجة الامتحان",
+    "placeholders": {
+      "score": {
+        "type": "num"
+      }
+    }
+  },
+  "correctAnswersOutOf": "{correct} من {total} إجابات صحيحة",
+  "@correctAnswersOutOf": {
+    "description": "عدد الإجابات الصحيحة من الإجمالي",
+    "placeholders": {
+      "correct": {
+        "type": "num"
+      },
+      "total": {
+        "type": "num"
+      }
+    }
+  },
+  "timeTakenMinutes": "الوقت المستغرق: {minutes} {minutes, plural, =1 {دقيقة} other {دقائق}}",
+  "@timeTakenMinutes": {
+    "description": "الوقت المستغرق بالدقائق",
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "questionIndex": "السؤال {index}",
+  "@questionIndex": {
+    "description": "رقم السؤال",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      }
+    }
+  },
   
   "instructor": "المدرب",
   "@instructor": {
@@ -629,10 +626,6 @@
   "downloads": "التحميلات",
   "@downloads": {
     "description": "التحميلات"
-  },
-  "booksScreenAppBarTitle": "الكتب",
-  "@booksScreenAppBarTitle": {
-    "description": "عنوان شاشة الكتب من الرئيسية"
   },
   "downloadLinkReceived": "تم الحصول على رابط التحميل. سيتم التحميل قريباً...",
   "@downloadLinkReceived": {
@@ -856,9 +849,9 @@
     "description": "الإجمالي"
   },
   
-  "editProfile": "ملف الطالب",
+  "editProfile": "تعديل الملف الشخصي",
   "@editProfile": {
-    "description": "عنوان شاشة ملف الطالب"
+    "description": "تعديل الملف الشخصي"
   },
   "errorLoadingProfile": "حدث خطأ أثناء تحميل الملف الشخصي",
   "@errorLoadingProfile": {
@@ -896,10 +889,6 @@
   "saveChanges": "حفظ التغييرات",
   "@saveChanges": {
     "description": "حفظ التغييرات"
-  },
-  "profileReadOnlyMessage": "هذه البيانات للعرض فقط",
-  "@profileReadOnlyMessage": {
-    "description": "تنبيه في شاشة الملف الشخصي للعرض فقط"
   },
   "selectImageSource": "اختر مصدر الصورة",
   "@selectImageSource": {
@@ -1185,6 +1174,10 @@
   "@enrollInCourse": {
     "description": "اشترك في الدورة"
   },
+  "freePreview": "معاينة مجانية",
+  "@freePreview": {
+    "description": "شارة معاينة مجانية للدروس"
+  },
   "loginRequired": "يجب تسجيل الدخول أولاً",
   "@loginRequired": {
     "description": "يجب تسجيل الدخول أولاً"
@@ -1335,10 +1328,6 @@
   "myExams": "اختباراتي",
   "@myExams": {
     "description": "اختباراتي"
-  },
-  "quizzesAssignmentsScreenTitle": "الاختبارات والواجبات",
-  "@quizzesAssignmentsScreenTitle": {
-    "description": "عنوان شاشة الاختبارات والواجبات"
   },
   "viewAllExams": "عرض جميع الاختبارات المكتملة",
   "@viewAllExams": {
@@ -1586,6 +1575,15 @@
       }
     }
   },
+  "usdAmount": "{amount} USD",
+  "@usdAmount": {
+    "description": "سعر بالدولار الأمريكي في ملخص الطلب",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
   "confirmPayment": "تأكيد الدفع",
   "@confirmPayment": {
     "description": "تأكيد الدفع"
@@ -1699,6 +1697,10 @@
   "smartLearningPlatform": "منصة التعليم الذكية",
   "@smartLearningPlatform": {
     "description": "منصة التعليم الذكية"
+  },
+  "learnWithUsFutureLanguage": "تعلم معنا بلغة المستقبل",
+  "@learnWithUsFutureLanguage": {
+    "description": "نص السطر التعريفي في السبلاش"
   },
   "certifiedAndSecure": "منصة معتمدة وآمنة",
   "@certifiedAndSecure": {
@@ -1964,15 +1966,6 @@
       }
     }
   },
-  "availableBooks": "{count, plural, =1 {كتاب متاح} other {كتب متاحة}}",
-  "@availableBooks": {
-    "description": "نص تحت عنوان شاشة الكتب",
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "storage": "مساحة التخزين",
   "@storage": {
     "description": "مساحة التخزين"
@@ -2060,6 +2053,10 @@
   "remindMe": "تذكيري",
   "@remindMe": {
     "description": "تذكيري"
+  },
+  "enterTheSession": "ادخل الجلسة",
+  "@enterTheSession": {
+    "description": "زر يظهر عندما يحين وقت الجلسة المباشرة"
   },
   "joinNow": "انضم الآن",
   "@joinNow": {
@@ -2155,7 +2152,7 @@
   "@unknownError": {
     "description": "خطأ غير معروف"
   },
-  "teachers": "المحاضرون",
+  "teachers": "المعلمون",
   "@teachers": {
     "description": "عنوان قسم المعلمين"
   },
@@ -2170,6 +2167,164 @@
   "teacherCoursesTitle": "الدورات المقدمة",
   "@teacherCoursesTitle": {
     "description": "عنوان قسم دورات المعلم"
+  },
+  "lessonDescriptionTitle": "وصف الدرس",
+  "@lessonDescriptionTitle": {
+    "description": "عنوان وصف الدرس"
+  },
+  "noLessonDescription": "لا يوجد وصف متاح",
+  "@noLessonDescription": {
+    "description": "لا يوجد وصف متاح"
+  },
+  "downloadForOffline": "تحميل للعرض بدون إنترنت",
+  "@downloadForOffline": {
+    "description": "تحميل للعرض بدون إنترنت"
+  },
+  "downloadingProgress": "جاري التحميل: {progress}%",
+  "@downloadingProgress": {
+    "description": "نص تقدم التحميل",
+    "placeholders": {
+      "progress": {
+        "type": "int"
+      }
+    }
+  },
+  "videoDownloaded": "تم تحميل الفيديو",
+  "@videoDownloaded": {
+    "description": "تم تحميل الفيديو"
+  },
+  "lessonFiles": "ملفات الدرس",
+  "@lessonFiles": {
+    "description": "ملفات الدرس"
+  },
+  "lessonImages": "صور الدرس",
+  "@lessonImages": {
+    "description": "عنوان قسم صور الدرس"
+  },
+  "audioFiles": "ملفات صوتية",
+  "@audioFiles": {
+    "description": "عنوان قسم الملفات الصوتية"
+  },
+  "videoFiles": "ملفات الفيديو",
+  "@videoFiles": {
+    "description": "عنوان قسم ملفات الفيديو"
+  },
+  "pdfFiles": "ملفات PDF",
+  "@pdfFiles": {
+    "description": "عنوان قسم ملفات PDF"
+  },
+  "imageLoadFailed": "تعذر تحميل الصورة",
+  "@imageLoadFailed": {
+    "description": "رسالة فشل تحميل الصورة"
+  },
+  "lessonDescriptionShownTop": "يُعرض الوصف في أعلى الشاشة.",
+  "@lessonDescriptionShownTop": {
+    "description": "تلميح عرض وصف الدرس في الأعلى"
+  },
+  "imageGalleryShownTop": "يُعرض معرض الصور في أعلى الشاشة.",
+  "@imageGalleryShownTop": {
+    "description": "تلميح عرض معرض الصور في الأعلى"
+  },
+  "downloadShownTop": "يُعرض التحميل للمشاهدة دون اتصال في أعلى الشاشة.",
+  "@downloadShownTop": {
+    "description": "تلميح عرض التحميل في الأعلى"
+  },
+  "lessonFilesShownTop": "يُعرض ملفات الدرس في أعلى الشاشة.",
+  "@lessonFilesShownTop": {
+    "description": "تلميح عرض ملفات الدرس في الأعلى"
+  },
+  "tapToShowVideoTop": "اضغط لعرض الفيديو في أعلى الشاشة.",
+  "@tapToShowVideoTop": {
+    "description": "تلميح عرض الفيديو في الأعلى"
+  },
+  "loadingAudioDuration": "جاري تحميل مدة الصوت...",
+  "@loadingAudioDuration": {
+    "description": "نص أثناء تحميل مدة الصوت"
+  },
+  "audioClipLabel": "مقطع صوتي {index}",
+  "@audioClipLabel": {
+    "description": "عنوان مقطع صوتي مع رقم",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      }
+    }
+  },
+  "videoLabel": "فيديو {index}",
+  "@videoLabel": {
+    "description": "عنوان فيديو مع رقم",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      }
+    }
+  },
+  "pdfFileLabel": "ملف PDF {index}",
+  "@pdfFileLabel": {
+    "description": "عنوان ملف PDF مع رقم",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      }
+    }
+  },
+  "nowPlaying": "يعمل الآن",
+  "@nowPlaying": {
+    "description": "شارة العنصر الذي يعمل حالياً"
+  },
+  "noFilesAvailable": "لا توجد ملفات متاحة",
+  "@noFilesAvailable": {
+    "description": "لا توجد ملفات متاحة"
+  },
+  "pdfLessonSummary": "ملف PDF - ملخص الدرس",
+  "@pdfLessonSummary": {
+    "description": "عنوان ملف PDF ملخص الدرس"
+  },
+  "attachmentFile": "ملف مرفق",
+  "@attachmentFile": {
+    "description": "عنوان ملف مرفق"
+  },
+  "video": "فيديو",
+  "@video": {
+    "description": "عنوان فيديو"
+  },
+  "cannotLoadThisVideo": "لا يمكن تحميل هذا الفيديو",
+  "@cannotLoadThisVideo": {
+    "description": "لا يمكن تحميل هذا الفيديو"
+  },
+  "storagePermissionRequiredToDownloadVideos": "يجب منح صلاحيات التخزين لتحميل الفيديوهات",
+  "@storagePermissionRequiredToDownloadVideos": {
+    "description": "رسالة طلب صلاحيات التخزين"
+  },
+  "noVideoUrlToDownload": "لا يوجد رابط فيديو للتحميل",
+  "@noVideoUrlToDownload": {
+    "description": "لا يوجد رابط فيديو للتحميل"
+  },
+  "courseWithId": "كورس {id}",
+  "@courseWithId": {
+    "description": "عنوان كورس افتراضي مع رقم",
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "videoDownloadedSuccessfully": "تم تحميل الفيديو بنجاح",
+  "@videoDownloadedSuccessfully": {
+    "description": "تم تحميل الفيديو بنجاح"
+  },
+  "videoDownloadFailed": "فشل تحميل الفيديو",
+  "@videoDownloadFailed": {
+    "description": "فشل تحميل الفيديو"
+  },
+  "videoDownloadError": "خطأ في تحميل الفيديو: {error}",
+  "@videoDownloadError": {
+    "description": "خطأ في تحميل الفيديو مع تفاصيل",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
   },
   "coursesCount": "{count} دورات",
   "@coursesCount": {
@@ -2189,13 +2344,38 @@
       }
     }
   },
-  "appExitNotificationTitle": "نراك قريباً!",
-  "@appExitNotificationTitle": {
-    "description": "عنوان إشعار محلي عند إغلاق التطبيق أو الخروج للخلفية"
+  "noExamsAvailable": "لا توجد اختبارات متاحة",
+  "@noExamsAvailable": {
+    "description": "لا توجد اختبارات متاحة"
   },
-  "appExitNotificationBody": "افتح A Plus في أي وقت لمتابعة تعلمك.",
-  "@appExitNotificationBody": {
-    "description": "نص إشعار محلي عند الخروج من التطبيق"
+  "passingScoreToPass": "{score}% للنجاح",
+  "@passingScoreToPass": {
+    "description": "نص نسبة النجاح",
+    "placeholders": {
+      "score": {
+        "type": "num"
+      }
+    }
+  },
+  "courseDescriptionTitle": "وصف الدورة",
+  "@courseDescriptionTitle": {
+    "description": "عنوان وصف الدورة"
+  },
+  "whatYouWillGet": "ماذا ستحصل عليه",
+  "@whatYouWillGet": {
+    "description": "عنوان ماذا ستحصل عليه"
+  },
+  "lifetimeAccess": "وصول مدى الحياة للمحتوى",
+  "@lifetimeAccess": {
+    "description": "ميزة الوصول مدى الحياة"
+  },
+  "availableOnAllDevices": "متاح على جميع الأجهزة",
+  "@availableOnAllDevices": {
+    "description": "ميزة متاح على جميع الأجهزة"
+  },
+  "downloadableFiles": "ملفات للتحميل",
+  "@downloadableFiles": {
+    "description": "ميزة ملفات للتحميل"
   }
 }
 

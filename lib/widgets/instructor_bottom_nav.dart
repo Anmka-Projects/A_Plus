@@ -60,7 +60,7 @@ class InstructorBottomNav extends StatelessWidget {
                         spreadRadius: 0,
                       ),
                       BoxShadow(
-                        color: AppColors.primary.withOpacity(0.1),
+                        color: AppColors.purple.withOpacity(0.1),
                         blurRadius: 40,
                         offset: const Offset(0, 4),
                         spreadRadius: -10,
@@ -143,8 +143,8 @@ class _CenterNavItem extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              AppColors.primary,
-              AppColors.secondary,
+              Color(0xFF0C52B3),
+              Color(0xFF093F8A),
             ],
           ),
           shape: BoxShape.circle,
@@ -213,8 +213,8 @@ class _NavItem extends StatelessWidget {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    AppColors.secondary.withOpacity(0.18),
-                    AppColors.secondary.withOpacity(0.10),
+                    AppColors.purple.withOpacity(0.15),
+                    AppColors.purple.withOpacity(0.08),
                   ],
                 )
               : null,
@@ -226,21 +226,15 @@ class _NavItem extends StatelessWidget {
             Icon(
               icon,
               size: isActive ? 26 : 24,
-              color:
-                  isActive ? AppColors.secondary : AppColors.mutedForeground,
+              color: isActive ? AppColors.purple : Colors.grey[500],
             ),
             const SizedBox(height: 4),
             Text(
               label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
               style: GoogleFonts.cairo(
                 fontSize: isActive ? 11 : 10,
                 fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-                color:
-                    isActive ? AppColors.secondary : AppColors.mutedForeground,
-                height: 1.2,
+                color: isActive ? AppColors.purple : Colors.grey[500],
               ),
             ),
           ],

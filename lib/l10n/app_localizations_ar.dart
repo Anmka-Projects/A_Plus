@@ -9,7 +9,7 @@ class AppLocalizationsAr extends AppLocalizations {
   AppLocalizationsAr([String locale = 'ar']) : super(locale);
 
   @override
-  String get appName => 'A Plus';
+  String get appName => 'Dr Champions Academy';
 
   @override
   String get settings => 'الإعدادات';
@@ -71,34 +71,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get enterEmailOrPhone => 'أدخل بريدك الإلكتروني أو رقم هاتفك';
 
   @override
-  String get studentCode => 'الكود';
-
-  @override
-  String get enterStudentCode => 'أدخل الكود';
-
-  @override
-  String get subcategory => 'التصنيف الفرعي';
-
-  @override
-  String get selectCategoryFirst => 'اختر التصنيف أولاً';
-
-  @override
-  String get tapToSelectCategory => 'اضغط لاختيار التصنيف';
-
-  @override
-  String get tapToSelectSubcategory => 'اضغط لاختيار التصنيف الفرعي';
-
-  @override
-  String get selectCategory => 'يرجى اختيار التصنيف';
-
-  @override
-  String get selectSubcategory => 'يرجى اختيار التصنيف الفرعي';
-
-  @override
-  String get noSubcategoriesForCategory =>
-      'لا يوجد تصنيف فرعي لهذا التصنيف — اختياري';
-
-  @override
   String get invalidEmailOrPhone => 'البريد الإلكتروني أو رقم الهاتف غير صحيح';
 
   @override
@@ -126,110 +98,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get welcomeBack => 'مرحباً بعودتك! 👋';
 
   @override
-  String get welcomeLabel => 'مرحباً';
-
-  @override
-  String get homeMotivationalLine => 'ركز درجة ال A+ في طريقها اليك';
-
-  @override
-  String get homeCoursesSectionTitle => 'الكورسات ..';
-
-  @override
-  String get homeDeptHeadsBooks => 'الكتب';
-
-  @override
-  String get homeQuizzesAssignments => 'الاختبارات والواجبات';
-
-  @override
-  String get homeBooksAssignmentsSection => 'كتب الأطباء والواجبات..';
-
-  @override
-  String get homeCohortContentLockedHint =>
-      'المحتوى مقفول لحد ما الإدارة تفتحه لفرقتك.';
-
-  @override
-  String get homeCohortLockedLabel => 'مقفول';
-
-  @override
-  String get cohortLibraryMaterialsAppTitle => 'الكتب';
-
-  @override
-  String get cohortLibraryQuizzesAppTitle => 'الاختبارات والواجبات';
-
-  @override
-  String get cohortLibraryEmpty => 'لا يوجد محتوى لفرقتك بعد.';
-
-  @override
-  String get cohortLibraryLoadError => 'تعذر تحميل المكتبة. اسحب للتحديث.';
-
-  @override
-  String get cohortLibrarySyntheticSubjectTitle => 'كل المواد';
-
-  @override
-  String get cohortGroupTypeSummary => 'تلخيصات';
-
-  @override
-  String get cohortGroupTypeBook => 'كتب';
-
-  @override
-  String get cohortGroupTypeQuiz => 'اختبارات';
-
-  @override
-  String get cohortGroupTypeFile => 'ملفات';
-
-  @override
-  String get cohortGroupTypeVideo => 'فيديوهات';
-
-  @override
-  String get cohortGroupTypeAssignment => 'واجبات';
-
-  @override
-  String get cohortGroupTypeOther => 'أخرى';
-
-  @override
-  String get cohortLibraryNoFileYet => 'لا يوجد ملف متاح لهذا العنصر بعد.';
-
-  @override
-  String get trackDoctor => 'طبيب';
-
-  @override
-  String get trackDentist => 'طبيب أسنان';
-
-  @override
-  String get trackPhysiotherapist => 'علاج طبيعي';
-
-  @override
-  String get trackPharmacist => 'صيدلي';
-
-  @override
-  String get trackNurse => 'تمريض';
-
-  @override
-  String get trackScientist => 'عالم';
-
-  @override
-  String get bottomNavCart => 'السلة';
-
-  @override
-  String get loginEnterCodeTitle => 'أدخل الكود';
-
-  @override
-  String get loginLogIn => 'تسجيل الدخول';
-
-  @override
-  String get codeActivation => 'تفعيل الكود';
-
-  @override
-  String get pleaseActivateCodeFirst =>
-      'يرجى تفعيل الكود أولاً من شاشة التفعيل';
-
-  @override
-  String get contactUs => 'تواصل معنا';
-
-  @override
-  String get chooseLanguage => 'اللغة';
-
-  @override
   String get enterEmail => 'أدخل بريدك الإلكتروني';
 
   @override
@@ -248,73 +116,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get apple => 'Apple';
 
   @override
-  String get register => 'تفعيل الحساب';
+  String get register => 'إنشاء حساب جديد';
 
   @override
   String get joinUsMessage => 'انضم إلينا وابدأ رحلة التعلم 🎓';
-
-  @override
-  String get quadNameTitle => 'الاسم الرباعي';
-
-  @override
-  String get namePartFirst => 'الاسم';
-
-  @override
-  String get namePartFather => 'الأب';
-
-  @override
-  String get namePartGrandfather => 'الجد';
-
-  @override
-  String get namePartFamily => 'العائلة';
-
-  @override
-  String get nationalId => 'الرقم القومي';
-
-  @override
-  String get nationalIdHint => 'أدخل الرقم القومي';
-
-  @override
-  String get invalidNationalId => 'أدخل رقماً قومياً صحيحاً (أرقام فقط)';
-
-  @override
-  String get faculty => 'الكلية';
-
-  @override
-  String get section => 'الفرقة / القسم';
-
-  @override
-  String get grade => 'السنة الدراسية';
-
-  @override
-  String get tapToSelectFaculty => 'اضغط لاختيار الكلية';
-
-  @override
-  String get tapToSelectSection => 'اضغط لاختيار الفرقة';
-
-  @override
-  String get tapToSelectGrade => 'اضغط لاختيار السنة';
-
-  @override
-  String get selectFacultyFirst => 'اختر الكلية أولاً';
-
-  @override
-  String get selectSectionFirst => 'اختر الفرقة أولاً';
-
-  @override
-  String get selectFaculty => 'يرجى اختيار الكلية';
-
-  @override
-  String get selectSection => 'يرجى اختيار الفرقة';
-
-  @override
-  String get selectGrade => 'يرجى اختيار السنة الدراسية';
-
-  @override
-  String get academicDataLoading => 'جاري تحميل الخيارات…';
-
-  @override
-  String get academicDataUnavailable => 'تعذر تحميل الخيارات. حاول لاحقاً.';
 
   @override
   String get fullName => 'الاسم الكامل';
@@ -416,6 +221,182 @@ class AppLocalizationsAr extends AppLocalizations {
   String get errorLoadingCourses => 'حدث خطأ أثناء تحميل الدورات';
 
   @override
+  String get errorTitle => 'حدث خطأ';
+
+  @override
+  String get unexpectedError => 'حدث خطأ غير متوقع';
+
+  @override
+  String get courseDetails => 'تفاصيل الدورة';
+
+  @override
+  String get about => 'نبذة';
+
+  @override
+  String get popular => 'الأكثر شيوعًا';
+
+  @override
+  String continueLesson(String title) {
+    return 'استكمل: $title';
+  }
+
+  @override
+  String get noLesson => 'لا يوجد درس';
+
+  @override
+  String get loadingVideo => 'جاري تحميل الفيديو...';
+
+  @override
+  String get cannotLoadVideo => 'لا يمكن تحميل الفيديو';
+
+  @override
+  String get videoLoadFailedCheckInternet =>
+      'فشل تحميل الفيديو. يرجى التحقق من الاتصال بالإنترنت.';
+
+  @override
+  String get videoFormatNotSupported => 'تنسيق الفيديو غير مدعوم';
+
+  @override
+  String get videoDecodeError => 'خطأ في فك تشفير الفيديو';
+
+  @override
+  String get networkConnectionError => 'خطأ في الاتصال بالشبكة';
+
+  @override
+  String get videoLoadError => 'خطأ في تحميل الفيديو';
+
+  @override
+  String get normalSpeed => 'عادي';
+
+  @override
+  String minutesUnit(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'دقائق',
+      one: 'دقيقة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String hoursUnitShort(num count) {
+    return '$countس';
+  }
+
+  @override
+  String get continueToPayment => 'متابعة للدفع';
+
+  @override
+  String get subscriptionPlan => 'خطة اشتراك';
+
+  @override
+  String get chooseSubscriptionPlan => 'اختر خطة الاشتراك';
+
+  @override
+  String monthsDuration(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'مدة $count شهور',
+      one: 'مدة 1 شهر',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String planDurationDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count أيام',
+      one: '1 يوم',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String planDurationMonths(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count أشهر',
+      one: '1 شهر',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String planDurationYears(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count سنوات',
+      one: '1 سنة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String planOfferEndsAt(String date) {
+    return 'ينتهي العرض في $date';
+  }
+
+  @override
+  String get notAvailableShort => '—';
+
+  @override
+  String bestScore(num score) {
+    return 'أفضل نتيجة: $score%';
+  }
+
+  @override
+  String attemptsUsedOutOf(num used, num max) {
+    return '$used/$max محاولات';
+  }
+
+  @override
+  String get attemptsExhausted => 'تم استنفاد المحاولات';
+
+  @override
+  String get youAreInstructorOfCourse => 'أنت مدرب هذه الدورة';
+
+  @override
+  String get finishExamLabel => 'إنهاء الامتحان';
+
+  @override
+  String get tryAgain => 'حاول مرة أخرى';
+
+  @override
+  String get wellDone => 'أحسنت! 🎉';
+
+  @override
+  String yourScore(num score) {
+    return 'نتيجتك: $score%';
+  }
+
+  @override
+  String correctAnswersOutOf(num correct, num total) {
+    return '$correct من $total إجابات صحيحة';
+  }
+
+  @override
+  String timeTakenMinutes(int minutes) {
+    String _temp0 = intl.Intl.pluralLogic(
+      minutes,
+      locale: localeName,
+      other: 'دقائق',
+      one: 'دقيقة',
+    );
+    return 'الوقت المستغرق: $minutes $_temp0';
+  }
+
+  @override
+  String questionIndex(int index) {
+    return 'السؤال $index';
+  }
+
+  @override
   String get instructor => 'المدرب';
 
   @override
@@ -490,9 +471,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get downloads => 'التحميلات';
-
-  @override
-  String get booksScreenAppBarTitle => 'الكتب';
 
   @override
   String get downloadLinkReceived =>
@@ -642,7 +620,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get total => 'الإجمالي';
 
   @override
-  String get editProfile => 'ملف الطالب';
+  String get editProfile => 'تعديل الملف الشخصي';
 
   @override
   String get errorLoadingProfile => 'حدث خطأ أثناء تحميل الملف الشخصي';
@@ -669,9 +647,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get saveChanges => 'حفظ التغييرات';
-
-  @override
-  String get profileReadOnlyMessage => 'هذه البيانات للعرض فقط';
 
   @override
   String get selectImageSource => 'اختر مصدر الصورة';
@@ -872,6 +847,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get enrollInCourse => 'اشترك في الدورة';
 
   @override
+  String get freePreview => 'معاينة مجانية';
+
+  @override
   String get loginRequired => 'يجب تسجيل الدخول أولاً';
 
   @override
@@ -976,9 +954,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get myExams => 'اختباراتي';
-
-  @override
-  String get quizzesAssignmentsScreenTitle => 'الاختبارات والواجبات';
 
   @override
   String get viewAllExams => 'عرض جميع الاختبارات المكتملة';
@@ -1165,6 +1140,11 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String usdAmount(String amount) {
+    return '$amount USD';
+  }
+
+  @override
   String get confirmPayment => 'تأكيد الدفع';
 
   @override
@@ -1249,6 +1229,9 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get smartLearningPlatform => 'منصة التعليم الذكية';
+
+  @override
+  String get learnWithUsFutureLanguage => 'تعلم معنا بلغة المستقبل';
 
   @override
   String get certifiedAndSecure => 'منصة معتمدة وآمنة';
@@ -1409,17 +1392,6 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String availableBooks(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'كتب متاحة',
-      one: 'كتاب متاح',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String get storage => 'مساحة التخزين';
 
   @override
@@ -1475,6 +1447,9 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get remindMe => 'تذكيري';
+
+  @override
+  String get enterTheSession => 'ادخل الجلسة';
 
   @override
   String get joinNow => 'انضم الآن';
@@ -1540,7 +1515,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get unknownError => 'حدث خطأ غير معروف';
 
   @override
-  String get teachers => 'المحاضرون';
+  String get teachers => 'المعلمون';
 
   @override
   String get allTeachers => 'جميع المعلمين';
@@ -1552,13 +1527,140 @@ class AppLocalizationsAr extends AppLocalizations {
   String get teacherCoursesTitle => 'الدورات المقدمة';
 
   @override
+  String get lessonDescriptionTitle => 'وصف الدرس';
+
+  @override
+  String get noLessonDescription => 'لا يوجد وصف متاح';
+
+  @override
+  String get downloadForOffline => 'تحميل للعرض بدون إنترنت';
+
+  @override
+  String downloadingProgress(int progress) {
+    return 'جاري التحميل: $progress%';
+  }
+
+  @override
+  String get videoDownloaded => 'تم تحميل الفيديو';
+
+  @override
+  String get lessonFiles => 'ملفات الدرس';
+
+  @override
+  String get lessonImages => 'صور الدرس';
+
+  @override
+  String get audioFiles => 'ملفات صوتية';
+
+  @override
+  String get videoFiles => 'ملفات الفيديو';
+
+  @override
+  String get pdfFiles => 'ملفات PDF';
+
+  @override
+  String get imageLoadFailed => 'تعذر تحميل الصورة';
+
+  @override
+  String get lessonDescriptionShownTop => 'يُعرض الوصف في أعلى الشاشة.';
+
+  @override
+  String get imageGalleryShownTop => 'يُعرض معرض الصور في أعلى الشاشة.';
+
+  @override
+  String get downloadShownTop =>
+      'يُعرض التحميل للمشاهدة دون اتصال في أعلى الشاشة.';
+
+  @override
+  String get lessonFilesShownTop => 'يُعرض ملفات الدرس في أعلى الشاشة.';
+
+  @override
+  String get tapToShowVideoTop => 'اضغط لعرض الفيديو في أعلى الشاشة.';
+
+  @override
+  String get loadingAudioDuration => 'جاري تحميل مدة الصوت...';
+
+  @override
+  String audioClipLabel(int index) {
+    return 'مقطع صوتي $index';
+  }
+
+  @override
+  String videoLabel(int index) {
+    return 'فيديو $index';
+  }
+
+  @override
+  String pdfFileLabel(int index) {
+    return 'ملف PDF $index';
+  }
+
+  @override
+  String get nowPlaying => 'يعمل الآن';
+
+  @override
+  String get noFilesAvailable => 'لا توجد ملفات متاحة';
+
+  @override
+  String get pdfLessonSummary => 'ملف PDF - ملخص الدرس';
+
+  @override
+  String get attachmentFile => 'ملف مرفق';
+
+  @override
+  String get video => 'فيديو';
+
+  @override
+  String get cannotLoadThisVideo => 'لا يمكن تحميل هذا الفيديو';
+
+  @override
+  String get storagePermissionRequiredToDownloadVideos =>
+      'يجب منح صلاحيات التخزين لتحميل الفيديوهات';
+
+  @override
+  String get noVideoUrlToDownload => 'لا يوجد رابط فيديو للتحميل';
+
+  @override
+  String courseWithId(String id) {
+    return 'كورس $id';
+  }
+
+  @override
+  String get videoDownloadedSuccessfully => 'تم تحميل الفيديو بنجاح';
+
+  @override
+  String get videoDownloadFailed => 'فشل تحميل الفيديو';
+
+  @override
+  String videoDownloadError(String error) {
+    return 'خطأ في تحميل الفيديو: $error';
+  }
+
+  @override
   String studentsCount(int count) {
     return '$count طالب';
   }
 
   @override
-  String get appExitNotificationTitle => 'نراك قريباً!';
+  String get noExamsAvailable => 'لا توجد اختبارات متاحة';
 
   @override
-  String get appExitNotificationBody => 'افتح A Plus في أي وقت لمتابعة تعلمك.';
+  String passingScoreToPass(num score) {
+    return '$score% للنجاح';
+  }
+
+  @override
+  String get courseDescriptionTitle => 'وصف الدورة';
+
+  @override
+  String get whatYouWillGet => 'ماذا ستحصل عليه';
+
+  @override
+  String get lifetimeAccess => 'وصول مدى الحياة للمحتوى';
+
+  @override
+  String get availableOnAllDevices => 'متاح على جميع الأجهزة';
+
+  @override
+  String get downloadableFiles => 'ملفات للتحميل';
 }

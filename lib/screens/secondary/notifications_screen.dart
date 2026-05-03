@@ -1,16 +1,17 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import '../../core/design/app_colors.dart';
+import '../../core/design/app_text_styles.dart';
 import '../../core/design/app_radius.dart';
 import '../../core/localization/localization_helper.dart';
-import '../../core/navigation/route_names.dart';
 import '../../services/notifications_service.dart';
-import '../../widgets/bottom_nav.dart';
+import '../../services/push_inbox_service.dart';
 
-/// Notifications Screen - Connected to API
+/// Notifications screen: LMS API list merged with FCM messages stored on device.
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
 
@@ -22,27 +23,54 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   bool _isLoading = true;
   List<Map<String, dynamic>> _notifications = [];
   int _unreadCount = 0;
-
-  void _safeSetState(VoidCallback fn) {
-    if (!mounted) return;
-    setState(fn);
-  }
+  StreamSubscription<void>? _inboxSub;
 
   @override
   void initState() {
     super.initState();
     _loadNotifications();
+    _inboxSub = PushInboxService.onInboxChanged.listen((_) {
+      if (mounted) _loadNotifications();
+    });
+  }
+
+  @override
+  void dispose() {
+    _inboxSub?.cancel();
+    super.dispose();
+  }
+
+  List<Map<String, dynamic>> _mergeWithPushInbox(
+    List<Map<String, dynamic>> apiList,
+    List<Map<String, dynamic>> localList,
+  ) {
+    final merged = <Map<String, dynamic>>[...localList, ...apiList];
+    merged.sort((a, b) {
+      final da = DateTime.tryParse(a['created_at']?.toString() ?? '') ??
+          DateTime.fromMillisecondsSinceEpoch(0);
+      final db = DateTime.tryParse(b['created_at']?.toString() ?? '') ??
+          DateTime.fromMillisecondsSinceEpoch(0);
+      return db.compareTo(da);
+    });
+    final seen = <String>{};
+    final out = <Map<String, dynamic>>[];
+    for (final n in merged) {
+      final id = n['id']?.toString() ?? '';
+      if (id.isEmpty) continue;
+      if (!seen.add(id)) continue;
+      out.add(n);
+    }
+    return out;
   }
 
   Future<void> _loadNotifications() async {
-    _safeSetState(() => _isLoading = true);
+    setState(() => _isLoading = true);
     try {
       final response = await NotificationsService.instance.getNotifications(
         page: 1,
         perPage: 50,
         unreadOnly: false,
       );
-      if (!mounted) return;
 
       // Handle response - safely check if data is a List or Map
       List<Map<String, dynamic>> notificationsList = [];
@@ -92,28 +120,20 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         }
       }
 
-      // Get unread count from meta or calculate it
-      int unreadCount = 0;
-      if (response['meta'] != null && response['meta'] is Map) {
-        unreadCount = (response['meta'] as Map)['unread_count'] ?? 0;
-      } else if (response['data'] != null && response['data'] is Map) {
-        unreadCount = (response['data'] as Map)['unread_count'] ?? 0;
-      }
+      final localPush = await PushInboxService.instance.getAll();
+      notificationsList = _mergeWithPushInbox(notificationsList, localPush);
 
-      // If unread_count is 0, calculate from notifications
-      if (unreadCount == 0) {
-        unreadCount = notificationsList
-            .where((n) => (n['is_read'] ?? false) == false)
-            .length;
-      }
+      final unreadCount = notificationsList
+          .where((n) => (n['is_read'] ?? false) == false)
+          .length;
 
-      _safeSetState(() {
+      setState(() {
         _notifications = notificationsList;
         _unreadCount = unreadCount;
         _isLoading = false;
       });
     } catch (e, stackTrace) {
-      _safeSetState(() => _isLoading = false);
+      setState(() => _isLoading = false);
       if (mounted) {
         // Print error for debugging
         debugPrint('❌ Error loading notifications: $e');
@@ -121,10 +141,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              context.l10n.errorLoadingNotifications(e.toString()),
-              style: GoogleFonts.cairo(fontSize: 14),
-            ),
+            content: Text(context.l10n.errorLoadingNotifications(e.toString())),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 3),
           ),
@@ -134,11 +151,33 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Future<void> _markAsRead(String notificationId) async {
+    final idx =
+        _notifications.indexWhere((n) => n['id']?.toString() == notificationId);
+    final isLocalFcm = idx >= 0 &&
+        _notifications[idx]['source']?.toString() == 'fcm_local';
+    if (isLocalFcm) {
+      try {
+        await PushInboxService.instance.markAsRead(notificationId);
+        if (mounted) await _loadNotifications();
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content:
+                  Text(context.l10n.errorUpdatingNotification(e.toString())),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+      return;
+    }
+
     try {
       await NotificationsService.instance.markAsRead(notificationId);
-      if (!mounted) return;
       // Update local state immediately for better UX
-      _safeSetState(() {
+      setState(() {
         final index = _notifications.indexWhere(
           (n) => n['id']?.toString() == notificationId,
         );
@@ -153,10 +192,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              context.l10n.errorUpdatingNotification(e.toString()),
-              style: GoogleFonts.cairo(fontSize: 14),
-            ),
+            content: Text(context.l10n.errorUpdatingNotification(e.toString())),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 2),
           ),
@@ -167,10 +203,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   Future<void> _markAllAsRead() async {
     try {
+      await PushInboxService.instance.markAllRead();
       await NotificationsService.instance.markAllAsRead();
-      if (!mounted) return;
       // Update local state immediately
-      _safeSetState(() {
+      setState(() {
         for (var notification in _notifications) {
           notification['is_read'] = true;
         }
@@ -182,10 +218,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              context.l10n.errorUpdatingNotifications(e.toString()),
-              style: GoogleFonts.cairo(fontSize: 14),
-            ),
+            content: Text(context.l10n.errorUpdatingNotifications(e.toString())),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 2),
           ),
@@ -236,6 +269,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       'message': Icons.message,
       'campaign': Icons.campaign,
       'announcement': Icons.campaign,
+      'notifications_active': Icons.notifications_active,
       'course': Icons.school,
       'school': Icons.school,
       'update': Icons.update,
@@ -246,331 +280,281 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return iconMap[iconName.toLowerCase()] ?? Icons.notifications;
   }
 
+  Color _parseColor(dynamic colorValue) {
+    if (colorValue == null) return AppColors.purple;
+    if (colorValue is Color) return colorValue;
+    if (colorValue is String) {
+      String hex = colorValue.replaceAll('#', '');
+      if (hex.length == 6) {
+        return Color(int.parse('FF$hex', radix: 16));
+      }
+    }
+    return AppColors.purple;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.beige,
-      body: Stack(
-        children: [
-          SafeArea(
-            top: false,
-            child: Column(
-              children: [
-                // Header — brand blue → purple
-                Container(
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: AppColors.brandGradient,
-                    ),
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(AppRadius.largeCard),
-                      bottomRight: Radius.circular(AppRadius.largeCard),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.brandBlue.withOpacity(0.3),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
-                      ),
-                      BoxShadow(
-                        color: AppColors.brandPurple.withOpacity(0.12),
-                        blurRadius: 36,
-                        offset: const Offset(0, 18),
-                        spreadRadius: -6,
-                      ),
-                    ],
-                  ),
-                  padding: EdgeInsets.only(
-                    top: MediaQuery.of(context).padding.top + 16, // pt-4
-                    bottom: 32, // pb-8
-                    left: 16, // px-4
-                    right: 16,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+      body: SafeArea(
+        top: false,
+        child: Column(
+          children: [
+            // Header - Purple gradient like Home
+            Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF0C52B3), Color(0xFF093F8A)],
+                ),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(AppRadius.largeCard),
+                  bottomRight: Radius.circular(AppRadius.largeCard),
+                ),
+              ),
+              padding: EdgeInsets.only(
+                top: MediaQuery.of(context).padding.top + 16, // pt-4
+                bottom: 32, // pb-8
+                left: 16, // px-4
+                right: 16,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Back button and title - matches React: gap-4 mb-4
+                  Row(
                     children: [
-                      // Back button and title - matches React: gap-4 mb-4
-                      Row(
-                        children: [
-                          GestureDetector(
-                            onTap: () {
-                              if (context.canPop()) {
-                                context.pop();
-                              } else {
-                                context.go(RouteNames.home);
-                              }
-                            },
-                            child: Container(
-                              width: 40, // w-10
-                              height: 40, // h-10
-                              decoration: const BoxDecoration(
-                                color: AppColors.whiteOverlay20, // bg-white/20
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.arrow_back_ios_new_rounded,
-                                color: Colors.white,
-                                size: 20, // w-5 h-5
-                              ),
-                            ),
+                      GestureDetector(
+                        onTap: () => context.pop(),
+                        child: Container(
+                          width: 40, // w-10
+                          height: 40, // h-10
+                          decoration: const BoxDecoration(
+                            color: AppColors.whiteOverlay20, // bg-white/20
+                            shape: BoxShape.circle,
                           ),
-                          const SizedBox(width: 16), // gap-4
-                          Text(
-                            context.l10n.notificationsTitle,
-                            style: GoogleFonts.cairo(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16), // mb-4
-                      // Notification count - matches React: gap-2
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.notifications,
+                          child: const Icon(
+                            Icons.arrow_back_ios_new_rounded,
+                            color: Colors.white,
                             size: 20, // w-5 h-5
-                            color: Colors.white.withOpacity(0.7), // white/70
                           ),
-                          const SizedBox(width: 8), // gap-2
-                          Text(
-                            context.l10n.newNotificationsCount(
-                              _unreadCount > 0
-                                  ? _unreadCount
-                                  : _newNotifications.length,
-                            ),
-                            style: GoogleFonts.cairo(
-                              fontSize: 14,
-                              color: Colors.white.withOpacity(0.7),
-                            ),
-                          ),
-                          const Spacer(),
-                          // Mark all as read button
-                          if (_newNotifications.isNotEmpty)
-                            GestureDetector(
-                              onTap: _markAllAsRead,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  context.l10n.markAllAsRead,
-                                  style: GoogleFonts.cairo(
-                                    fontSize: 12,
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ),
-                        ],
+                        ),
+                      ),
+                      const SizedBox(width: 16), // gap-4
+                      Text(
+                        context.l10n.notificationsTitle,
+                        style: AppTextStyles.h3(color: Colors.white),
                       ),
                     ],
                   ),
-                ),
-
-                // Content - matches React: px-4 -mt-4 space-y-6
-                Expanded(
-                  child: Transform.translate(
-                    offset: const Offset(0, -16), // -mt-4
-                    child: _isLoading
-                        ? _buildNotificationsSkeleton()
-                        : SingleChildScrollView(
+                  const SizedBox(height: 16), // mb-4
+                  // Notification count - matches React: gap-2
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.notifications,
+                        size: 20, // w-5 h-5
+                        color: Colors.white.withOpacity(0.7), // white/70
+                      ),
+                      const SizedBox(width: 8), // gap-2
+                      Text(
+                        context.l10n.newNotificationsCount(
+                          _unreadCount > 0 ? _unreadCount : _newNotifications.length,
+                        ),
+                        style: AppTextStyles.bodyMedium(
+                          color: Colors.white.withOpacity(0.7), // white/70
+                        ),
+                      ),
+                      const Spacer(),
+                      // Mark all as read button
+                      if (_newNotifications.isNotEmpty)
+                        GestureDetector(
+                          onTap: _markAllAsRead,
+                          child: Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 16), // px-4
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const SizedBox(height: 24), // space-y-6
-
-                                // New Notifications section
-                                if (_newNotifications.isNotEmpty) ...[
-                                  Text(
-                                    context.l10n.newSection,
-                                    style: GoogleFonts.cairo(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppColors.foreground,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 12), // mb-3
-                                  ..._newNotifications
-                                      .asMap()
-                                      .entries
-                                      .map((entry) {
-                                    final index = entry.key;
-                                    final notification = entry.value;
-                                    return TweenAnimationBuilder<double>(
-                                      tween: Tween(begin: 0.0, end: 1.0),
-                                      duration: Duration(
-                                          milliseconds: 400 + (index * 100)),
-                                      curve: Curves.easeOut,
-                                      builder: (context, value, child) {
-                                        return Transform.translate(
-                                          offset: Offset(0, 20 * (1 - value)),
-                                          child: Opacity(
-                                            opacity: value,
-                                            child: child,
-                                          ),
-                                        );
-                                      },
-                                      child: GestureDetector(
-                                        onTap: () {
-                                          final notificationId =
-                                              notification['id']?.toString();
-                                          if (notificationId != null) {
-                                            _markAsRead(notificationId);
-                                          }
-                                          // Handle navigation if action_type exists
-                                          final actionValue =
-                                              notification['action_value'];
-                                          if (actionValue != null && mounted) {
-                                            // Navigate based on action_value
-                                            // You can implement navigation logic here
-                                          }
-                                        },
-                                        child: _buildNotificationCard(
-                                            context, notification,
-                                            isNew: true),
-                                      ),
-                                    );
-                                  }),
-                                ],
-
-                                const SizedBox(height: 24), // space-y-6
-
-                                // Read Notifications section
-                                if (_readNotifications.isNotEmpty) ...[
-                                  Text(
-                                    context.l10n.past,
-                                    style: GoogleFonts.cairo(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppColors.foreground,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 12), // mb-3
-                                  ..._readNotifications
-                                      .asMap()
-                                      .entries
-                                      .map((entry) {
-                                    final index = entry.key;
-                                    final notification = entry.value;
-                                    return TweenAnimationBuilder<double>(
-                                      tween: Tween(begin: 0.0, end: 1.0),
-                                      duration: Duration(
-                                        milliseconds: 400 +
-                                            ((_newNotifications.length +
-                                                    index) *
-                                                100),
-                                      ),
-                                      curve: Curves.easeOut,
-                                      builder: (context, value, child) {
-                                        return Transform.translate(
-                                          offset: Offset(0, 20 * (1 - value)),
-                                          child: Opacity(
-                                            opacity: value,
-                                            child: child,
-                                          ),
-                                        );
-                                      },
-                                      child: _buildNotificationCard(
-                                          context, notification,
-                                          isNew: false),
-                                    );
-                                  }),
-                                ],
-
-                                // Empty state - matches React
-                                if (_notifications.isEmpty)
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 80),
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Container(
-                                          width: 96, // w-24
-                                          height: 96, // h-24
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            gradient: LinearGradient(
-                                              begin: Alignment.topLeft,
-                                              end: Alignment.bottomRight,
-                                              colors: [
-                                                AppColors.brandBlue
-                                                    .withOpacity(0.14),
-                                                AppColors.brandPurple
-                                                    .withOpacity(0.14),
-                                              ],
-                                            ),
-                                          ),
-                                          child: Center(
-                                            child: ShaderMask(
-                                              blendMode: BlendMode.srcIn,
-                                              shaderCallback: (bounds) =>
-                                                  const LinearGradient(
-                                                begin: Alignment.topLeft,
-                                                end: Alignment.bottomRight,
-                                                colors: AppColors.brandGradient,
-                                              ).createShader(bounds),
-                                              child: const Icon(
-                                                Icons.notifications,
-                                                size: 48,
-                                                color: Colors.white,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 16), // mb-4
-                                        Text(
-                                          context.l10n.noNotifications,
-                                          style: GoogleFonts.cairo(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.w600,
-                                            color: AppColors.foreground,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 8), // mb-2
-                                        Text(
-                                          context
-                                              .l10n.newNotificationsWillAppear,
-                                          style: GoogleFonts.cairo(
-                                            fontSize: 14,
-                                            color: AppColors.mutedForeground,
-                                          ),
-                                          textAlign: TextAlign.center,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-
-                                const SizedBox(height: 32),
-                              ],
+                                horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              context.l10n.markAllAsRead,
+                              style: GoogleFonts.cairo(
+                                fontSize: 12,
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
+                        ),
+                    ],
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          const BottomNav(activeTab: 'notifications'),
-        ],
+
+            // Content - matches React: px-4 -mt-4 space-y-6
+            Expanded(
+              child: Transform.translate(
+                offset: const Offset(0, -16), // -mt-4
+                child: _isLoading
+                    ? _buildNotificationsSkeleton()
+                    : RefreshIndicator(
+                        onRefresh: _loadNotifications,
+                        child: SingleChildScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16), // px-4
+                          child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 24), // space-y-6
+
+                            // New Notifications section
+                            if (_newNotifications.isNotEmpty) ...[
+                              Text(
+                                context.l10n.newSection,
+                                style: AppTextStyles.bodySmall(
+                                  color: AppColors.foreground,
+                                ).copyWith(fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(height: 12), // mb-3
+                              ..._newNotifications.asMap().entries.map((entry) {
+                                final index = entry.key;
+                                final notification = entry.value;
+                                return TweenAnimationBuilder<double>(
+                                  tween: Tween(begin: 0.0, end: 1.0),
+                                  duration: Duration(
+                                      milliseconds: 400 + (index * 100)),
+                                  curve: Curves.easeOut,
+                                  builder: (context, value, child) {
+                                    return Transform.translate(
+                                      offset: Offset(0, 20 * (1 - value)),
+                                      child: Opacity(
+                                        opacity: value,
+                                        child: child,
+                                      ),
+                                    );
+                                  },
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      final notificationId =
+                                          notification['id']?.toString();
+                                      if (notificationId != null) {
+                                        _markAsRead(notificationId);
+                                      }
+                                      // Handle navigation if action_type exists
+                                      final actionValue =
+                                          notification['action_value'];
+                                      if (actionValue != null && mounted) {
+                                        // Navigate based on action_value
+                                        // You can implement navigation logic here
+                                      }
+                                    },
+                                    child: _buildNotificationCard(context, notification,
+                                        isNew: true),
+                                  ),
+                                );
+                              }),
+                            ],
+
+                            const SizedBox(height: 24), // space-y-6
+
+                            // Read Notifications section
+                            if (_readNotifications.isNotEmpty) ...[
+                              Text(
+                                context.l10n.past,
+                                style: AppTextStyles.bodySmall(
+                                  color: AppColors.foreground,
+                                ).copyWith(fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(height: 12), // mb-3
+                              ..._readNotifications
+                                  .asMap()
+                                  .entries
+                                  .map((entry) {
+                                final index = entry.key;
+                                final notification = entry.value;
+                                return TweenAnimationBuilder<double>(
+                                  tween: Tween(begin: 0.0, end: 1.0),
+                                  duration: Duration(
+                                    milliseconds: 400 +
+                                        ((_newNotifications.length + index) *
+                                            100),
+                                  ),
+                                  curve: Curves.easeOut,
+                                  builder: (context, value, child) {
+                                    return Transform.translate(
+                                      offset: Offset(0, 20 * (1 - value)),
+                                      child: Opacity(
+                                        opacity: value,
+                                        child: child,
+                                      ),
+                                    );
+                                  },
+                                  child: _buildNotificationCard(context, notification,
+                                      isNew: false),
+                                );
+                              }),
+                            ],
+
+                            // Empty state - matches React
+                            if (_notifications.isEmpty)
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 80),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Container(
+                                      width: 96, // w-24
+                                      height: 96, // h-24
+                                      decoration: const BoxDecoration(
+                                        color: AppColors.lavenderLight,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.notifications,
+                                        size: 48, // w-12 h-12
+                                        color: AppColors.purple,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16), // mb-4
+                                    Text(
+                                      context.l10n.noNotifications,
+                                      style: AppTextStyles.h4(
+                                        color: AppColors.foreground,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8), // mb-2
+                                    Text(
+                                      context.l10n.newNotificationsWillAppear,
+                                      style: AppTextStyles.bodyMedium(
+                                        color: AppColors.mutedForeground,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                            const SizedBox(height: 32),
+                          ],
+                        ),
+                      ),
+                    ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildNotificationCard(
-      BuildContext context, Map<String, dynamic> notification,
+  Widget _buildNotificationCard(BuildContext context, Map<String, dynamic> notification,
       {required bool isNew}) {
+    final color = _parseColor(notification['color']?.toString());
     final icon = notification['icon'] is IconData
         ? notification['icon'] as IconData
         : _getIconFromString(notification['icon']?.toString());
@@ -590,14 +574,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         boxShadow: isNew
             ? [
                 BoxShadow(
-                  color: AppColors.brandBlue.withOpacity(0.1),
-                  blurRadius: 16,
-                  offset: const Offset(0, 6),
-                  spreadRadius: -4,
-                ),
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
-                  blurRadius: 8,
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
               ]
@@ -605,7 +583,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       ),
       child: Stack(
         children: [
-          // Brand gradient strip for new notifications
+          // Purple indicator for new notifications - matches React
           if (isNew)
             Positioned(
               top: 0,
@@ -614,11 +592,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               child: Container(
                 width: 8, // w-2
                 decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: AppColors.brandGradient,
-                  ),
+                  color: AppColors.purple,
                   borderRadius: BorderRadius.only(
                     topRight: Radius.circular(16),
                     bottomRight: Radius.circular(16),
@@ -643,16 +617,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   width: 48, // w-12
                   height: 48, // h-12
                   decoration: BoxDecoration(
-                    color: AppColors.primary
-                        .withOpacity(isNew ? 0.15 : 0.1), // brand tint
+                    color: color.withOpacity(
+                        isNew ? 0.15 : 0.1), // color15 or opacity-60
                     borderRadius: BorderRadius.circular(12), // rounded-xl
                   ),
                   child: Icon(
                     icon,
                     size: 24, // w-6 h-6
-                    color: isNew
-                        ? AppColors.primary
-                        : AppColors.primary.withOpacity(0.6),
+                    color: isNew ? color : color.withOpacity(0.6),
                   ),
                 ),
                 const SizedBox(width: 12), // gap-3
@@ -663,17 +635,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     children: [
                       Text(
                         title.toString(),
-                        style: GoogleFonts.cairo(
-                          fontSize: 14,
-                          fontWeight: isNew ? FontWeight.w700 : FontWeight.w500,
+                        style: AppTextStyles.bodyMedium(
                           color: AppColors.foreground,
+                        ).copyWith(
+                          fontWeight: isNew ? FontWeight.bold : FontWeight.w500,
                         ),
                       ),
                       const SizedBox(height: 4), // mb-1
                       Text(
                         message.toString(),
-                        style: GoogleFonts.cairo(
-                          fontSize: 13,
+                        style: AppTextStyles.bodySmall(
                           color: AppColors.mutedForeground,
                         ),
                         maxLines: 2,
@@ -682,9 +653,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       const SizedBox(height: 8), // mb-2
                       Text(
                         time.toString(),
-                        style: GoogleFonts.cairo(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
+                        style: AppTextStyles.labelSmall(
                           color: AppColors.mutedForeground,
                         ),
                       ),

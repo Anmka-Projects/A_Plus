@@ -6,6 +6,7 @@ import '../core/design/app_text_styles.dart';
 /// Matches: components/screens/home-screen.tsx featured courses
 class CourseCard extends StatelessWidget {
   final String title;
+  final String instructor;
   final double rating;
   final int hours;
   final double price;
@@ -18,6 +19,7 @@ class CourseCard extends StatelessWidget {
   const CourseCard({
     super.key,
     required this.title,
+    required this.instructor,
     required this.rating,
     required this.hours,
     required this.price,
@@ -123,6 +125,14 @@ class CourseCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
+                  const SizedBox(height: 8), // mb-2
+                  // Instructor - matches React: text-sm mb-3
+                  Text(
+                    instructor,
+                    style: AppTextStyles.bodySmall(
+                      color: AppColors.mutedForeground,
+                    ),
+                  ),
                   const SizedBox(height: 12), // mb-3
                   // Rating and price - matches React: gap-3 text-xs
                   Row(
@@ -163,7 +173,7 @@ class CourseCard extends StatelessWidget {
                             : '${price.toStringAsFixed(0)} جنيه',
                         style: AppTextStyles.bodyMedium(
                           color: isFree == true
-                              ? AppColors.orange
+                              ? const Color(0xFF10B981)
                               : AppColors.purple,
                         ).copyWith(fontWeight: FontWeight.bold),
                       ),
@@ -238,6 +248,14 @@ class CourseCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
+                  const SizedBox(height: 4), // mb-1
+                  // Instructor - matches React: text-xs mb-2
+                  Text(
+                    instructor,
+                    style: AppTextStyles.labelSmall(
+                      color: AppColors.mutedForeground,
+                    ),
+                  ),
                   const SizedBox(height: 8), // mb-2
                   // Rating and price - matches React: gap-1 text-xs
                   Row(
@@ -265,7 +283,7 @@ class CourseCard extends StatelessWidget {
                             : '${price.toStringAsFixed(0)} جنيه',
                         style: AppTextStyles.bodySmall(
                           color: isFree == true
-                              ? AppColors.orange
+                              ? const Color(0xFF10B981)
                               : AppColors.purple,
                         ).copyWith(fontWeight: FontWeight.bold),
                       ),

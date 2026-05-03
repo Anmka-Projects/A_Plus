@@ -2,10 +2,10 @@
 class ApiEndpoints {
   ApiEndpoints._();
 
-  static const String baseUrl = 'https://a-plus.anmka.com/api';
+  static const String baseUrl = 'https://drchampions-academy.anmka.com/api';
 
   /// Base URL for images and media files
-  static const String imageBaseUrl = 'https://a-plus.anmka.com';
+  static const String imageBaseUrl = 'https://drchampions-academy.anmka.com';
 
   /// Helper method to convert relative image path to full URL
   static String getImageUrl(String? imagePath) {
@@ -48,14 +48,6 @@ class ApiEndpoints {
   // Authentication
   static String get login => '$baseUrl/auth/login';
   static String get register => '$baseUrl/auth/register';
-  static String get fcmToken => '$baseUrl/auth/fcm-token';
-
-  /// Academic structure for registration (faculty → section → grade).
-  static String get registrationFaculties => '$baseUrl/registration/faculties';
-  static String registrationSections(String facultyId) =>
-      '$baseUrl/registration/faculties/$facultyId/sections';
-  static String registrationGrades(String sectionId) =>
-      '$baseUrl/registration/sections/$sectionId/grades';
   static String get logout => '$baseUrl/auth/logout';
   static String get forgotPassword => '$baseUrl/auth/forgot-password';
   static String get refreshToken => '$baseUrl/auth/refresh';
@@ -67,16 +59,10 @@ class ApiEndpoints {
   // Home Page
   static String get home => '$baseUrl/home';
 
-  /// Books + quizzes for the student's faculty/section/grade (cohort). See docs/BACKEND_HOME_COHORT_BOOKS_QUIZZES.md
-  static String get studentCohortLibrary => '$baseUrl/student/cohort-library';
-
   // Categories
   static String get categories => '$baseUrl/categories';
   static String get adminCategories => '$baseUrl/admin/categories';
   static String categoryCourses(String id) => '$baseUrl/categories/$id/courses';
-
-  // Countries (admin)
-  static String get adminCountries => '$baseUrl/countries';
 
   // Courses
   static String get courses => '$baseUrl/courses';
@@ -88,8 +74,6 @@ class ApiEndpoints {
       '$baseUrl/courses/$courseId/lessons/$lessonId/content';
   static String courseLessonProgress(String courseId, String lessonId) =>
       '$baseUrl/courses/$courseId/lessons/$lessonId/progress';
-  static String courseHomeworks(String courseId) =>
-      '$baseUrl/courses/$courseId/homeworks/student';
 
   // Enrollment
   static String enrollCourse(String id) => '$baseUrl/courses/$id/enroll';
@@ -107,12 +91,74 @@ class ApiEndpoints {
   static String exam(String id) => '$baseUrl/admin/exams/$id';
   static String startExam(String id) => '$baseUrl/admin/exams/$id/start';
   static String submitExam(String id) => '$baseUrl/admin/exams/$id/submit';
+  static String myExamResults({
+    int page = 1,
+    int perPage = 20,
+    String? courseId,
+    bool? isPassed,
+  }) {
+    final courseFilter = (courseId != null && courseId.isNotEmpty)
+        ? '&course_id=$courseId'
+        : '';
+    final passedFilter =
+        isPassed == null ? '' : '&is_passed=${isPassed ? 'true' : 'false'}';
+    return '$baseUrl/my-exam-results?page=$page&per_page=$perPage$courseFilter$passedFilter';
+  }
+
+  /// Question banks (instructor/admin). Backend may implement list/create here
+  /// or only use [upload] with `type=question_bank`; app tries both patterns.
+  static String get adminQuestionBanks => '$baseUrl/admin/question-banks';
+  static String adminCourseQuestionBanks(String courseId) =>
+      '$baseUrl/admin/courses/$courseId/question-banks';
+  
+  // Lesson question bank (student)
+  static String lessonQuestions(String lessonId) =>
+      '$baseUrl/lesson-questions/lessons/$lessonId';
+  static String submitLessonQuestions(String lessonId) =>
+      '$baseUrl/lesson-questions/lessons/$lessonId/submit';
+
+  // Lesson question bank (admin/instructor)
+  static String adminLessonQuestions(String lessonId) =>
+      '$baseUrl/admin/lesson-questions/lessons/$lessonId/questions';
+  static String adminLessonQuestion(String questionId) =>
+      '$baseUrl/admin/lesson-questions/questions/$questionId';
+  static String reorderAdminLessonQuestions(String lessonId) =>
+      '$baseUrl/admin/lesson-questions/lessons/$lessonId/questions/reorder';
+  static String adminLessonQuestionCountsForCourse(String courseId) =>
+      '$baseUrl/admin/lesson-questions/courses/$courseId/counts';
+  static String importAdminLessonQuestionsXlsx(String lessonId) =>
+      '$baseUrl/admin/lesson-questions/lessons/$lessonId/questions/import-xlsx';
 
   // Course Exams
-  static String courseExams(String courseId) =>
-      '$baseUrl/courses/$courseId/exams';
+  static String courseExams(String courseId, {String? lessonId}) {
+    final lessonQuery =
+        (lessonId != null && lessonId.trim().isNotEmpty)
+            ? '?lesson_id=${Uri.encodeQueryComponent(lessonId.trim())}'
+            : '';
+    return '$baseUrl/courses/$courseId/exams$lessonQuery';
+  }
   static String courseExamDetails(String courseId, String examId) =>
       '$baseUrl/courses/$courseId/exams/$examId';
+  static String courseExamStart(String courseId, String examId) =>
+      '$baseUrl/courses/$courseId/exams/$examId/start';
+  static String courseExamSubmit(String courseId, String examId) =>
+      '$baseUrl/courses/$courseId/exams/$examId/submit';
+  static String courseExamQuestionSubmit(
+    String courseId,
+    String examId,
+    String attemptId,
+    String questionId,
+  ) =>
+      '$baseUrl/courses/$courseId/exams/$examId/attempts/$attemptId/questions/$questionId/submit';
+  static String courseAssignments(String courseId) =>
+      '$baseUrl/courses/$courseId/assignments';
+  static String courseAssignmentDetails(String courseId, String assignmentId) =>
+      '$baseUrl/courses/$courseId/assignments/$assignmentId';
+  static String courseAssignmentSubmit(String courseId, String assignmentId) =>
+      '$baseUrl/courses/$courseId/assignments/$assignmentId/submit';
+
+  /// Alternate upload path from API docs (`POST /api/uploads/upload`).
+  static String get uploadsUpload => '$baseUrl/uploads/upload';
 
   // Certificates
   static String get certificates => '$baseUrl/certificates';
@@ -206,7 +252,7 @@ class ApiEndpoints {
   // Chat (teacher-student)
   static String get chatConversations => '$baseUrl/chat/conversations';
 
-  /// Socket.IO base URL – https://stp.anmka.com, no port (default 443).
+  /// Socket.IO base URL – https://drchampions-academy.anmka.com, no port (default 443).
   /// Use with socket_io_client at path /api/socket.io.
   static String get chatSocketBaseUrl {
     final url =

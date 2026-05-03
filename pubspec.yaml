@@ -1,12 +1,13 @@
 name: educational_app
 description: Educational Mobile App - Flutter Native Migration
-publish_to: "none"
-version: 1.0.0+1
+publish_to: 'none'
+version: 1.0.0+2
 
 environment:
-  sdk: ">=3.0.0 <4.0.0"
+  sdk: '>=3.0.0 <4.0.0'
 
 dependencies:
+  just_audio: any
   crypto: any
   device_info_plus: any
   dio: any
@@ -21,12 +22,14 @@ dependencies:
   flutter_pdfview: any
   flutter_svg: any
   go_router: any
+  get: any
   google_fonts: any
   google_sign_in: any
   http: any
   file_picker: any
   image_picker: any
   intl: any
+  path: any
   path_provider: any
   permission_handler: any
   pod_player: any
@@ -39,7 +42,6 @@ dependencies:
   fl_chart: any
   skeletonizer: any
   sqflite: any
-  intl_phone_field: any
   url_launcher: any
   video_player: any
   webview_flutter: any
@@ -53,10 +55,11 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 
+
 flutter_launcher_icons:
-  android: true
+  android: false
   ios: true
-  image_path: "assets/images/app_logo.png"
+  image_path: "assets/images/company-logo.jpeg"
   remove_alpha_ios: true
 
 flutter:
@@ -64,24 +67,8 @@ flutter:
   generate: true
 
   assets:
+    - assets/appicon.jpeg
     - assets/images/
-    - assets/icons/tracks/
+  #  - assets/icons/
   # Cairo font is loaded automatically via google_fonts package
   # No need to include font files manually
-
-  fonts:
-    - family: Indigo
-      fonts:
-        - asset: assets/fonts/indigo/Indigo Regular.otf
-          weight: 400
-
-    - family: Radlush
-      fonts:
-        - asset: assets/fonts/radlush/Radlush-Regular.ttf
-          weight: 400
-        - asset: assets/fonts/radlush/Radlush-Medium.ttf
-          weight: 500
-        - asset: assets/fonts/radlush/Radlush-Bold.ttf
-          weight: 700
-        - asset: assets/fonts/radlush/Radlush-Black.ttf
-          weight: 900

@@ -101,7 +101,7 @@ abstract class AppLocalizations {
   /// Application name
   ///
   /// In en, this message translates to:
-  /// **'A Plus'**
+  /// **'Dr Champions Academy'**
   String get appName;
 
   /// Settings screen title
@@ -218,60 +218,6 @@ abstract class AppLocalizations {
   /// **'Enter your email or phone number'**
   String get enterEmailOrPhone;
 
-  /// Unique student or learner code used to log in
-  ///
-  /// In en, this message translates to:
-  /// **'Student code'**
-  String get studentCode;
-
-  /// Placeholder for student code field
-  ///
-  /// In en, this message translates to:
-  /// **'Enter your code'**
-  String get enterStudentCode;
-
-  /// Subcategory label on registration
-  ///
-  /// In en, this message translates to:
-  /// **'Subcategory'**
-  String get subcategory;
-
-  /// Shown when subcategory is opened before category
-  ///
-  /// In en, this message translates to:
-  /// **'Select a category first'**
-  String get selectCategoryFirst;
-
-  /// Category picker placeholder
-  ///
-  /// In en, this message translates to:
-  /// **'Tap to select category'**
-  String get tapToSelectCategory;
-
-  /// Subcategory picker placeholder
-  ///
-  /// In en, this message translates to:
-  /// **'Tap to select subcategory'**
-  String get tapToSelectSubcategory;
-
-  /// Validation when category missing on register
-  ///
-  /// In en, this message translates to:
-  /// **'Please select a category'**
-  String get selectCategory;
-
-  /// Validation when subcategory required but missing
-  ///
-  /// In en, this message translates to:
-  /// **'Please select a subcategory'**
-  String get selectSubcategory;
-
-  /// Shown when category has no nested subcategories on register
-  ///
-  /// In en, this message translates to:
-  /// **'No subcategories for this category — optional'**
-  String get noSubcategoriesForCategory;
-
   /// Invalid email or phone error message
   ///
   /// In en, this message translates to:
@@ -326,210 +272,6 @@ abstract class AppLocalizations {
   /// **'Welcome back! 👋'**
   String get welcomeBack;
 
-  /// Short welcome prefix above user name on home
-  ///
-  /// In en, this message translates to:
-  /// **'Welcome'**
-  String get welcomeLabel;
-
-  /// Tagline under home header
-  ///
-  /// In en, this message translates to:
-  /// **'Stay focused, your A+ is coming...'**
-  String get homeMotivationalLine;
-
-  /// Home medical tracks section title
-  ///
-  /// In en, this message translates to:
-  /// **'Courses ..'**
-  String get homeCoursesSectionTitle;
-
-  /// Home books row title
-  ///
-  /// In en, this message translates to:
-  /// **'Books'**
-  String get homeDeptHeadsBooks;
-
-  /// Home assignments row title
-  ///
-  /// In en, this message translates to:
-  /// **'Quizzes and assignments'**
-  String get homeQuizzesAssignments;
-
-  /// Second home section heading
-  ///
-  /// In en, this message translates to:
-  /// **'Doctors books and assignments..'**
-  String get homeBooksAssignmentsSection;
-
-  /// SnackBar when books/quizzes cohort section is locked
-  ///
-  /// In en, this message translates to:
-  /// **'This content is locked until an administrator enables it for your class.'**
-  String get homeCohortContentLockedHint;
-
-  /// Short badge on home card when cohort content locked
-  ///
-  /// In en, this message translates to:
-  /// **'Locked'**
-  String get homeCohortLockedLabel;
-
-  /// App bar for cohort library materials root
-  ///
-  /// In en, this message translates to:
-  /// **'Books'**
-  String get cohortLibraryMaterialsAppTitle;
-
-  /// App bar for cohort library quizzes root
-  ///
-  /// In en, this message translates to:
-  /// **'Quizzes and assignments'**
-  String get cohortLibraryQuizzesAppTitle;
-
-  /// Empty cohort library
-  ///
-  /// In en, this message translates to:
-  /// **'No content for your class yet.'**
-  String get cohortLibraryEmpty;
-
-  /// Cohort library fetch failed
-  ///
-  /// In en, this message translates to:
-  /// **'Could not load library. Pull to retry.'**
-  String get cohortLibraryLoadError;
-
-  /// Fallback subject title when API returns flat lists
-  ///
-  /// In en, this message translates to:
-  /// **'All materials'**
-  String get cohortLibrarySyntheticSubjectTitle;
-
-  /// Cohort group type
-  ///
-  /// In en, this message translates to:
-  /// **'Summaries'**
-  String get cohortGroupTypeSummary;
-
-  /// Cohort group type
-  ///
-  /// In en, this message translates to:
-  /// **'Books'**
-  String get cohortGroupTypeBook;
-
-  /// Cohort group type
-  ///
-  /// In en, this message translates to:
-  /// **'Quizzes'**
-  String get cohortGroupTypeQuiz;
-
-  /// Cohort group type
-  ///
-  /// In en, this message translates to:
-  /// **'Files'**
-  String get cohortGroupTypeFile;
-
-  /// Cohort group type
-  ///
-  /// In en, this message translates to:
-  /// **'Videos'**
-  String get cohortGroupTypeVideo;
-
-  /// Cohort group type
-  ///
-  /// In en, this message translates to:
-  /// **'Assignments'**
-  String get cohortGroupTypeAssignment;
-
-  /// Cohort group type
-  ///
-  /// In en, this message translates to:
-  /// **'Other'**
-  String get cohortGroupTypeOther;
-
-  /// Unlocked item without file_url
-  ///
-  /// In en, this message translates to:
-  /// **'No file is available for this item yet.'**
-  String get cohortLibraryNoFileYet;
-
-  /// Medical track
-  ///
-  /// In en, this message translates to:
-  /// **'Doctor'**
-  String get trackDoctor;
-
-  /// Medical track
-  ///
-  /// In en, this message translates to:
-  /// **'Dentist'**
-  String get trackDentist;
-
-  /// Medical track
-  ///
-  /// In en, this message translates to:
-  /// **'Physiotherapist'**
-  String get trackPhysiotherapist;
-
-  /// Medical track
-  ///
-  /// In en, this message translates to:
-  /// **'Pharmacist'**
-  String get trackPharmacist;
-
-  /// Medical track
-  ///
-  /// In en, this message translates to:
-  /// **'Nurse'**
-  String get trackNurse;
-
-  /// Medical track
-  ///
-  /// In en, this message translates to:
-  /// **'Scientist'**
-  String get trackScientist;
-
-  /// Bottom nav cart tab
-  ///
-  /// In en, this message translates to:
-  /// **'Cart'**
-  String get bottomNavCart;
-
-  /// Login screen code field section title
-  ///
-  /// In en, this message translates to:
-  /// **'ENTER CODE'**
-  String get loginEnterCodeTitle;
-
-  /// Primary login button label
-  ///
-  /// In en, this message translates to:
-  /// **'Log in'**
-  String get loginLogIn;
-
-  /// Button to open registration / code activation
-  ///
-  /// In en, this message translates to:
-  /// **'Code activation'**
-  String get codeActivation;
-
-  /// Hint under login code field
-  ///
-  /// In en, this message translates to:
-  /// **'Please activate code first'**
-  String get pleaseActivateCodeFirst;
-
-  /// Login footer support link
-  ///
-  /// In en, this message translates to:
-  /// **'Contact us'**
-  String get contactUs;
-
-  /// Login footer language picker title
-  ///
-  /// In en, this message translates to:
-  /// **'Language'**
-  String get chooseLanguage;
-
   /// Email placeholder text
   ///
   /// In en, this message translates to:
@@ -566,10 +308,10 @@ abstract class AppLocalizations {
   /// **'Apple'**
   String get apple;
 
-  /// Register screen header (student code verification flow)
+  /// Register screen title
   ///
   /// In en, this message translates to:
-  /// **'Code verification'**
+  /// **'Create New Account'**
   String get register;
 
   /// Welcome message in register
@@ -577,132 +319,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Join us and start your learning journey 🎓'**
   String get joinUsMessage;
-
-  /// Label for four-part Arabic name row
-  ///
-  /// In en, this message translates to:
-  /// **'Full name (four parts)'**
-  String get quadNameTitle;
-
-  /// First name part label
-  ///
-  /// In en, this message translates to:
-  /// **'First'**
-  String get namePartFirst;
-
-  /// Father name part label
-  ///
-  /// In en, this message translates to:
-  /// **'Father'**
-  String get namePartFather;
-
-  /// Grandfather name part label
-  ///
-  /// In en, this message translates to:
-  /// **'Grandfather'**
-  String get namePartGrandfather;
-
-  /// Family name part label
-  ///
-  /// In en, this message translates to:
-  /// **'Family'**
-  String get namePartFamily;
-
-  /// National ID field label
-  ///
-  /// In en, this message translates to:
-  /// **'National ID'**
-  String get nationalId;
-
-  /// National ID placeholder
-  ///
-  /// In en, this message translates to:
-  /// **'Enter national ID number'**
-  String get nationalIdHint;
-
-  /// National ID validation
-  ///
-  /// In en, this message translates to:
-  /// **'Enter a valid national ID (digits only)'**
-  String get invalidNationalId;
-
-  /// Faculty picker label
-  ///
-  /// In en, this message translates to:
-  /// **'Faculty'**
-  String get faculty;
-
-  /// Section picker label
-  ///
-  /// In en, this message translates to:
-  /// **'Section'**
-  String get section;
-
-  /// Grade picker label
-  ///
-  /// In en, this message translates to:
-  /// **'Grade'**
-  String get grade;
-
-  /// Faculty picker placeholder
-  ///
-  /// In en, this message translates to:
-  /// **'Tap to select faculty'**
-  String get tapToSelectFaculty;
-
-  /// Section picker placeholder
-  ///
-  /// In en, this message translates to:
-  /// **'Tap to select section'**
-  String get tapToSelectSection;
-
-  /// Grade picker placeholder
-  ///
-  /// In en, this message translates to:
-  /// **'Tap to select grade'**
-  String get tapToSelectGrade;
-
-  /// Section disabled until faculty
-  ///
-  /// In en, this message translates to:
-  /// **'Select a faculty first'**
-  String get selectFacultyFirst;
-
-  /// Grade disabled until section
-  ///
-  /// In en, this message translates to:
-  /// **'Select a section first'**
-  String get selectSectionFirst;
-
-  /// Validation faculty
-  ///
-  /// In en, this message translates to:
-  /// **'Please select a faculty'**
-  String get selectFaculty;
-
-  /// Validation section
-  ///
-  /// In en, this message translates to:
-  /// **'Please select a section'**
-  String get selectSection;
-
-  /// Validation grade
-  ///
-  /// In en, this message translates to:
-  /// **'Please select a grade'**
-  String get selectGrade;
-
-  /// Loading faculties sections grades
-  ///
-  /// In en, this message translates to:
-  /// **'Loading options…'**
-  String get academicDataLoading;
-
-  /// Academic API failure
-  ///
-  /// In en, this message translates to:
-  /// **'Could not load options. Try again later.'**
-  String get academicDataUnavailable;
 
   /// Full name field
   ///
@@ -902,6 +518,228 @@ abstract class AppLocalizations {
   /// **'Error loading courses'**
   String get errorLoadingCourses;
 
+  /// Generic error title
+  ///
+  /// In en, this message translates to:
+  /// **'Error'**
+  String get errorTitle;
+
+  /// Fallback unexpected error message
+  ///
+  /// In en, this message translates to:
+  /// **'An unexpected error occurred'**
+  String get unexpectedError;
+
+  /// Course details screen title
+  ///
+  /// In en, this message translates to:
+  /// **'Course Details'**
+  String get courseDetails;
+
+  /// Generic about tab title
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get about;
+
+  /// Popular badge label
+  ///
+  /// In en, this message translates to:
+  /// **'Most Popular'**
+  String get popular;
+
+  /// Continue learning label with last lesson title
+  ///
+  /// In en, this message translates to:
+  /// **'Continue: {title}'**
+  String continueLesson(String title);
+
+  /// No lesson available
+  ///
+  /// In en, this message translates to:
+  /// **'No lesson'**
+  String get noLesson;
+
+  /// Video loading indicator text
+  ///
+  /// In en, this message translates to:
+  /// **'Loading video...'**
+  String get loadingVideo;
+
+  /// Video cannot load error
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot load video'**
+  String get cannotLoadVideo;
+
+  /// Video load failed due to connectivity
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load video. Please check your internet connection.'**
+  String get videoLoadFailedCheckInternet;
+
+  /// Video format not supported error
+  ///
+  /// In en, this message translates to:
+  /// **'Video format is not supported'**
+  String get videoFormatNotSupported;
+
+  /// Video decode error
+  ///
+  /// In en, this message translates to:
+  /// **'Video decode error'**
+  String get videoDecodeError;
+
+  /// Network connection error
+  ///
+  /// In en, this message translates to:
+  /// **'Network connection error'**
+  String get networkConnectionError;
+
+  /// Generic video load error
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading video'**
+  String get videoLoadError;
+
+  /// Normal playback speed label
+  ///
+  /// In en, this message translates to:
+  /// **'Normal'**
+  String get normalSpeed;
+
+  /// Minutes unit label
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1 {minute} other {minutes}}'**
+  String minutesUnit(int count);
+
+  /// Hours unit short label (e.g. 3h)
+  ///
+  /// In en, this message translates to:
+  /// **'{count}h'**
+  String hoursUnitShort(num count);
+
+  /// Continue to payment button label
+  ///
+  /// In en, this message translates to:
+  /// **'Continue to payment'**
+  String get continueToPayment;
+
+  /// Subscription plan label
+  ///
+  /// In en, this message translates to:
+  /// **'Subscription plan'**
+  String get subscriptionPlan;
+
+  /// Choose subscription plan title
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a subscription plan'**
+  String get chooseSubscriptionPlan;
+
+  /// Subscription duration in months
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1 {Duration: 1 month} other {Duration: {count} months}}'**
+  String monthsDuration(int count);
+
+  /// Subscription plan duration in days (no prefix)
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1 {1 day} other {{count} days}}'**
+  String planDurationDays(int count);
+
+  /// Subscription plan duration in months (no prefix)
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1 {1 month} other {{count} months}}'**
+  String planDurationMonths(int count);
+
+  /// Subscription plan duration in years (no prefix)
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1 {1 year} other {{count} years}}'**
+  String planDurationYears(int count);
+
+  /// Subscription plan promotional pricing end date
+  ///
+  /// In en, this message translates to:
+  /// **'Offer ends {date}'**
+  String planOfferEndsAt(String date);
+
+  /// Short not-available placeholder
+  ///
+  /// In en, this message translates to:
+  /// **'—'**
+  String get notAvailableShort;
+
+  /// Best exam score label
+  ///
+  /// In en, this message translates to:
+  /// **'Best score: {score}%'**
+  String bestScore(num score);
+
+  /// Attempts used out of max
+  ///
+  /// In en, this message translates to:
+  /// **'{used}/{max} attempts'**
+  String attemptsUsedOutOf(num used, num max);
+
+  /// Attempts exhausted label
+  ///
+  /// In en, this message translates to:
+  /// **'Attempts exhausted'**
+  String get attemptsExhausted;
+
+  /// Shown when user is instructor of the course
+  ///
+  /// In en, this message translates to:
+  /// **'You are the instructor of this course'**
+  String get youAreInstructorOfCourse;
+
+  /// Finish exam label
+  ///
+  /// In en, this message translates to:
+  /// **'Finish Exam'**
+  String get finishExamLabel;
+
+  /// Try again generic encouragement
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get tryAgain;
+
+  /// Well done encouragement
+  ///
+  /// In en, this message translates to:
+  /// **'Well done! 🎉'**
+  String get wellDone;
+
+  /// Your exam score label
+  ///
+  /// In en, this message translates to:
+  /// **'Your score: {score}%'**
+  String yourScore(num score);
+
+  /// Correct answers out of total label
+  ///
+  /// In en, this message translates to:
+  /// **'{correct} of {total} correct answers'**
+  String correctAnswersOutOf(num correct, num total);
+
+  /// Time taken in minutes label
+  ///
+  /// In en, this message translates to:
+  /// **'Time taken: {minutes} {minutes, plural, =1 {minute} other {minutes}}'**
+  String timeTakenMinutes(int minutes);
+
+  /// Question index label
+  ///
+  /// In en, this message translates to:
+  /// **'Question {index}'**
+  String questionIndex(int index);
+
   /// Instructor
   ///
   /// In en, this message translates to:
@@ -1039,12 +877,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Downloads'**
   String get downloads;
-
-  /// Header title on books/downloads screen opened from home
-  ///
-  /// In en, this message translates to:
-  /// **'Books'**
-  String get booksScreenAppBarTitle;
 
   /// Download link message
   ///
@@ -1310,10 +1142,10 @@ abstract class AppLocalizations {
   /// **'Total'**
   String get total;
 
-  /// Student profile screen title
+  /// Edit profile
   ///
   /// In en, this message translates to:
-  /// **'Student Profile'**
+  /// **'Edit Profile'**
   String get editProfile;
 
   /// Profile loading error message
@@ -1363,12 +1195,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save Changes'**
   String get saveChanges;
-
-  /// Notice on read-only profile screen
-  ///
-  /// In en, this message translates to:
-  /// **'This information is for viewing only and cannot be edited here.'**
-  String get profileReadOnlyMessage;
 
   /// Select Image Source
   ///
@@ -1730,6 +1556,12 @@ abstract class AppLocalizations {
   /// **'Enroll in Course'**
   String get enrollInCourse;
 
+  /// Free preview badge label for lessons
+  ///
+  /// In en, this message translates to:
+  /// **'Free preview'**
+  String get freePreview;
+
   /// Login required
   ///
   /// In en, this message translates to:
@@ -1927,12 +1759,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'My Exams'**
   String get myExams;
-
-  /// Header title on my exams / quizzes screen
-  ///
-  /// In en, this message translates to:
-  /// **'Quizzes and Assignments'**
-  String get quizzesAssignmentsScreenTitle;
 
   /// View all completed exams
   ///
@@ -2240,6 +2066,12 @@ abstract class AppLocalizations {
   /// **'{amount} EGP'**
   String egyptianPoundAmount(String amount);
 
+  /// Price in US dollars for checkout summary
+  ///
+  /// In en, this message translates to:
+  /// **'USD {amount}'**
+  String usdAmount(String amount);
+
   /// Confirm Payment
   ///
   /// In en, this message translates to:
@@ -2401,6 +2233,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Smart Learning Platform'**
   String get smartLearningPlatform;
+
+  /// Splash tagline
+  ///
+  /// In en, this message translates to:
+  /// **'Learn with us in the language of the future'**
+  String get learnWithUsFutureLanguage;
 
   /// Certified and Secure Platform
   ///
@@ -2666,12 +2504,6 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1 {downloaded file} other {downloaded files}}'**
   String downloadedFiles(int count);
 
-  /// Subtitle under books screen header (offline items count)
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =1 {Available book} other {Available books}}'**
-  String availableBooks(int count);
-
   /// Storage
   ///
   /// In en, this message translates to:
@@ -2773,6 +2605,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Remind Me'**
   String get remindMe;
+
+  /// Button shown when a live session is available to join
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the session'**
+  String get enterTheSession;
 
   /// Join Now
   ///
@@ -2912,23 +2750,245 @@ abstract class AppLocalizations {
   /// **'Courses offered'**
   String get teacherCoursesTitle;
 
+  /// Lesson description section title
+  ///
+  /// In en, this message translates to:
+  /// **'Lesson description'**
+  String get lessonDescriptionTitle;
+
+  /// No lesson description available
+  ///
+  /// In en, this message translates to:
+  /// **'No description available'**
+  String get noLessonDescription;
+
+  /// Download for offline viewing label
+  ///
+  /// In en, this message translates to:
+  /// **'Download for offline viewing'**
+  String get downloadForOffline;
+
+  /// Downloading progress label
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading: {progress}%'**
+  String downloadingProgress(int progress);
+
+  /// Video downloaded label
+  ///
+  /// In en, this message translates to:
+  /// **'Video downloaded'**
+  String get videoDownloaded;
+
+  /// Lesson files section title
+  ///
+  /// In en, this message translates to:
+  /// **'Lesson files'**
+  String get lessonFiles;
+
+  /// Lesson images section title
+  ///
+  /// In en, this message translates to:
+  /// **'Lesson images'**
+  String get lessonImages;
+
+  /// Audio files section title
+  ///
+  /// In en, this message translates to:
+  /// **'Audio files'**
+  String get audioFiles;
+
+  /// Video files section title
+  ///
+  /// In en, this message translates to:
+  /// **'Video files'**
+  String get videoFiles;
+
+  /// PDF files section title
+  ///
+  /// In en, this message translates to:
+  /// **'PDF files'**
+  String get pdfFiles;
+
+  /// Error when image cannot load
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load image'**
+  String get imageLoadFailed;
+
+  /// Hint when description appears in hero area
+  ///
+  /// In en, this message translates to:
+  /// **'Description is shown above.'**
+  String get lessonDescriptionShownTop;
+
+  /// Hint when image gallery appears in hero area
+  ///
+  /// In en, this message translates to:
+  /// **'Image gallery is shown above.'**
+  String get imageGalleryShownTop;
+
+  /// Hint when download panel appears in hero area
+  ///
+  /// In en, this message translates to:
+  /// **'Offline download panel is shown above.'**
+  String get downloadShownTop;
+
+  /// Hint when lesson files panel appears in hero area
+  ///
+  /// In en, this message translates to:
+  /// **'Lesson files are shown above.'**
+  String get lessonFilesShownTop;
+
+  /// Hint when no hero video is selected
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to show the video above.'**
+  String get tapToShowVideoTop;
+
+  /// Helper text while loading audio duration
+  ///
+  /// In en, this message translates to:
+  /// **'Loading audio duration...'**
+  String get loadingAudioDuration;
+
+  /// Audio clip label with index
+  ///
+  /// In en, this message translates to:
+  /// **'Audio clip {index}'**
+  String audioClipLabel(int index);
+
+  /// Video label with index
+  ///
+  /// In en, this message translates to:
+  /// **'Video {index}'**
+  String videoLabel(int index);
+
+  /// PDF file label with index
+  ///
+  /// In en, this message translates to:
+  /// **'PDF file {index}'**
+  String pdfFileLabel(int index);
+
+  /// Badge text for currently playing item
+  ///
+  /// In en, this message translates to:
+  /// **'Now playing'**
+  String get nowPlaying;
+
+  /// No files available
+  ///
+  /// In en, this message translates to:
+  /// **'No files available'**
+  String get noFilesAvailable;
+
+  /// PDF lesson summary file title
+  ///
+  /// In en, this message translates to:
+  /// **'PDF file - lesson summary'**
+  String get pdfLessonSummary;
+
+  /// Generic attachment file label
+  ///
+  /// In en, this message translates to:
+  /// **'Attachment'**
+  String get attachmentFile;
+
+  /// Generic video label
+  ///
+  /// In en, this message translates to:
+  /// **'Video'**
+  String get video;
+
+  /// Cannot load this video error
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot load this video'**
+  String get cannotLoadThisVideo;
+
+  /// Storage permission required message
+  ///
+  /// In en, this message translates to:
+  /// **'Storage permission is required to download videos'**
+  String get storagePermissionRequiredToDownloadVideos;
+
+  /// No video url to download message
+  ///
+  /// In en, this message translates to:
+  /// **'No video URL available for download'**
+  String get noVideoUrlToDownload;
+
+  /// Fallback course title with id
+  ///
+  /// In en, this message translates to:
+  /// **'Course {id}'**
+  String courseWithId(String id);
+
+  /// Video downloaded successfully message
+  ///
+  /// In en, this message translates to:
+  /// **'Video downloaded successfully'**
+  String get videoDownloadedSuccessfully;
+
+  /// Video download failed message
+  ///
+  /// In en, this message translates to:
+  /// **'Video download failed'**
+  String get videoDownloadFailed;
+
+  /// Video download error with details
+  ///
+  /// In en, this message translates to:
+  /// **'Video download error: {error}'**
+  String videoDownloadError(String error);
+
   /// Students count label
   ///
   /// In en, this message translates to:
   /// **'{count} students'**
   String studentsCount(int count);
 
-  /// Local notification title when user backgrounds the app
+  /// No exams available empty state
   ///
   /// In en, this message translates to:
-  /// **'See you soon!'**
-  String get appExitNotificationTitle;
+  /// **'No exams available'**
+  String get noExamsAvailable;
 
-  /// Local notification body when user backgrounds the app
+  /// Passing score label
   ///
   /// In en, this message translates to:
-  /// **'Open A Plus anytime to keep learning.'**
-  String get appExitNotificationBody;
+  /// **'{score}% to pass'**
+  String passingScoreToPass(num score);
+
+  /// Course description section title
+  ///
+  /// In en, this message translates to:
+  /// **'Course description'**
+  String get courseDescriptionTitle;
+
+  /// What you will get section title
+  ///
+  /// In en, this message translates to:
+  /// **'What you will get'**
+  String get whatYouWillGet;
+
+  /// Lifetime access feature
+  ///
+  /// In en, this message translates to:
+  /// **'Lifetime access to content'**
+  String get lifetimeAccess;
+
+  /// Available on all devices feature
+  ///
+  /// In en, this message translates to:
+  /// **'Available on all devices'**
+  String get availableOnAllDevices;
+
+  /// Downloadable files feature
+  ///
+  /// In en, this message translates to:
+  /// **'Downloadable files'**
+  String get downloadableFiles;
 }
 
 class _AppLocalizationsDelegate

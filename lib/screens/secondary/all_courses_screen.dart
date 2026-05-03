@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import '../../core/course_pricing.dart';
 import '../../core/design/app_colors.dart';
 import '../../core/design/app_radius.dart';
 import '../../core/localization/localization_helper.dart';
@@ -11,21 +12,9 @@ import '../../core/navigation/route_names.dart';
 import '../../widgets/bottom_nav.dart';
 import '../../services/courses_service.dart';
 
-/// My Enrolled Courses Screen with search.
-///
-/// Optional [categoryId] / [categorySlug] / [screenTitle] come from `GoRouterState.extra`
-/// (see [RouteNames.allCourses]).
+/// All Courses Screen - With Filters & Modern Card Design
 class AllCoursesScreen extends StatefulWidget {
-  final String? categoryId;
-  final String? categorySlug;
-  final String? screenTitle;
-
-  const AllCoursesScreen({
-    super.key,
-    this.categoryId,
-    this.categorySlug,
-    this.screenTitle,
-  });
+  const AllCoursesScreen({super.key});
 
   @override
   State<AllCoursesScreen> createState() => _AllCoursesScreenState();
@@ -33,37 +22,82 @@ class AllCoursesScreen extends StatefulWidget {
 
 class _AllCoursesScreenState extends State<AllCoursesScreen> {
   bool _isLoading = true;
+  String? _selectedCategoryId;
+  final String _selectedPrice = 'all'; // all, free, paid
+  final String _sortBy = 'newest'; // newest, rating, popular
   final _searchController = TextEditingController();
   String _searchQuery = '';
   Timer? _searchDebounce;
 
+  List<Map<String, dynamic>> _categories = [];
   List<Map<String, dynamic>> _courses = [];
   int _totalCourses = 0;
-  bool get _hasCategoryFilter {
-    final id = widget.categoryId?.trim();
-    final slug = widget.categorySlug?.trim();
-    return (id != null && id.isNotEmpty) || (slug != null && slug.isNotEmpty);
+
+  List<Map<String, dynamic>> _extractCategoriesFromCourses(
+      List<Map<String, dynamic>> courses) {
+    final seenIds = <String>{};
+    final extracted = <Map<String, dynamic>>[];
+
+    for (final course in courses) {
+      final categoryRaw = course['category'];
+      Map<String, dynamic>? categoryMap;
+
+      if (categoryRaw is Map<String, dynamic>) {
+        categoryMap = categoryRaw;
+      } else if (categoryRaw is String && categoryRaw.trim().isNotEmpty) {
+        categoryMap = {
+          'id': course['category_id']?.toString() ?? categoryRaw,
+          'name': categoryRaw,
+          'name_ar': categoryRaw,
+        };
+      }
+
+      if (categoryMap == null) continue;
+
+      final id = categoryMap['id']?.toString() ??
+          categoryMap['name']?.toString() ??
+          categoryMap['name_ar']?.toString();
+      if (id == null || id.isEmpty || seenIds.contains(id)) continue;
+
+      seenIds.add(id);
+      extracted.add(categoryMap);
+    }
+
+    return extracted;
   }
+
+  List<Map<String, dynamic>> _getPriceFilters(BuildContext context) => [
+        {'value': 'all', 'label': context.l10n.all},
+        {'value': 'free', 'label': context.l10n.free},
+        {'value': 'paid', 'label': context.l10n.paid},
+      ];
+
+  List<Map<String, dynamic>> _getSortOptions(BuildContext context) => [
+        {'value': 'newest', 'label': context.l10n.newest},
+        {'value': 'rating', 'label': context.l10n.highestRated},
+        {'value': 'popular', 'label': context.l10n.bestSelling},
+        {'value': 'price_low', 'label': context.l10n.priceLowToHigh},
+        {'value': 'price_high', 'label': context.l10n.priceHighToLow},
+      ];
 
   @override
   void initState() {
     super.initState();
-    _loadCourses();
+    _loadData();
     _searchController.addListener(_onSearchChanged);
   }
 
   @override
   void dispose() {
-    _searchDebounce?.cancel();
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
+    _searchDebounce?.cancel();
     super.dispose();
   }
 
   void _onSearchChanged() {
     _searchDebounce?.cancel();
     _searchDebounce = Timer(const Duration(milliseconds: 500), () {
-      if (!mounted) return;
       if (_searchController.text != _searchQuery) {
         setState(() {
           _searchQuery = _searchController.text;
@@ -73,90 +107,170 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
     });
   }
 
-  Future<void> _loadCourses() async {
-    if (!mounted) return;
+  Future<void> _loadData() async {
+    setState(() => _isLoading = true);
     try {
-      setState(() => _isLoading = true);
-      List<Map<String, dynamic>> coursesList = [];
-      int totalCoursesValue = 0;
-
-      if (_hasCategoryFilter) {
-        final response = await CoursesService.instance.getCourses(
-          page: 1,
-          perPage: 50,
-          search: _searchQuery.trim().isEmpty ? null : _searchQuery.trim(),
-          categoryId: widget.categoryId,
-          categorySlug: widget.categorySlug,
-          price: 'all',
-          sort: 'newest',
-          level: 'all',
-          duration: 'all',
-        );
-
-        if (response['data'] is List) {
-          coursesList = (response['data'] as List)
-              .whereType<Map>()
-              .map((e) => Map<String, dynamic>.from(e))
-              .toList();
-        } else if (response['data'] is Map<String, dynamic>) {
-          final dataMap = response['data'] as Map<String, dynamic>;
-          if (dataMap['courses'] is List) {
-            coursesList = (dataMap['courses'] as List)
-                .whereType<Map>()
-                .map((e) => Map<String, dynamic>.from(e))
-                .toList();
-          }
+      // Keep courses loading even if categories fail.
+      final categoriesFuture =
+          CoursesService.instance.getCategories().catchError((e) {
+        if (kDebugMode) {
+          print('⚠️ Categories failed, continuing without categories: $e');
         }
-        totalCoursesValue = response['meta']?['total'] is num
-            ? (response['meta']!['total'] as num).toInt()
-            : coursesList.length;
-      } else {
-        final response = await CoursesService.instance.getEnrollments(
-          status: 'all',
-          page: 1,
-          perPage: 100,
-        );
+        return <Map<String, dynamic>>[];
+      });
 
-        final data = response['data'];
-        List<Map<String, dynamic>> enrollments = <Map<String, dynamic>>[];
-        if (data is List) {
-          enrollments = data
-              .whereType<Map>()
-              .map((e) => Map<String, dynamic>.from(e))
-              .toList();
-        } else if (data is Map<String, dynamic>) {
-          final source = data['enrollments'] ?? data['courses'] ?? data['data'];
-          if (source is List) {
-            enrollments = source
-                .whereType<Map>()
-                .map((e) => Map<String, dynamic>.from(e))
-                .toList();
-          }
-        }
-
-        coursesList = enrollments
-            .map((enrollment) => enrollment['course'])
-            .whereType<Map>()
-            .map((course) => Map<String, dynamic>.from(course))
-            .toList();
-
-        if (_searchQuery.trim().isNotEmpty) {
-          final q = _searchQuery.trim().toLowerCase();
-          coursesList = coursesList.where((course) {
-            final title = course['title']?.toString().toLowerCase() ?? '';
-            final instructor = course['instructor'] is Map
-                ? (course['instructor'] as Map)['name']
-                        ?.toString()
-                        .toLowerCase() ??
-                    ''
-                : course['instructor']?.toString().toLowerCase() ?? '';
-            return title.contains(q) || instructor.contains(q);
-          }).toList();
-        }
-        totalCoursesValue = coursesList.length;
-      }
+      await _loadCourses();
+      final categories = await categoriesFuture;
 
       if (!mounted) return;
+      setState(() {
+        _categories = categories.isNotEmpty
+            ? categories
+            : _extractCategoriesFromCourses(_courses);
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Error loading data: $e');
+      }
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _loadCourses() async {
+    try {
+      setState(() => _isLoading = true);
+
+      final String? categoryIdRaw = _selectedCategoryId;
+      final String? categoryId =
+          categoryIdRaw != null && categoryIdRaw.trim().isNotEmpty
+              ? categoryIdRaw.trim()
+              : null;
+      String price = _selectedPrice;
+
+      // Map sort options to API format
+      String apiSort = 'newest';
+      if (_sortBy == 'rating') {
+        apiSort = 'rating';
+      } else if (_sortBy == 'popular') {
+        apiSort = 'popular';
+      } else if (_sortBy == 'price_low') {
+        apiSort = 'price_low';
+      } else if (_sortBy == 'price_high') {
+        apiSort = 'price_high';
+      }
+
+      Map<String, dynamic> response;
+
+      final hasCategory = categoryId != null;
+      final hasSearch = _searchQuery.trim().isNotEmpty;
+
+      // Category-scoped listing: `/categories/{id}/courses` is often more complete
+      // than `/courses?category_id=` (some categories missed rows, e.g. EEG).
+      if (hasCategory && !hasSearch) {
+        final cid = categoryId;
+        try {
+          response = await CoursesService.instance.getCategoryCoursesAllPages(
+            cid,
+            perPage: 50,
+            sort: apiSort,
+            price: price,
+            level: 'all',
+          );
+          if (response['success'] != true) {
+            response = await CoursesService.instance.getCoursesAllPages(
+              perPage: 50,
+              search: null,
+              categoryId: cid,
+              price: price,
+              sort: apiSort,
+              level: 'all',
+              duration: 'all',
+            );
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            print(
+                '⚠️ Category courses endpoint failed, falling back to /courses: $e');
+          }
+          response = await CoursesService.instance.getCoursesAllPages(
+            perPage: 50,
+            search: null,
+            categoryId: cid,
+            price: price,
+            sort: apiSort,
+            level: 'all',
+            duration: 'all',
+          );
+        }
+      } else {
+        response = await CoursesService.instance.getCoursesAllPages(
+          perPage: 50,
+          search: _searchQuery.isNotEmpty ? _searchQuery : null,
+          categoryId: categoryId,
+          price: price,
+          sort: apiSort,
+          level: 'all', // Can be extended later
+          duration: 'all', // Can be extended later
+        );
+      }
+
+      if (kDebugMode) {
+        Object? nestedMetaTotal;
+        if (response['data'] is Map<String, dynamic>) {
+          final dataMap = response['data'] as Map<String, dynamic>;
+          final meta = dataMap['meta'];
+          if (meta is Map<String, dynamic>) {
+            nestedMetaTotal = meta['total'];
+          }
+        }
+        print('✅ Courses loaded with filters:');
+        print('  categoryId: $categoryId');
+        print('  price: $price');
+        print('  sort: $apiSort');
+        print('  search: $_searchQuery');
+        print('  total: ${nestedMetaTotal ?? response['meta']?['total'] ?? 0}');
+      }
+
+      List<Map<String, dynamic>> coursesList = [];
+      if (response['data'] != null) {
+        if (response['data'] is List) {
+          coursesList = List<Map<String, dynamic>>.from(
+            response['data'] as List,
+          );
+        } else if (response['data'] is Map) {
+          final dataMap = response['data'] as Map<String, dynamic>;
+          if (dataMap['courses'] != null && dataMap['courses'] is List) {
+            coursesList = List<Map<String, dynamic>>.from(
+              dataMap['courses'] as List,
+            );
+          }
+        }
+      }
+
+      // Safely parse total courses
+      int totalCoursesValue = coursesList.length;
+      Object? totalFromDataMeta;
+      if (response['data'] is Map<String, dynamic>) {
+        final dataMap = response['data'] as Map<String, dynamic>;
+        final meta = dataMap['meta'];
+        if (meta is Map<String, dynamic>) {
+          totalFromDataMeta = meta['total'];
+        }
+      }
+      final totalRaw = totalFromDataMeta ?? response['meta']?['total'];
+      if (totalRaw != null) {
+        final total = totalRaw;
+        if (total is int) {
+          totalCoursesValue = total;
+        } else if (total is num) {
+          totalCoursesValue = total.toInt();
+        } else if (total is String) {
+          totalCoursesValue = int.tryParse(total) ?? coursesList.length;
+        }
+      }
+
       setState(() {
         _courses = coursesList;
         _totalCourses = totalCoursesValue;
@@ -167,7 +281,6 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
         print('❌ Error loading courses: $e');
         print('  Stack trace: ${StackTrace.current}');
       }
-      if (!mounted) return;
       setState(() {
         _courses = [];
         _totalCourses = 0;
@@ -179,7 +292,7 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
           SnackBar(
             content: Text(
               context.l10n.errorLoadingCourses,
-              style: GoogleFonts.cairo(fontSize: 14),
+              style: GoogleFonts.cairo(),
             ),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
@@ -193,6 +306,14 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
     }
   }
 
+  List<Map<String, dynamic>> _getCategoryList(BuildContext context) {
+    final List<Map<String, dynamic>> list = [
+      {'id': null, 'name': context.l10n.all, 'name_ar': context.l10n.all},
+    ];
+    list.addAll(_categories);
+    return list;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -204,62 +325,35 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
               // Header
               _buildHeader(context),
 
+              // Filters
+              _buildFilters(),
+
               // Courses Grid
               Expanded(
-                child: RefreshIndicator(
-                  onRefresh: _loadCourses,
-                  child: _isLoading
-                      ? ListView(
-                          physics: const AlwaysScrollableScrollPhysics(
-                            parent: BouncingScrollPhysics(),
+                child: _isLoading
+                    ? _buildCoursesSkeleton()
+                    : _courses.isEmpty
+                        ? _buildEmptyState()
+                        : GridView.builder(
+                            padding: const EdgeInsets.fromLTRB(20, 20, 20, 140),
+                            physics: const BouncingScrollPhysics(),
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 14,
+                              mainAxisSpacing: 14,
+                              childAspectRatio: 0.60,
+                            ),
+                            itemCount: _courses.length,
+                            itemBuilder: (context, index) {
+                              return _buildCourseCard(_courses[index]);
+                            },
                           ),
-                          padding: const EdgeInsets.fromLTRB(20, 20, 20, 140),
-                          children: [
-                            SizedBox(
-                              height: MediaQuery.of(context).size.height * 0.55,
-                              child: _buildCoursesSkeleton(),
-                            ),
-                          ],
-                        )
-                      : _courses.isEmpty
-                          ? ListView(
-                              physics: const AlwaysScrollableScrollPhysics(
-                                parent: BouncingScrollPhysics(),
-                              ),
-                              padding:
-                                  const EdgeInsets.fromLTRB(20, 20, 20, 140),
-                              children: [
-                                SizedBox(
-                                  height:
-                                      MediaQuery.of(context).size.height * 0.5,
-                                  child: _buildEmptyState(),
-                                ),
-                              ],
-                            )
-                          : GridView.builder(
-                              padding:
-                                  const EdgeInsets.fromLTRB(20, 20, 20, 140),
-                              physics: const AlwaysScrollableScrollPhysics(
-                                parent: BouncingScrollPhysics(),
-                              ),
-                              gridDelegate:
-                                  const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2,
-                                crossAxisSpacing: 14,
-                                mainAxisSpacing: 14,
-                                childAspectRatio: 0.63,
-                              ),
-                              itemCount: _courses.length,
-                              itemBuilder: (context, index) {
-                                return _buildCourseCard(_courses[index]);
-                              },
-                            ),
-                ),
               ),
             ],
           ),
           // Bottom Navigation
-          const BottomNav(activeTab: ''),
+          const BottomNav(activeTab: 'courses'),
         ],
       ),
     );
@@ -271,7 +365,7 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: AppColors.brandGradient,
+          colors: [Color(0xFF0C52B3), Color(0xFF093F8A)],
         ),
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(AppRadius.largeCard),
@@ -279,15 +373,9 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.brandBlue.withOpacity(0.3),
+            color: AppColors.purple.withOpacity(0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
-          ),
-          BoxShadow(
-            color: AppColors.brandPurple.withOpacity(0.12),
-            blurRadius: 36,
-            offset: const Offset(0, 18),
-            spreadRadius: -6,
           ),
         ],
       ),
@@ -322,21 +410,15 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      widget.screenTitle?.trim().isNotEmpty == true
-                          ? widget.screenTitle!.trim()
-                          : (_hasCategoryFilter
-                              ? context.l10n.allCourses
-                              : context.l10n.myCourses),
+                      context.l10n.allCourses,
                       style: GoogleFonts.cairo(
                         fontSize: 22,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
                     ),
                     Text(
-                      _hasCategoryFilter
-                          ? context.l10n.coursesAvailable(_totalCourses)
-                          : context.l10n.enrolledCoursesCount(_totalCourses),
+                      context.l10n.coursesAvailable(_totalCourses),
                       style: GoogleFonts.cairo(
                         fontSize: 13,
                         color: Colors.white.withOpacity(0.7),
@@ -356,15 +438,9 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
               borderRadius: BorderRadius.circular(30),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.brandBlue.withOpacity(0.14),
-                  blurRadius: 28,
-                  offset: const Offset(0, 12),
-                  spreadRadius: -6,
-                ),
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.09),
-                  blurRadius: 18,
-                  offset: const Offset(0, 6),
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
                 ),
               ],
             ),
@@ -374,24 +450,11 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
               decoration: InputDecoration(
                 hintText: context.l10n.searchCourse,
                 hintStyle: GoogleFonts.cairo(
-                  fontSize: 14,
-                  color: AppColors.mutedForeground,
-                ),
-                prefixIcon: Padding(
-                  padding: const EdgeInsets.only(right: 16, left: 12),
-                  child: ShaderMask(
-                    blendMode: BlendMode.srcIn,
-                    shaderCallback: (bounds) => const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: AppColors.brandGradient,
-                    ).createShader(bounds),
-                    child: const Icon(
-                      Icons.search_rounded,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                  ),
+                    color: AppColors.mutedForeground, fontSize: 14),
+                prefixIcon: const Padding(
+                  padding: EdgeInsets.only(right: 16, left: 12),
+                  child: Icon(Icons.search_rounded,
+                      color: AppColors.purple, size: 24),
                 ),
                 border: InputBorder.none,
                 contentPadding:
@@ -407,44 +470,240 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
     );
   }
 
+  Widget _buildFilters() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Column(
+        children: [
+          // Category Filter
+          SizedBox(
+            height: 40,
+            child: _isLoading && _categories.isEmpty
+                ? _buildCategoriesSkeleton()
+                : ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    itemCount: _getCategoryList(context).length,
+                    itemBuilder: (context, index) {
+                      final category = _getCategoryList(context)[index];
+                      final categoryId = category['id']?.toString();
+                      final isSelected = _selectedCategoryId == categoryId;
+                      final categoryName = category['name']?.toString() ??
+                          category['name_ar']?.toString() ??
+                          context.l10n.all;
+                      return Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _selectedCategoryId = categoryId;
+                            });
+                            _loadCourses();
+                          },
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(horizontal: 18),
+                            decoration: BoxDecoration(
+                              gradient: isSelected
+                                  ? const LinearGradient(colors: [
+                                      Color(0xFF0C52B3),
+                                      Color(0xFF093F8A)
+                                    ])
+                                  : null,
+                              color: isSelected ? null : Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: isSelected
+                                      ? AppColors.purple.withOpacity(0.3)
+                                      : Colors.black.withOpacity(0.04),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Center(
+                              child: Text(
+                                categoryName,
+                                style: GoogleFonts.cairo(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : AppColors.foreground,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+          // const SizedBox(height: 12),
+
+          // // Price & Sort Filters
+          // Padding(
+          //   padding: const EdgeInsets.symmetric(horizontal: 20),
+          //   child: Row(
+          //     children: [
+          //       // Price Filter
+          //       Expanded(
+          //         child: Builder(
+          //           builder: (context) {
+          //             final priceFilters = _getPriceFilters(context);
+          //             return _buildDropdownFilter(
+          //               value: priceFilters.firstWhere(
+          //                 (item) => item['value'] == _selectedPrice,
+          //                 orElse: () => priceFilters[0],
+          //               )['label'] as String,
+          //               items: priceFilters
+          //                   .map((e) => e['label'] as String)
+          //                   .toList(),
+          //               icon: Icons.attach_money_rounded,
+          //               onChanged: (value) {
+          //                 final selected = priceFilters.firstWhere(
+          //                   (item) => item['label'] == value,
+          //                 );
+          //                 setState(() {
+          //                   _selectedPrice = selected['value'] as String;
+          //                 });
+          //                 _loadCourses();
+          //               },
+          //             );
+          //           },
+          //         ),
+          //       ),
+          //       const SizedBox(width: 12),
+          //       // Sort Filter
+          //       Expanded(
+          //         child: Builder(
+          //           builder: (context) {
+          //             final sortOptions = _getSortOptions(context);
+          //             return _buildDropdownFilter(
+          //               value: sortOptions.firstWhere(
+          //                 (item) => item['value'] == _sortBy,
+          //                 orElse: () => sortOptions[0],
+          //               )['label'] as String,
+          //               items: sortOptions
+          //                   .map((e) => e['label'] as String)
+          //                   .toList(),
+          //               icon: Icons.sort_rounded,
+          //               onChanged: (value) {
+          //                 final selected = sortOptions.firstWhere(
+          //                   (item) => item['label'] == value,
+          //                 );
+          //                 setState(() {
+          //                   _sortBy = selected['value'] as String;
+          //                 });
+          //                 _loadCourses();
+          //               },
+          //             );
+          //           },
+          //         ),
+          //       ),
+          //     ],
+          //   ),
+          // ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDropdownFilter({
+    required String value,
+    required List<String> items,
+    required IconData icon,
+    required Function(String?) onChanged,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: AppColors.purple),
+          const SizedBox(width: 8),
+          Expanded(
+            child: DropdownButton<String>(
+              value: value,
+              isExpanded: true,
+              underline: const SizedBox(),
+              style:
+                  GoogleFonts.cairo(fontSize: 13, color: AppColors.foreground),
+              icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 20),
+              items: items
+                  .map((item) =>
+                      DropdownMenuItem(value: item, child: Text(item)))
+                  .toList(),
+              onChanged: onChanged,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildCourseCard(Map<String, dynamic> course) {
-    // Safely parse price
-    num priceValue = 0;
-    if (course['price'] != null) {
-      if (course['price'] is num) {
-        priceValue = course['price'] as num;
-      } else if (course['price'] is String) {
-        priceValue = num.tryParse(course['price'] as String) ?? 0;
-      }
-    }
-    final isFree = course['is_free'] == true || priceValue == 0;
+    final priceValue = tryParseCourseNum(course['price']) ?? 0;
+    final isFree = courseIsEffectivelyFree(course);
+    final hasPricePlans = courseHasSubscriptionPlans(course);
+    final hidePriceBadge = courseHasPlansWithZeroBasePrice(course);
+    final showPriceBadge = !hidePriceBadge;
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
+    final currencyCode =
+        course['currency']?.toString().toUpperCase() == 'USD' ? 'USD' : 'EGP';
+    final backendFinalPrice = tryParseCourseNum(course['price']);
+    final backendOriginalPrice = tryParseCourseNum(course['original_price']);
+    final backendDiscountPrice = tryParseCourseNum(course['discount_price']);
+    final hasBackendDiscount = backendDiscountPrice != null &&
+        backendOriginalPrice != null &&
+        backendDiscountPrice > 0 &&
+        backendOriginalPrice > backendDiscountPrice;
+    final oldPriceText = hasBackendDiscount
+        ? formatSingleCurrencyPrice(
+            currency: currencyCode,
+            amount: backendOriginalPrice,
+          )
+        : null;
+    final newPriceText = hasBackendDiscount
+        ? formatSingleCurrencyPrice(
+            currency: currencyCode,
+            amount: backendDiscountPrice,
+          )
+        : null;
+    final badgeAmount = courseCardDisplayAmount(course) ?? priceValue;
+    final priceBadgeText = isFree
+        ? null
+        : ((backendFinalPrice != null && backendFinalPrice > 0)
+            ? formatSingleCurrencyPrice(
+                currency: currencyCode,
+                amount: backendFinalPrice,
+              )
+            : formatCoursePriceCompact(course)) ??
+            (badgeAmount > 0
+                ? '${badgeAmount.toInt()} ${context.l10n.egyptianPoundShort}'
+                : null);
 
     final thumbnail = course['thumbnail']?.toString() ?? '';
-    final categoryName = course['category'] is Map
-        ? (course['category'] as Map)['name']?.toString() ?? ''
-        : course['category']?.toString() ?? '';
-    // Safely parse rating
-    num ratingValue = 0.0;
-    if (course['rating'] != null) {
-      if (course['rating'] is num) {
-        ratingValue = course['rating'] as num;
-      } else if (course['rating'] is String) {
-        ratingValue = num.tryParse(course['rating'] as String) ?? 0.0;
-      }
-    }
+    final categoryName = courseCategoryEnglishLabel(course['category']);
+    final instructorName = courseDisplayInstructor(course);
+    final courseTitle =
+        courseDisplayTitle(course, fallback: context.l10n.noTitle);
 
-    // Safely parse students_count
-    int studentsCountValue = 0;
-    if (course['students_count'] != null) {
-      if (course['students_count'] is int) {
-        studentsCountValue = course['students_count'] as int;
-      } else if (course['students_count'] is num) {
-        studentsCountValue = (course['students_count'] as num).toInt();
-      } else if (course['students_count'] is String) {
-        studentsCountValue =
-            int.tryParse(course['students_count'] as String) ?? 0;
-      }
-    }
+    final ratingValue = courseCardRatingNum(course);
+    final studentsCountValue = courseCardStudentsCount(course);
+    final durationLabel =
+        courseListCardDurationText(course, context.l10n.hoursUnitShort);
 
     return GestureDetector(
       onTap: () {
@@ -469,7 +728,7 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
             Stack(
               children: [
                 Container(
-                  height: 150,
+                  height: 132,
                   decoration: BoxDecoration(
                     borderRadius:
                         const BorderRadius.vertical(top: Radius.circular(20)),
@@ -479,8 +738,8 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                             colors: [
-                              AppColors.brandBlue.withOpacity(0.12),
-                              AppColors.brandPurple.withOpacity(0.12),
+                              AppColors.purple.withOpacity(0.1),
+                              AppColors.orange.withOpacity(0.1),
                             ],
                           ),
                     color: thumbnail.isEmpty ? AppColors.lavenderLight : null,
@@ -503,7 +762,7 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
                                 child: const Center(
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    color: AppColors.brandBlue,
+                                    color: AppColors.purple,
                                   ),
                                 ),
                               );
@@ -529,39 +788,73 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
                     ),
                   ),
                 // Price Badge
-                Positioned(
-                  top: 8,
-                  left: 8,
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      gradient: isFree
-                          ? const LinearGradient(
-                              colors: [Color(0xFF10B981), Color(0xFF059669)])
-                          : const LinearGradient(
-                              colors: [Color(0xFFF59E0B), Color(0xFFD97706)]),
-                      borderRadius: BorderRadius.circular(8),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Text(
-                      isFree
-                          ? context.l10n.free
-                          : '${priceValue.toInt()} ${context.l10n.egyptianPoundShort}',
-                      style: GoogleFonts.cairo(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
+                if (showPriceBadge)
+                  Positioned(
+                    top: 8,
+                    left: 8,
+                    child: Container(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        gradient: isFree
+                            ? const LinearGradient(
+                                colors: [Color(0xFF10B981), Color(0xFF059669)])
+                            : const LinearGradient(
+                                colors: [Color(0xFFF59E0B), Color(0xFFD97706)]),
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        isFree
+                            ? context.l10n.free
+                            : (priceBadgeText ?? context.l10n.notAvailableShort),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.cairo(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white),
                       ),
                     ),
                   ),
-                ),
+                if (hasPricePlans)
+                  Positioned(
+                    right: 8,
+                    bottom: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0C52B3).withOpacity(0.92),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.sell_rounded,
+                              size: 11, color: Colors.white),
+                          const SizedBox(width: 4),
+                          Text(
+                            isAr ? 'يوجد خطط أسعار' : 'Plans available',
+                            style: GoogleFonts.cairo(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
               ],
             ),
 
@@ -578,73 +871,108 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              AppColors.brandBlue.withOpacity(0.15),
-                              AppColors.brandPurple.withOpacity(0.15),
-                            ],
-                          ),
+                          color: AppColors.purple.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: ShaderMask(
-                          blendMode: BlendMode.srcIn,
-                          shaderCallback: (bounds) => const LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: AppColors.brandGradient,
-                          ).createShader(bounds),
-                          child: Text(
-                            categoryName,
-                            style: GoogleFonts.cairo(
+                        child: Text(
+                          categoryName,
+                          style: GoogleFonts.cairo(
                               fontSize: 9,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                          ),
+                              color: AppColors.purple,
+                              fontWeight: FontWeight.w600),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     if (categoryName.isNotEmpty) const SizedBox(height: 6),
                     // Title
                     Text(
-                      course['title']?.toString() ?? context.l10n.noTitle,
+                      courseTitle,
                       style: GoogleFonts.cairo(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.foreground,
-                      ),
-                      maxLines: 2,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.foreground),
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
+                    const SizedBox(height: 2),
+                    if (hasBackendDiscount) ...[
+                      Row(
+                        children: [
+                          Text(
+                            oldPriceText!,
+                            style: GoogleFonts.cairo(
+                              fontSize: 9,
+                              color: AppColors.mutedForeground,
+                              decoration: TextDecoration.lineThrough,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            newPriceText!,
+                            style: GoogleFonts.cairo(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFFEA580C),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                    ],
+                    // Instructor
+                    if (instructorName.isNotEmpty)
+                      Text(
+                        instructorName,
+                        style: GoogleFonts.cairo(
+                            fontSize: 10, color: AppColors.mutedForeground),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     const Spacer(),
-                    // Stats
+                    // Stats: rating, duration, learners (field names vary by endpoint).
                     Row(
                       children: [
                         const Icon(Icons.star_rounded,
-                            size: 14, color: Colors.amber),
+                            size: 12, color: Colors.amber),
                         const SizedBox(width: 2),
-                        Text(
-                          ratingValue.toStringAsFixed(1),
-                          style: GoogleFonts.cairo(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.foreground,
+                        Flexible(
+                          child: Text(
+                            ratingValue.toStringAsFixed(1),
+                            style: GoogleFonts.cairo(
+                                fontSize: 10, fontWeight: FontWeight.w600),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        const Spacer(),
-                        Icon(Icons.people_rounded,
-                            size: 12, color: Colors.grey[400]),
+                        const SizedBox(width: 6),
+                        Icon(Icons.access_time_rounded,
+                            size: 11, color: Colors.grey[400]),
                         const SizedBox(width: 2),
-                        Text(
-                          studentsCountValue.toString(),
-                          style: GoogleFonts.cairo(
-                            fontSize: 10,
-                            color: AppColors.mutedForeground,
+                        Flexible(
+                          child: Text(
+                            durationLabel,
+                            style: GoogleFonts.cairo(
+                                fontSize: 9,
+                                color: AppColors.mutedForeground),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Icon(Icons.people_rounded,
+                            size: 11, color: Colors.grey[400]),
+                        const SizedBox(width: 2),
+                        Flexible(
+                          child: Text(
+                            studentsCountValue.toString(),
+                            style: GoogleFonts.cairo(
+                                fontSize: 9,
+                                color: AppColors.mutedForeground),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
                     ),
+                    const SizedBox(height: 2),
                   ],
                 ),
               ),
@@ -664,8 +992,8 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppColors.brandBlue.withOpacity(0.14),
-            AppColors.brandPurple.withOpacity(0.14),
+            AppColors.purple.withOpacity(0.15),
+            AppColors.orange.withOpacity(0.15),
           ],
         ),
       ),
@@ -676,28 +1004,13 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    AppColors.brandBlue.withOpacity(0.12),
-                    AppColors.brandPurple.withOpacity(0.12),
-                  ],
-                ),
+                color: AppColors.purple.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: ShaderMask(
-                blendMode: BlendMode.srcIn,
-                shaderCallback: (bounds) => const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: AppColors.brandGradient,
-                ).createShader(bounds),
-                child: const Icon(
-                  Icons.menu_book_rounded,
-                  color: Colors.white,
-                  size: 32,
-                ),
+              child: const Icon(
+                Icons.menu_book_rounded,
+                color: AppColors.purple,
+                size: 32,
               ),
             ),
             const SizedBox(height: 8),
@@ -705,9 +1018,7 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
               width: 40,
               height: 3,
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: AppColors.brandGradient,
-                ),
+                color: AppColors.purple.withOpacity(0.3),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -726,55 +1037,51 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
             width: 100,
             height: 100,
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppColors.brandBlue.withOpacity(0.14),
-                  AppColors.brandPurple.withOpacity(0.14),
-                ],
-              ),
+              color: AppColors.purple.withOpacity(0.1),
               shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.brandBlue.withOpacity(0.18),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
-                ),
-              ],
             ),
-            child: ShaderMask(
-              blendMode: BlendMode.srcIn,
-              shaderCallback: (bounds) => const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: AppColors.brandGradient,
-              ).createShader(bounds),
-              child: const Icon(
-                Icons.search_off_rounded,
-                size: 50,
-                color: Colors.white,
-              ),
-            ),
+            child: const Icon(Icons.search_off_rounded,
+                size: 50, color: AppColors.purple),
           ),
           const SizedBox(height: 20),
           Text(
             context.l10n.noResults,
             style: GoogleFonts.cairo(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: AppColors.foreground,
-            ),
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.foreground),
           ),
           const SizedBox(height: 8),
           Text(
             context.l10n.tryDifferentSearch,
             style: GoogleFonts.cairo(
-              fontSize: 14,
-              color: AppColors.mutedForeground,
-            ),
+                fontSize: 14, color: AppColors.mutedForeground),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildCategoriesSkeleton() {
+    return Skeletonizer(
+      enabled: true,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        itemCount: 5,
+        itemBuilder: (context, index) {
+          return Padding(
+            padding: const EdgeInsets.only(left: 8),
+            child: Container(
+              width: 100,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -788,7 +1095,7 @@ class _AllCoursesScreenState extends State<AllCoursesScreen> {
           crossAxisCount: 2,
           crossAxisSpacing: 14,
           mainAxisSpacing: 14,
-          childAspectRatio: 0.68,
+          childAspectRatio: 0.60,
         ),
         itemCount: 6,
         itemBuilder: (context, index) {

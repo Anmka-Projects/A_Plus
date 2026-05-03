@@ -12,12 +12,14 @@ class PaymentsService {
     required String courseId,
     required String paymentMethod,
     String? couponCode,
+    String? planId,
   }) async {
     try {
       final body = <String, dynamic>{
         'course_id': courseId,
         'payment_method': paymentMethod,
         if (couponCode != null && couponCode.isNotEmpty) 'coupon_code': couponCode,
+        if (planId != null && planId.isNotEmpty) 'plan_id': planId,
       };
 
       final response = await ApiClient.instance.post(

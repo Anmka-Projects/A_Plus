@@ -5,12 +5,15 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../core/api/api_endpoints.dart';
 import '../../core/design/app_colors.dart';
+import '../../core/design/app_text_styles.dart';
 import '../../core/design/app_radius.dart';
 import '../../core/localization/localization_helper.dart';
 import '../../services/certificates_service.dart';
+import '../../services/token_storage_service.dart';
 
 /// Certificates Screen - Pixel-perfect match to React version
 /// Matches: components/screens/certificates-screen.tsx
@@ -32,22 +35,20 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
   }
 
   Future<void> _loadCertificates() async {
+    if (kDebugMode) {
+      print('🔄 CertificatesScreen: _loadCertificates() called');
+    }
     setState(() => _isLoading = true);
     try {
       final response = await CertificatesService.instance.getCertificates();
+      final parsedCertificates = _extractCertificates(response);
 
       if (kDebugMode) {
-        print('✅ Certificates loaded: ${response['data']?.length ?? 0}');
+        print('✅ Certificates loaded: ${parsedCertificates.length}');
       }
 
       setState(() {
-        if (response['data'] is List) {
-          _certificates = List<Map<String, dynamic>>.from(
-            response['data'] as List,
-          );
-        } else {
-          _certificates = [];
-        }
+        _certificates = parsedCertificates;
         _isLoading = false;
       });
     } catch (e) {
@@ -59,6 +60,24 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
         _isLoading = false;
       });
     }
+  }
+
+  List<Map<String, dynamic>> _extractCertificates(Map<String, dynamic> response) {
+    final dynamic data = response['data'];
+    if (data is List) {
+      return data.whereType<Map<String, dynamic>>().toList();
+    }
+    if (data is Map<String, dynamic>) {
+      final dynamic nested = data['certificates'] ?? data['items'] ?? data['data'];
+      if (nested is List) {
+        return nested.whereType<Map<String, dynamic>>().toList();
+      }
+    }
+    final dynamic root = response['certificates'] ?? response['items'];
+    if (root is List) {
+      return root.whereType<Map<String, dynamic>>().toList();
+    }
+    return const [];
   }
 
   String _formatDate(BuildContext context, String? dateString) {
@@ -97,23 +116,16 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
           children: [
             // Header - Purple gradient like Home
             Container(
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: AppColors.brandGradient,
+                  colors: [Color(0xFF0C52B3), Color(0xFF093F8A)],
                 ),
-                borderRadius: const BorderRadius.only(
+                borderRadius: BorderRadius.only(
                   bottomLeft: Radius.circular(AppRadius.largeCard),
                   bottomRight: Radius.circular(AppRadius.largeCard),
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.brandBlue.withOpacity(0.3),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
               ),
               padding: EdgeInsets.only(
                 top: MediaQuery.of(context).padding.top + 16, // pt-4
@@ -146,11 +158,7 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
                       const SizedBox(width: 16), // gap-4
                       Text(
                         context.l10n.certificates,
-                        style: GoogleFonts.cairo(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
+                        style: AppTextStyles.h3(color: Colors.white),
                       ),
                     ],
                   ),
@@ -166,9 +174,8 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
                       const SizedBox(width: 8), // gap-2
                       Text(
                         context.l10n.achievedCertificates(_certificates.length),
-                        style: GoogleFonts.cairo(
-                          fontSize: 14,
-                          color: Colors.white.withOpacity(0.7),
+                        style: AppTextStyles.bodyMedium(
+                          color: Colors.white.withOpacity(0.7), // white/70
                         ),
                       ),
                     ],
@@ -222,14 +229,14 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
   }
 
   Future<void> _downloadCertificate(Map<String, dynamic> cert) async {
-    final downloadUrl = cert['download_url']?.toString();
-    if (downloadUrl == null || downloadUrl.isEmpty) {
+    final downloadUrl = _resolveCertificateUrl(cert['download_url']?.toString());
+    if (downloadUrl.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
               context.l10n.downloadLinkNotAvailable,
-              style: GoogleFonts.cairo(fontSize: 13),
+              style: GoogleFonts.cairo(),
             ),
             backgroundColor: Colors.orange,
             behavior: SnackBarBehavior.floating,
@@ -259,11 +266,11 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
                 const SizedBox(width: 12),
                 Text(
                   context.l10n.downloading,
-                  style: GoogleFonts.cairo(fontSize: 13),
+                  style: GoogleFonts.cairo(),
                 ),
               ],
             ),
-            backgroundColor: AppColors.brandPurple,
+            backgroundColor: AppColors.purple,
             behavior: SnackBarBehavior.floating,
             duration: const Duration(seconds: 30),
             shape: RoundedRectangleBorder(
@@ -308,7 +315,16 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
       final file = File('${directory.path}/$certificateNumber.$fileExtension');
 
       // Download file
-      final response = await http.get(Uri.parse(downloadUrl));
+      final token = await TokenStorageService.instance.getAccessToken();
+      final authToken = (token ?? '').trim().toLowerCase().startsWith('bearer ')
+          ? (token ?? '').trim().substring(7).trim()
+          : (token ?? '').trim();
+      final response = await http.get(
+        Uri.parse(downloadUrl),
+        headers: authToken.isNotEmpty
+            ? {'Authorization': 'Bearer $authToken'}
+            : {},
+      );
       if (response.statusCode == 200) {
         await file.writeAsBytes(response.bodyBytes);
 
@@ -318,7 +334,7 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
             SnackBar(
               content: Text(
                 context.l10n.downloadSuccessful(file.path),
-                style: GoogleFonts.cairo(fontSize: 13),
+                style: GoogleFonts.cairo(),
               ),
               backgroundColor: const Color(0xFF10B981),
               behavior: SnackBarBehavior.floating,
@@ -344,85 +360,11 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
             content: Text(
               context.l10n.errorDownloading(
                   e.toString().replaceFirst('Exception: ', '')),
-              style: GoogleFonts.cairo(fontSize: 13),
+              style: GoogleFonts.cairo(),
             ),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
             duration: const Duration(seconds: 3),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-        );
-      }
-    }
-  }
-
-  Future<void> _shareCertificate(Map<String, dynamic> cert) async {
-    final shareUrl =
-        cert['share_url']?.toString() ?? cert['verification_url']?.toString();
-    final downloadUrl = cert['download_url']?.toString();
-    final courseTitle = cert['course']?['title']?.toString() ??
-        cert['course_title']?.toString() ??
-        context.l10n.course;
-    final certificateNumber = cert['certificate_number']?.toString() ?? '';
-
-    try {
-      String text = context.l10n.certificateCompletion(courseTitle);
-      if (certificateNumber.isNotEmpty) {
-        text += '\n${context.l10n.certificateNumberLabel}: $certificateNumber';
-      }
-      if (shareUrl != null && shareUrl.isNotEmpty) {
-        text += '\n${context.l10n.verificationLinkLabel}: $shareUrl';
-      }
-
-      if (downloadUrl != null && downloadUrl.isNotEmpty) {
-        // Try to share the file if available
-        try {
-          final directory = Platform.isAndroid
-              ? await getExternalStorageDirectory()
-              : await getApplicationDocumentsDirectory();
-
-          if (directory != null) {
-            final fileName = downloadUrl.split('/').last;
-            final fileExtension =
-                fileName.contains('.') ? fileName.split('.').last : 'pdf';
-            final filePath =
-                '${directory.path}/$certificateNumber.$fileExtension';
-            final file = File(filePath);
-
-            if (await file.exists()) {
-              await Share.shareXFiles(
-                [XFile(filePath)],
-                text: text,
-              );
-              return;
-            }
-          }
-        } catch (e) {
-          // If file sharing fails, fall back to text sharing
-          if (kDebugMode) {
-            print('⚠️ File sharing failed, using text: $e');
-          }
-        }
-      }
-
-      // Share text and URL
-      await Share.share(text);
-    } catch (e) {
-      if (kDebugMode) {
-        print('❌ Error sharing certificate: $e');
-      }
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              context.l10n.errorSharing,
-              style: GoogleFonts.cairo(fontSize: 13),
-            ),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
             ),
@@ -468,8 +410,8 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
                 begin: Alignment.topRight,
                 end: Alignment.bottomLeft,
                 colors: [
-                  AppColors.brandBlue.withOpacity(0.1),
-                  AppColors.brandPurple.withOpacity(0.1),
+                  AppColors.purple.withOpacity(0.1),
+                  AppColors.orange.withOpacity(0.1),
                 ],
               ),
               borderRadius: const BorderRadius.vertical(
@@ -477,7 +419,7 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
               ),
               border: Border(
                 bottom: BorderSide(
-                  color: AppColors.brandPurple.withOpacity(0.25),
+                  color: AppColors.purple.withOpacity(0.2),
                   width: 2,
                   style: BorderStyle
                       .solid, // Flutter doesn't have dashed, using solid
@@ -492,9 +434,9 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
                   height: 64, // h-16
                   decoration: const BoxDecoration(
                     gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: AppColors.brandGradient,
+                      begin: Alignment.topRight,
+                      end: Alignment.bottomLeft,
+                      colors: [AppColors.orange, AppColors.purple],
                     ),
                     shape: BoxShape.circle,
                   ),
@@ -509,9 +451,7 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
                 // Certificate title - matches React
                 Text(
                   context.l10n.certificateOfCompletion,
-                  style: GoogleFonts.cairo(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
+                  style: AppTextStyles.h4(
                     color: AppColors.foreground,
                   ),
                   textAlign: TextAlign.center,
@@ -521,11 +461,9 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
                 // Course name - matches React
                 Text(
                   courseTitle,
-                  style: GoogleFonts.cairo(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.brandPurple,
-                  ),
+                  style: AppTextStyles.bodyMedium(
+                    color: AppColors.purple,
+                  ).copyWith(fontWeight: FontWeight.w500),
                   textAlign: TextAlign.center,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -535,8 +473,7 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
                 // "Certifies that" text
                 Text(
                   context.l10n.certifiesThat,
-                  style: GoogleFonts.cairo(
-                    fontSize: 13,
+                  style: AppTextStyles.bodySmall(
                     color: AppColors.foreground,
                   ),
                   textAlign: TextAlign.center,
@@ -546,9 +483,7 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
                 // Student name - matches React: text-xl font-bold
                 Text(
                   studentName,
-                  style: GoogleFonts.cairo(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
+                  style: AppTextStyles.h3(
                     color: AppColors.foreground,
                   ),
                   textAlign: TextAlign.center,
@@ -558,8 +493,7 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
                 // "Has completed with grade" text
                 Text(
                   context.l10n.hasCompletedWithGrade,
-                  style: GoogleFonts.cairo(
-                    fontSize: 13,
+                  style: AppTextStyles.bodySmall(
                     color: AppColors.mutedForeground,
                   ),
                   textAlign: TextAlign.center,
@@ -568,9 +502,7 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
                 // Grade - matches React: font-bold text-[var(--orange)] text-lg
                 Text(
                   grade,
-                  style: GoogleFonts.cairo(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
+                  style: AppTextStyles.h4(
                     color: AppColors.orange,
                   ),
                   textAlign: TextAlign.center,
@@ -600,8 +532,7 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
                           const SizedBox(width: 8), // gap-2
                           Text(
                             _formatDate(context, issueDate),
-                            style: GoogleFonts.cairo(
-                              fontSize: 13,
+                            style: AppTextStyles.bodySmall(
                               color: AppColors.mutedForeground,
                             ),
                           ),
@@ -611,9 +542,7 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
                         certificateNumber.isNotEmpty
                             ? '#$certificateNumber'
                             : '',
-                        style: GoogleFonts.cairo(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
+                        style: AppTextStyles.labelSmall(
                           color: AppColors.mutedForeground,
                         ),
                       ),
@@ -624,7 +553,42 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
                 // Action buttons - matches React: flex gap-3
                 Row(
                   children: [
-                    // Download button - matches React: flex-1 bg-[var(--purple)]
+                    // Preview button
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => _openPreview(cert),
+                        child: Container(
+                          padding:
+                              const EdgeInsets.symmetric(vertical: 12), // py-3
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.1),
+                            borderRadius:
+                                BorderRadius.circular(12), // rounded-xl
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.remove_red_eye_rounded,
+                                size: 20, // w-5 h-5
+                                color: AppColors.primary,
+                              ),
+                              const SizedBox(width: 8), // gap-2
+                              Text(
+                                Localizations.localeOf(context).languageCode == 'ar'
+                                    ? 'Preview'
+                                    : 'Preview',
+                                style: AppTextStyles.bodyMedium(
+                                  color: AppColors.primary,
+                                ).copyWith(fontWeight: FontWeight.w500),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12), // gap-3
+                    // Download button
                     Expanded(
                       child: GestureDetector(
                         onTap: () => _downloadCertificate(cert),
@@ -632,11 +596,7 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
                           padding:
                               const EdgeInsets.symmetric(vertical: 12), // py-3
                           decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              begin: Alignment.centerLeft,
-                              end: Alignment.centerRight,
-                              colors: AppColors.brandGradient,
-                            ),
+                            color: AppColors.primary,
                             borderRadius:
                                 BorderRadius.circular(12), // rounded-xl
                           ),
@@ -651,46 +611,9 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
                               const SizedBox(width: 8), // gap-2
                               Text(
                                 context.l10n.download,
-                                style: GoogleFonts.cairo(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
+                                style: AppTextStyles.bodyMedium(
                                   color: Colors.white,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12), // gap-3
-                    // Share button - matches React: flex-1 bg-[var(--orange)]/10
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => _shareCertificate(cert),
-                        child: Container(
-                          padding:
-                              const EdgeInsets.symmetric(vertical: 12), // py-3
-                          decoration: BoxDecoration(
-                            color: AppColors.brandBlue.withOpacity(0.1),
-                            borderRadius:
-                                BorderRadius.circular(12), // rounded-xl
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.share,
-                                size: 20, // w-5 h-5
-                                color: AppColors.brandBlue,
-                              ),
-                              const SizedBox(width: 8), // gap-2
-                              Text(
-                                context.l10n.share,
-                                style: GoogleFonts.cairo(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                  color: AppColors.brandBlue,
-                                ),
+                                ).copyWith(fontWeight: FontWeight.w500),
                               ),
                             ],
                           ),
@@ -721,18 +644,16 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
                 color: AppColors.lavenderLight,
                 shape: BoxShape.circle,
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.emoji_events,
                 size: 48, // w-12 h-12
-                color: AppColors.brandPurple,
+                color: AppColors.purple,
               ),
             ),
             const SizedBox(height: 16), // mb-4
             Text(
               context.l10n.noCertificatesYet,
-              style: GoogleFonts.cairo(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
+              style: AppTextStyles.h4(
                 color: AppColors.foreground,
               ),
             ),
@@ -741,8 +662,7 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 48),
               child: Text(
                 context.l10n.completeCoursesForCertificates,
-                style: GoogleFonts.cairo(
-                  fontSize: 14,
+                style: AppTextStyles.bodyMedium(
                   color: AppColors.mutedForeground,
                 ),
                 textAlign: TextAlign.center,
@@ -772,5 +692,43 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
         },
       ),
     );
+  }
+
+  String _resolveCertificateUrl(String? raw) {
+    final value = (raw ?? '').trim();
+    if (value.isEmpty) return '';
+    if (value.startsWith('http://') || value.startsWith('https://')) {
+      return value;
+    }
+    if (value.startsWith('/')) {
+      return '${ApiEndpoints.imageBaseUrl}$value';
+    }
+    return '${ApiEndpoints.imageBaseUrl}/$value';
+  }
+
+  Future<void> _openPreview(Map<String, dynamic> cert) async {
+    final previewUrl = _resolveCertificateUrl(cert['preview_url']?.toString());
+    if (previewUrl.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            Localizations.localeOf(context).languageCode == 'ar'
+                ? 'Preview link not available'
+                : 'Preview link not available',
+            style: GoogleFonts.cairo(),
+          ),
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
+      return;
+    }
+    final uri = Uri.tryParse(previewUrl);
+    if (uri == null) return;
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 }

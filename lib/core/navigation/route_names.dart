@@ -4,7 +4,8 @@ class RouteNames {
 
   // Startup flow
   static const String splash = '/';
-  static const String brandIntro = '/brand-intro';
+  static const String onboarding1 = '/onboarding/1';
+  static const String onboarding2 = '/onboarding/2';
   static const String login = '/login';
   static const String register = '/register';
   static const String forgotPassword = '/forgot-password';
@@ -35,26 +36,20 @@ class RouteNames {
   static const String checkout = '/checkout';
   static const String liveCourses = '/live-courses';
   static const String downloads = '/downloads';
-  /// Cohort library (subjects → groups → items). extra: `{ 'root': 'materials' | 'quizzes' }`
-  static const String cohortLibrary = '/cohort-library';
   static const String certificates = '/certificates';
   static const String enrolled = '/enrolled';
   static const String settings = '/settings';
   static const String allCourses = '/all-courses';
-  // Keep path in sync with existing links (/homework-detailes)
-  static const String homeworkDetails = '/homework-detailes';
   static const String editProfile = '/edit-profile';
   static const String changePassword = '/change-password';
   static const String pdfViewer = '/pdf-viewer';
+  static const String embedWebViewer = '/embed-web';
   static const String centerAttendance = '/center-attendance';
   static const String teachers = '/teachers';
   static const String teacherDetails = '/teacher-details';
   static const String chatConversations = '/chat';
   static const String chatMessages = '/chat/:conversationId';
 
-  // Legal
-  static const String privacyPolicy = '/privacy-policy';
-
-  // Support
-  static const String supportAndHelp = '/support-and-help';
+  /// Debug: lesson viewer with a sample Vimeo embed (`VimeoTestScreen`).
+  static const String vimeoTest = '/debug/vimeo-test';
 }

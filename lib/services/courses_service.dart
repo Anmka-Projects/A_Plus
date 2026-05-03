@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import '../core/api/api_client.dart';
 import '../core/api/api_endpoints.dart';
-import '../data/registration_categories_catalog.dart';
+import 'token_storage_service.dart';
 
 /// Service for courses, categories, and enrollments
 class CoursesService {
@@ -44,6 +44,22 @@ class CoursesService {
       }
     }
 
+    // Backend uses `is_wishlisted`; UI historically checks `is_in_wishlist`
+    if (processedCourse['is_in_wishlist'] == null &&
+        processedCourse['is_wishlisted'] != null) {
+      processedCourse['is_in_wishlist'] = processedCourse['is_wishlisted'];
+    }
+
+    // List payloads sometimes omit `id` but include `uuid` / `course_id`.
+    final idStr = processedCourse['id']?.toString().trim();
+    if (idStr == null || idStr.isEmpty) {
+      final alt = processedCourse['uuid']?.toString().trim() ??
+          processedCourse['course_id']?.toString().trim();
+      if (alt != null && alt.isNotEmpty) {
+        processedCourse['id'] = alt;
+      }
+    }
+
     return processedCourse;
   }
 
@@ -57,15 +73,46 @@ class CoursesService {
     }).toList();
   }
 
-  /// Get all courses with filters.
-  /// [categorySlug] is sent as `category_slug` (see docs/BACKEND_HOME_MEDICAL_CATEGORY_COURSES.md);
-  /// omitted when [categoryId] is set.
+  /// Fallback source for categories when `/api/categories` is unavailable.
+  Future<List<Map<String, dynamic>>> _getCategoriesFromHome() async {
+    final response = await ApiClient.instance.get(
+      ApiEndpoints.home,
+      requireAuth: true,
+    );
+
+    if (response['success'] != true || response['data'] == null) {
+      return <Map<String, dynamic>>[];
+    }
+
+    final data = response['data'];
+    if (data is! Map<String, dynamic>) {
+      return <Map<String, dynamic>>[];
+    }
+
+    final categoriesRaw = data['categories'];
+    if (categoriesRaw is! List) {
+      return <Map<String, dynamic>>[];
+    }
+
+    final categories = List<Map<String, dynamic>>.from(categoriesRaw);
+    return categories.map((category) {
+      final processedCategory = Map<String, dynamic>.from(category);
+      if (processedCategory['icon'] != null) {
+        final iconValue = processedCategory['icon']?.toString();
+        if (iconValue != null && iconValue.isNotEmpty) {
+          processedCategory['icon'] = ApiEndpoints.getImageUrl(iconValue);
+        }
+      }
+      return processedCategory;
+    }).toList();
+  }
+
+  /// Get all courses with filters
   Future<Map<String, dynamic>> getCourses({
     int page = 1,
     int perPage = 20,
     String? search,
     String? categoryId,
-    String? categorySlug,
     String? subcategoryId,
     String? instructorId,
     String price = 'all', // all, free, paid
@@ -92,15 +139,6 @@ class CoursesService {
         queryParams['category_id'] = categoryId.trim();
       }
 
-      final slugEffective = (categoryId != null && categoryId.trim().isNotEmpty)
-          ? null
-          : (categorySlug != null && categorySlug.trim().isNotEmpty
-              ? categorySlug.trim()
-              : null);
-      if (slugEffective != null) {
-        queryParams['category_slug'] = slugEffective;
-      }
-
       if (subcategoryId != null && subcategoryId.trim().isNotEmpty) {
         queryParams['subcategory_id'] = subcategoryId.trim();
       }
@@ -120,8 +158,6 @@ class CoursesService {
           'search=${search != null && search.trim().isNotEmpty ? Uri.encodeComponent(search.trim()) : ''}');
       queryParts.add(
           'category_id=${categoryId != null && categoryId.trim().isNotEmpty ? Uri.encodeComponent(categoryId.trim()) : ''}');
-      queryParts.add(
-          'category_slug=${slugEffective != null ? Uri.encodeComponent(slugEffective) : ''}');
 
       if (subcategoryId != null && subcategoryId.trim().isNotEmpty) {
         queryParts
@@ -230,6 +266,144 @@ class CoursesService {
     }
   }
 
+  /// Parses course rows from a [getCourses] response (list root or `data.courses`).
+  List<Map<String, dynamic>> coursesListFromCoursesResponse(
+      Map<String, dynamic> response) {
+    final data = response['data'];
+    if (data is List) {
+      return data
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+    }
+    if (data is Map<String, dynamic>) {
+      final c = data['courses'];
+      if (c is List) {
+        return c
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList();
+      }
+    }
+    return [];
+  }
+
+  int? _parsePositiveInt(dynamic v) {
+    if (v == null) return null;
+    if (v is int) return v > 0 ? v : null;
+    if (v is num) {
+      final i = v.toInt();
+      return i > 0 ? i : null;
+    }
+    return int.tryParse(v.toString());
+  }
+
+  /// First non-empty identifier across common API shapes (for dedupe / details).
+  String? _courseStableId(Map<String, dynamic> row) {
+    for (final k in ['id', 'uuid', 'course_id']) {
+      final v = row[k]?.toString().trim();
+      if (v != null && v.isNotEmpty) return v;
+    }
+    return null;
+  }
+
+  void _appendCoursesDeduped(
+    List<Map<String, dynamic>> merged,
+    Set<String> seenIds,
+    List<Map<String, dynamic>> batch,
+  ) {
+    for (final row in batch) {
+      final key = _courseStableId(row);
+      if (key != null) {
+        if (seenIds.contains(key)) continue;
+        seenIds.add(key);
+      }
+      merged.add(row);
+    }
+  }
+
+  /// Calls [getCourses] repeatedly until every page is loaded (fixes UI showing
+  /// only the first `per_page` items).
+  Future<Map<String, dynamic>> getCoursesAllPages({
+    int perPage = 50,
+    String? search,
+    String? categoryId,
+    String? subcategoryId,
+    String? instructorId,
+    String price = 'all',
+    String level = 'all',
+    String sort = 'newest',
+    String duration = 'all',
+    int maxPages = 100,
+  }) async {
+    final merged = <Map<String, dynamic>>[];
+    final seenIds = <String>{};
+    var page = 1;
+
+    while (page <= maxPages) {
+      final response = await getCourses(
+        page: page,
+        perPage: perPage,
+        search: search,
+        categoryId: categoryId,
+        subcategoryId: subcategoryId,
+        instructorId: instructorId,
+        price: price,
+        level: level,
+        sort: sort,
+        duration: duration,
+      );
+
+      if (response['success'] != true) {
+        return response;
+      }
+
+      final batch = coursesListFromCoursesResponse(response);
+      _appendCoursesDeduped(merged, seenIds, batch);
+
+      Map<String, dynamic>? meta;
+      final data = response['data'];
+      if (data is Map<String, dynamic>) {
+        final m = data['meta'];
+        if (m is Map) meta = Map<String, dynamic>.from(m);
+      }
+      meta ??= response['meta'] is Map
+          ? Map<String, dynamic>.from(response['meta'] as Map)
+          : null;
+
+      if (batch.isEmpty) break;
+
+      final lastPage = _parsePositiveInt(meta?['last_page']) ??
+          _parsePositiveInt(meta?['lastPage']);
+      final currentPage = _parsePositiveInt(meta?['current_page']) ??
+          _parsePositiveInt(meta?['currentPage']) ??
+          page;
+
+      if (lastPage != null && currentPage >= lastPage) break;
+      // Do not stop on meta.total alone: some backends return an incorrect total
+      // when category_id or other filters are applied, which hid courses (e.g. EEG).
+      if (batch.length < perPage) break;
+
+      page++;
+    }
+
+    final processed = _processCoursesList(merged);
+    final displayTotal = processed.length;
+    return {
+      'success': true,
+      'data': {
+        'courses': processed,
+        'meta': {
+          'total': displayTotal,
+          'per_page': perPage,
+        },
+      },
+      'meta': {
+        'total': displayTotal,
+      },
+    };
+  }
+
   /// Get course details
   Future<Map<String, dynamic>> getCourseDetails(String courseId) async {
     final endpoint = ApiEndpoints.course(courseId);
@@ -243,9 +417,10 @@ class CoursesService {
       print('───────────────────────────────────────────────────────────');
     }
     try {
+      final requireAuth = await TokenStorageService.instance.isLoggedIn();
       final response = await ApiClient.instance.get(
         endpoint,
-        requireAuth: true,
+        requireAuth: requireAuth,
       );
 
       if (kDebugMode) {
@@ -318,16 +493,147 @@ class CoursesService {
     }
   }
 
+  /// Get course assignments for student
+  Future<List<Map<String, dynamic>>> getCourseAssignments(String courseId) async {
+    try {
+      final response = await ApiClient.instance.get(
+        ApiEndpoints.courseAssignments(courseId),
+        requireAuth: true,
+      );
+
+      List<Map<String, dynamic>> toList(dynamic raw) {
+        if (raw is! List) return <Map<String, dynamic>>[];
+        return raw
+            .whereType<Map>()
+            .map((item) => Map<String, dynamic>.from(item))
+            .toList();
+      }
+
+      if (response['success'] != true) {
+        throw Exception(
+            response['message'] ?? 'Failed to fetch course assignments');
+      }
+
+      final data = response['data'];
+
+      // Common payload shapes:
+      // 1) { data: [ ... ] }
+      final fromDirectData = toList(data);
+      if (fromDirectData.isNotEmpty) return fromDirectData;
+
+      // 2) { data: { assignments: [...] | data: [...] | items: [...] | rows: [...] } }
+      if (data is Map<String, dynamic>) {
+        for (final key in ['assignments', 'data', 'items', 'rows']) {
+          final parsed = toList(data[key]);
+          if (parsed.isNotEmpty) return parsed;
+        }
+      }
+
+      // 3) { assignments: [...] } on root
+      for (final key in ['assignments', 'items', 'rows']) {
+        final parsed = toList(response[key]);
+        if (parsed.isNotEmpty) return parsed;
+      }
+
+      if (kDebugMode) {
+        print('⚠️ Assignments response parsed empty for course: $courseId');
+        print('   response keys: ${response.keys.toList()}');
+        print('   data type: ${data.runtimeType}');
+      }
+
+      return <Map<String, dynamic>>[];
+    } on ApiException catch (e) {
+      // Production often returns Next.js HTML 404 when the route is not mounted
+      // on the API (same host as the web app). Treat as empty list so the UI
+      // can still use curriculum-based fallbacks without a thrown error.
+      if (e.statusCode == 404) {
+        if (kDebugMode) {
+          print(
+            '⚠️ GET .../courses/$courseId/assignments returned 404 (no API route '
+            'or assignment module not deployed). Using empty list.');
+        }
+        return <Map<String, dynamic>>[];
+      }
+      rethrow;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Get single assignment details for student
+  Future<Map<String, dynamic>> getCourseAssignmentDetails(
+    String courseId,
+    String assignmentId,
+  ) async {
+    try {
+      final response = await ApiClient.instance.get(
+        ApiEndpoints.courseAssignmentDetails(courseId, assignmentId),
+        requireAuth: true,
+      );
+
+      if (response['success'] == true && response['data'] != null) {
+        return Map<String, dynamic>.from(response['data'] as Map);
+      }
+
+      throw Exception(response['message'] ?? 'Failed to fetch assignment details');
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Submit or resubmit assignment (see `docs/FLUTTER_ASSIGNMENT_STUDENT_LOGIC.md`).
+  /// Upload files first via [UploadService], then pass returned URL paths in [answerFiles] / [answerImages].
+  Future<void> submitCourseAssignment(
+    String courseId,
+    String assignmentId, {
+    String? answerText,
+    List<String> answerImages = const [],
+    List<String> answerFiles = const [],
+  }) async {
+    final trimmed = answerText?.trim() ?? '';
+    final body = <String, dynamic>{
+      if (trimmed.isNotEmpty) 'answer_text': trimmed,
+      'answer_images': answerImages,
+      'answer_files': answerFiles,
+    };
+
+    final response = await ApiClient.instance.post(
+      ApiEndpoints.courseAssignmentSubmit(courseId, assignmentId),
+      body: body,
+      requireAuth: true,
+    );
+
+    if (response['success'] != true) {
+      throw Exception(response['message']?.toString() ?? 'Failed to submit assignment');
+    }
+  }
+
   /// Get lesson content
   Future<Map<String, dynamic>> getLessonContent(
     String courseId,
     String lessonId,
   ) async {
     try {
-      final response = await ApiClient.instance.get(
-        ApiEndpoints.courseLessonContent(courseId, lessonId),
-        requireAuth: true,
-      );
+      Map<String, dynamic> response;
+      try {
+        response = await ApiClient.instance.get(
+          ApiEndpoints.courseLessonContent(courseId, lessonId),
+          requireAuth: true,
+        );
+      } on ApiException catch (e) {
+        // Some backend deployments expose lesson details at:
+        // /courses/:courseId/lessons/:lessonId
+        // without a dedicated /content sub-route.
+        if (e.statusCode != 404) rethrow;
+        if (kDebugMode) {
+          print(
+              '⚠️ Lesson content endpoint returned 404; falling back to lesson details endpoint.');
+        }
+        response = await ApiClient.instance.get(
+          ApiEndpoints.courseLesson(courseId, lessonId),
+          requireAuth: true,
+        );
+      }
 
       if (kDebugMode) {
         print('📦 Lesson Content API Response:');
@@ -400,7 +706,7 @@ class CoursesService {
     try {
       final response = await ApiClient.instance.get(
         url,
-        requireAuth: false,
+        requireAuth: true,
       );
 
       if (kDebugMode) {
@@ -463,54 +769,9 @@ class CoursesService {
         print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       }
 
-      final dynamic successValue = response['success'];
-      final isSuccess = successValue == true ||
-          successValue?.toString().toLowerCase() == 'true' ||
-          (response['error'] == null && response['message'] == null);
-
-      final dynamic data = response['data'] ??
-          response['categories'] ??
-          response['items'] ??
-          response['results'];
-
-      if (isSuccess && data != null) {
-        List<Map<String, dynamic>> categories = [];
-
-        // Support multiple backend shapes:
-        // - data: [...]
-        // - data: { categories: [...] }
-        // - data: { items: [...] }
-        if (data is List) {
-          categories = data
-              .whereType<Map>()
-              .map((item) => Map<String, dynamic>.from(item))
-              .toList();
-        } else if (data is Map<String, dynamic>) {
-          final nestedCategories = data['categories'];
-          final nestedItems = data['items'];
-          final nestedData = data['data'];
-
-          if (nestedCategories is List) {
-            categories = nestedCategories
-                .whereType<Map>()
-                .map((item) => Map<String, dynamic>.from(item))
-                .toList();
-          } else if (nestedItems is List) {
-            categories = nestedItems
-                .whereType<Map>()
-                .map((item) => Map<String, dynamic>.from(item))
-                .toList();
-          } else if (nestedData is List) {
-            categories = nestedData
-                .whereType<Map>()
-                .map((item) => Map<String, dynamic>.from(item))
-                .toList();
-          }
-        }
-
-        if (categories.isEmpty) {
-          throw Exception('Categories payload is empty or unsupported');
-        }
+      if (response['success'] == true && response['data'] != null) {
+        final categories =
+            List<Map<String, dynamic>>.from(response['data'] as List);
 
         // Process categories to add base URL to icons if needed
         final processedCategories = categories.map((category) {
@@ -528,12 +789,6 @@ class CoursesService {
         }).toList();
 
         return processedCategories;
-      } else if (isSuccess && response is List) {
-        final categories = (response as List)
-            .whereType<Map>()
-            .map((item) => Map<String, dynamic>.from(item))
-            .toList();
-        return categories;
       } else {
         throw Exception(response['message'] ?? 'Failed to fetch categories');
       }
@@ -545,45 +800,34 @@ class CoursesService {
         print('  URL: $url');
         print('  Error: $e');
         print('  Error type: ${e.runtimeType}');
-        print('  (404? Try useAdmin: true for /api/admin/categories)');
         print('───────────────────────────────────────────────────────────');
+      }
+
+      // Student/public flow:
+      // If public categories endpoint is unavailable (404), do not hit admin
+      // endpoint because it requires instructor privileges.
+      if (!useAdmin && e.toString().contains('status 404')) {
+        if (kDebugMode) {
+          print('ℹ️ Public categories endpoint not found (404).');
+          print('↩️ Retrying categories using /api/home fallback...');
+        }
+        try {
+          final homeCategories = await _getCategoriesFromHome();
+          if (kDebugMode) {
+            print(
+                '✅ Loaded categories from /api/home fallback: ${homeCategories.length}');
+          }
+          return homeCategories;
+        } catch (fallbackError) {
+          if (kDebugMode) {
+            print('⚠️ /api/home fallback failed: $fallbackError');
+            print('ℹ️ Returning empty categories list.');
+          }
+        }
+        return <Map<String, dynamic>>[];
       }
       rethrow;
     }
-  }
-
-  /// Categories for registration: same endpoint as [getCategories], filtered
-  /// to the canonical Arabic faculty list and year subcategories.
-  Future<List<Map<String, dynamic>>> getCategoriesForRegistration() async {
-    final raw = await getCategories(useAdmin: false);
-    if (raw.isEmpty) return raw;
-
-    final filtered = RegistrationCategoriesCatalog.filterApiCategories(raw);
-
-    // Use strict catalog only when backend actually provides that catalog.
-    // Otherwise, keep registration usable with raw API categories.
-    final expectedCount = RegistrationCategoriesCatalog.categorySpecs.length;
-    if (filtered.length == expectedCount) {
-      return filtered;
-    }
-
-    return raw.map((category) {
-      final copy = Map<String, dynamic>.from(category);
-      for (final key in ['subcategories', 'sub_categories', 'children']) {
-        final rawSubs = copy[key];
-        if (rawSubs is List) {
-          final normalizedSubs = rawSubs
-              .whereType<Map>()
-              .map((sub) => Map<String, dynamic>.from(sub))
-              .toList();
-          copy['subcategories'] = normalizedSubs;
-          copy['sub_categories'] = normalizedSubs;
-          copy.remove('children');
-          break;
-        }
-      }
-      return copy;
-    }).toList();
   }
 
   /// Get category courses
@@ -656,6 +900,80 @@ class CoursesService {
     } catch (e) {
       rethrow;
     }
+  }
+
+  /// Paginates [getCategoryCourses] until the category list is complete. Prefer this
+  /// when the generic `/courses?category_id=` filter misses rows for some categories.
+  Future<Map<String, dynamic>> getCategoryCoursesAllPages(
+    String categoryId, {
+    int perPage = 50,
+    String sort = 'newest',
+    String price = 'all',
+    String level = 'all',
+    String? subcategoryId,
+    int maxPages = 100,
+  }) async {
+    final merged = <Map<String, dynamic>>[];
+    final seenIds = <String>{};
+    var page = 1;
+
+    while (page <= maxPages) {
+      final response = await getCategoryCourses(
+        categoryId,
+        page: page,
+        perPage: perPage,
+        sort: sort,
+        price: price,
+        level: level,
+        subcategoryId: subcategoryId,
+      );
+
+      if (response['success'] != true) {
+        return response;
+      }
+
+      final batch = coursesListFromCoursesResponse(response);
+      _appendCoursesDeduped(merged, seenIds, batch);
+
+      Map<String, dynamic>? meta;
+      final data = response['data'];
+      if (data is Map<String, dynamic>) {
+        final m = data['meta'];
+        if (m is Map) meta = Map<String, dynamic>.from(m);
+      }
+      meta ??= response['meta'] is Map
+          ? Map<String, dynamic>.from(response['meta'] as Map)
+          : null;
+
+      if (batch.isEmpty) break;
+
+      final lastPage = _parsePositiveInt(meta?['last_page']) ??
+          _parsePositiveInt(meta?['lastPage']);
+      final currentPage = _parsePositiveInt(meta?['current_page']) ??
+          _parsePositiveInt(meta?['currentPage']) ??
+          page;
+
+      if (lastPage != null && currentPage >= lastPage) break;
+      if (batch.length < perPage) break;
+
+      page++;
+    }
+
+    final processed = _processCoursesList(merged);
+    final displayTotal = processed.length;
+    return {
+      'success': true,
+      'data': {
+        'courses': processed,
+        'meta': {
+          'total': displayTotal,
+          'per_page': perPage,
+        },
+      },
+      'meta': {
+        'total': displayTotal,
+      },
+    };
   }
 
   /// Enroll in a course

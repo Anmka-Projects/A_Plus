@@ -276,7 +276,7 @@ class _TeacherDetailsScreenState extends State<TeacherDetailsScreen> {
                                         ),
                                       ),
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: AppColors.primaryLight,
+                                        backgroundColor: AppColors.purple,
                                         foregroundColor: Colors.white,
                                         padding: const EdgeInsets.symmetric(
                                           vertical: 12,
@@ -487,7 +487,7 @@ class _TeacherDetailsScreenState extends State<TeacherDetailsScreen> {
                       ),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryLight,
+                      backgroundColor: AppColors.purple,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(

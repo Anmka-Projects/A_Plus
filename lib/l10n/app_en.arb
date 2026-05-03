@@ -1,6 +1,6 @@
 {
   "@@locale": "en",
-  "appName": "A Plus",
+  "appName": "Dr Champions Academy",
   "@appName": {
     "description": "Application name"
   },
@@ -87,42 +87,6 @@
   "@enterEmailOrPhone": {
     "description": "Enter email or phone placeholder text"
   },
-  "studentCode": "Student code",
-  "@studentCode": {
-    "description": "Unique student or learner code used to log in"
-  },
-  "enterStudentCode": "Enter your code",
-  "@enterStudentCode": {
-    "description": "Placeholder for student code field"
-  },
-  "subcategory": "Subcategory",
-  "@subcategory": {
-    "description": "Subcategory label on registration"
-  },
-  "selectCategoryFirst": "Select a category first",
-  "@selectCategoryFirst": {
-    "description": "Shown when subcategory is opened before category"
-  },
-  "tapToSelectCategory": "Tap to select category",
-  "@tapToSelectCategory": {
-    "description": "Category picker placeholder"
-  },
-  "tapToSelectSubcategory": "Tap to select subcategory",
-  "@tapToSelectSubcategory": {
-    "description": "Subcategory picker placeholder"
-  },
-  "selectCategory": "Please select a category",
-  "@selectCategory": {
-    "description": "Validation when category missing on register"
-  },
-  "selectSubcategory": "Please select a subcategory",
-  "@selectSubcategory": {
-    "description": "Validation when subcategory required but missing"
-  },
-  "noSubcategoriesForCategory": "No subcategories for this category — optional",
-  "@noSubcategoriesForCategory": {
-    "description": "Shown when category has no nested subcategories on register"
-  },
   "invalidEmailOrPhone": "Invalid email or phone number",
   "@invalidEmailOrPhone": {
     "description": "Invalid email or phone error message"
@@ -159,116 +123,6 @@
   "@welcomeBack": {
     "description": "Welcome message in login"
   },
-  "welcomeLabel": "Welcome",
-  "@welcomeLabel": {
-    "description": "Short welcome prefix above user name on home"
-  },
-  "homeMotivationalLine": "Stay focused, your A+ is coming...",
-  "@homeMotivationalLine": {
-    "description": "Tagline under home header"
-  },
-  "homeCoursesSectionTitle": "Courses ..",
-  "@homeCoursesSectionTitle": {
-    "description": "Home medical tracks section title"
-  },
-  "homeDeptHeadsBooks": "Books",
-  "@homeDeptHeadsBooks": {
-    "description": "Home books row title"
-  },
-  "homeQuizzesAssignments": "Quizzes and assignments",
-  "@homeQuizzesAssignments": {
-    "description": "Home assignments row title"
-  },
-  "homeBooksAssignmentsSection": "Doctors books and assignments..",
-  "@homeBooksAssignmentsSection": {
-    "description": "Second home section heading"
-  },
-  "homeCohortContentLockedHint": "This content is locked until an administrator enables it for your class.",
-  "@homeCohortContentLockedHint": {
-    "description": "SnackBar when books/quizzes cohort section is locked"
-  },
-  "homeCohortLockedLabel": "Locked",
-  "@homeCohortLockedLabel": {
-    "description": "Short badge on home card when cohort content locked"
-  },
-  "cohortLibraryMaterialsAppTitle": "Books",
-  "@cohortLibraryMaterialsAppTitle": {
-    "description": "App bar for cohort library materials root"
-  },
-  "cohortLibraryQuizzesAppTitle": "Quizzes and assignments",
-  "@cohortLibraryQuizzesAppTitle": {
-    "description": "App bar for cohort library quizzes root"
-  },
-  "cohortLibraryEmpty": "No content for your class yet.",
-  "@cohortLibraryEmpty": {
-    "description": "Empty cohort library"
-  },
-  "cohortLibraryLoadError": "Could not load library. Pull to retry.",
-  "@cohortLibraryLoadError": {
-    "description": "Cohort library fetch failed"
-  },
-  "cohortLibrarySyntheticSubjectTitle": "All materials",
-  "@cohortLibrarySyntheticSubjectTitle": {
-    "description": "Fallback subject title when API returns flat lists"
-  },
-  "cohortGroupTypeSummary": "Summaries",
-  "@cohortGroupTypeSummary": { "description": "Cohort group type" },
-  "cohortGroupTypeBook": "Books",
-  "@cohortGroupTypeBook": { "description": "Cohort group type" },
-  "cohortGroupTypeQuiz": "Quizzes",
-  "@cohortGroupTypeQuiz": { "description": "Cohort group type" },
-  "cohortGroupTypeFile": "Files",
-  "@cohortGroupTypeFile": { "description": "Cohort group type" },
-  "cohortGroupTypeVideo": "Videos",
-  "@cohortGroupTypeVideo": { "description": "Cohort group type" },
-  "cohortGroupTypeAssignment": "Assignments",
-  "@cohortGroupTypeAssignment": { "description": "Cohort group type" },
-  "cohortGroupTypeOther": "Other",
-  "@cohortGroupTypeOther": { "description": "Cohort group type" },
-  "cohortLibraryNoFileYet": "No file is available for this item yet.",
-  "@cohortLibraryNoFileYet": {
-    "description": "Unlocked item without file_url"
-  },
-  "trackDoctor": "Doctor",
-  "@trackDoctor": { "description": "Medical track" },
-  "trackDentist": "Dentist",
-  "@trackDentist": { "description": "Medical track" },
-  "trackPhysiotherapist": "Physiotherapist",
-  "@trackPhysiotherapist": { "description": "Medical track" },
-  "trackPharmacist": "Pharmacist",
-  "@trackPharmacist": { "description": "Medical track" },
-  "trackNurse": "Nurse",
-  "@trackNurse": { "description": "Medical track" },
-  "trackScientist": "Scientist",
-  "@trackScientist": { "description": "Medical track" },
-  "bottomNavCart": "Cart",
-  "@bottomNavCart": {
-    "description": "Bottom nav cart tab"
-  },
-  "loginEnterCodeTitle": "ENTER CODE",
-  "@loginEnterCodeTitle": {
-    "description": "Login screen code field section title"
-  },
-  "loginLogIn": "Log in",
-  "@loginLogIn": {
-    "description": "Primary login button label"
-  },
-  "codeActivation": "Code activation",
-  "@codeActivation": {
-    "description": "Button to open registration / code activation"
-  },
-  "pleaseActivateCodeFirst": "Please activate code first",
-  "@pleaseActivateCodeFirst": {
-    "description": "Hint under login code field"
-  },
-  "contactUs": "Contact us",
-  "@contactUs": {
-    "description": "Login footer support link"
-  },
-  "chooseLanguage": "Language",
-  "@chooseLanguage": {
-    "description": "Login footer language picker title"
-  },
   "enterEmail": "Enter your email",
   "@enterEmail": {
     "description": "Email placeholder text"
@@ -294,97 +148,13 @@
     "description": "Apple"
   },
   
-  "register": "Code verification",
+  "register": "Create New Account",
   "@register": {
-    "description": "Register screen header (student code verification flow)"
+    "description": "Register screen title"
   },
   "joinUsMessage": "Join us and start your learning journey 🎓",
   "@joinUsMessage": {
     "description": "Welcome message in register"
-  },
-  "quadNameTitle": "Full name (four parts)",
-  "@quadNameTitle": {
-    "description": "Label for four-part Arabic name row"
-  },
-  "namePartFirst": "First",
-  "@namePartFirst": {
-    "description": "First name part label"
-  },
-  "namePartFather": "Father",
-  "@namePartFather": {
-    "description": "Father name part label"
-  },
-  "namePartGrandfather": "Grandfather",
-  "@namePartGrandfather": {
-    "description": "Grandfather name part label"
-  },
-  "namePartFamily": "Family",
-  "@namePartFamily": {
-    "description": "Family name part label"
-  },
-  "nationalId": "National ID",
-  "@nationalId": {
-    "description": "National ID field label"
-  },
-  "nationalIdHint": "Enter national ID number",
-  "@nationalIdHint": {
-    "description": "National ID placeholder"
-  },
-  "invalidNationalId": "Enter a valid national ID (digits only)",
-  "@invalidNationalId": {
-    "description": "National ID validation"
-  },
-  "faculty": "Faculty",
-  "@faculty": {
-    "description": "Faculty picker label"
-  },
-  "section": "Section",
-  "@section": {
-    "description": "Section picker label"
-  },
-  "grade": "Grade",
-  "@grade": {
-    "description": "Grade picker label"
-  },
-  "tapToSelectFaculty": "Tap to select faculty",
-  "@tapToSelectFaculty": {
-    "description": "Faculty picker placeholder"
-  },
-  "tapToSelectSection": "Tap to select section",
-  "@tapToSelectSection": {
-    "description": "Section picker placeholder"
-  },
-  "tapToSelectGrade": "Tap to select grade",
-  "@tapToSelectGrade": {
-    "description": "Grade picker placeholder"
-  },
-  "selectFacultyFirst": "Select a faculty first",
-  "@selectFacultyFirst": {
-    "description": "Section disabled until faculty"
-  },
-  "selectSectionFirst": "Select a section first",
-  "@selectSectionFirst": {
-    "description": "Grade disabled until section"
-  },
-  "selectFaculty": "Please select a faculty",
-  "@selectFaculty": {
-    "description": "Validation faculty"
-  },
-  "selectSection": "Please select a section",
-  "@selectSection": {
-    "description": "Validation section"
-  },
-  "selectGrade": "Please select a grade",
-  "@selectGrade": {
-    "description": "Validation grade"
-  },
-  "academicDataLoading": "Loading options…",
-  "@academicDataLoading": {
-    "description": "Loading faculties sections grades"
-  },
-  "academicDataUnavailable": "Could not load options. Try again later.",
-  "@academicDataUnavailable": {
-    "description": "Academic API failure"
   },
   "fullName": "Full Name",
   "@fullName": {
@@ -521,6 +291,233 @@
   "@errorLoadingCourses": {
     "description": "Courses loading error message"
   },
+
+  "errorTitle": "Error",
+  "@errorTitle": {
+    "description": "Generic error title"
+  },
+  "unexpectedError": "An unexpected error occurred",
+  "@unexpectedError": {
+    "description": "Fallback unexpected error message"
+  },
+  "courseDetails": "Course Details",
+  "@courseDetails": {
+    "description": "Course details screen title"
+  },
+  "about": "About",
+  "@about": {
+    "description": "Generic about tab title"
+  },
+  "popular": "Most Popular",
+  "@popular": {
+    "description": "Popular badge label"
+  },
+  "continueLesson": "Continue: {title}",
+  "@continueLesson": {
+    "description": "Continue learning label with last lesson title",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "noLesson": "No lesson",
+  "@noLesson": {
+    "description": "No lesson available"
+  },
+  "loadingVideo": "Loading video...",
+  "@loadingVideo": {
+    "description": "Video loading indicator text"
+  },
+  "cannotLoadVideo": "Cannot load video",
+  "@cannotLoadVideo": {
+    "description": "Video cannot load error"
+  },
+  "videoLoadFailedCheckInternet": "Failed to load video. Please check your internet connection.",
+  "@videoLoadFailedCheckInternet": {
+    "description": "Video load failed due to connectivity"
+  },
+  "videoFormatNotSupported": "Video format is not supported",
+  "@videoFormatNotSupported": {
+    "description": "Video format not supported error"
+  },
+  "videoDecodeError": "Video decode error",
+  "@videoDecodeError": {
+    "description": "Video decode error"
+  },
+  "networkConnectionError": "Network connection error",
+  "@networkConnectionError": {
+    "description": "Network connection error"
+  },
+  "videoLoadError": "Error loading video",
+  "@videoLoadError": {
+    "description": "Generic video load error"
+  },
+  "normalSpeed": "Normal",
+  "@normalSpeed": {
+    "description": "Normal playback speed label"
+  },
+  "minutesUnit": "{count, plural, =1 {minute} other {minutes}}",
+  "@minutesUnit": {
+    "description": "Minutes unit label",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "hoursUnitShort": "{count}h",
+  "@hoursUnitShort": {
+    "description": "Hours unit short label (e.g. 3h)",
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "continueToPayment": "Continue to payment",
+  "@continueToPayment": {
+    "description": "Continue to payment button label"
+  },
+  "subscriptionPlan": "Subscription plan",
+  "@subscriptionPlan": {
+    "description": "Subscription plan label"
+  },
+  "chooseSubscriptionPlan": "Choose a subscription plan",
+  "@chooseSubscriptionPlan": {
+    "description": "Choose subscription plan title"
+  },
+  "monthsDuration": "{count, plural, =1 {Duration: 1 month} other {Duration: {count} months}}",
+  "@monthsDuration": {
+    "description": "Subscription duration in months",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
+  "planDurationDays": "{count, plural, =1 {1 day} other {{count} days}}",
+  "@planDurationDays": {
+    "description": "Subscription plan duration in days (no prefix)",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "planDurationMonths": "{count, plural, =1 {1 month} other {{count} months}}",
+  "@planDurationMonths": {
+    "description": "Subscription plan duration in months (no prefix)",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "planDurationYears": "{count, plural, =1 {1 year} other {{count} years}}",
+  "@planDurationYears": {
+    "description": "Subscription plan duration in years (no prefix)",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "planOfferEndsAt": "Offer ends {date}",
+  "@planOfferEndsAt": {
+    "description": "Subscription plan promotional pricing end date",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+
+  "notAvailableShort": "—",
+  "@notAvailableShort": {
+    "description": "Short not-available placeholder"
+  },
+  "bestScore": "Best score: {score}%",
+  "@bestScore": {
+    "description": "Best exam score label",
+    "placeholders": {
+      "score": {
+        "type": "num"
+      }
+    }
+  },
+  "attemptsUsedOutOf": "{used}/{max} attempts",
+  "@attemptsUsedOutOf": {
+    "description": "Attempts used out of max",
+    "placeholders": {
+      "used": {
+        "type": "num"
+      },
+      "max": {
+        "type": "num"
+      }
+    }
+  },
+  "attemptsExhausted": "Attempts exhausted",
+  "@attemptsExhausted": {
+    "description": "Attempts exhausted label"
+  },
+  "youAreInstructorOfCourse": "You are the instructor of this course",
+  "@youAreInstructorOfCourse": {
+    "description": "Shown when user is instructor of the course"
+  },
+  "finishExamLabel": "Finish Exam",
+  "@finishExamLabel": {
+    "description": "Finish exam label"
+  },
+  "tryAgain": "Try again",
+  "@tryAgain": {
+    "description": "Try again generic encouragement"
+  },
+  "wellDone": "Well done! 🎉",
+  "@wellDone": {
+    "description": "Well done encouragement"
+  },
+  "yourScore": "Your score: {score}%",
+  "@yourScore": {
+    "description": "Your exam score label",
+    "placeholders": {
+      "score": {
+        "type": "num"
+      }
+    }
+  },
+  "correctAnswersOutOf": "{correct} of {total} correct answers",
+  "@correctAnswersOutOf": {
+    "description": "Correct answers out of total label",
+    "placeholders": {
+      "correct": {
+        "type": "num"
+      },
+      "total": {
+        "type": "num"
+      }
+    }
+  },
+  "timeTakenMinutes": "Time taken: {minutes} {minutes, plural, =1 {minute} other {minutes}}",
+  "@timeTakenMinutes": {
+    "description": "Time taken in minutes label",
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "questionIndex": "Question {index}",
+  "@questionIndex": {
+    "description": "Question index label",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      }
+    }
+  },
   
   "instructor": "Instructor",
   "@instructor": {
@@ -629,10 +626,6 @@
   "downloads": "Downloads",
   "@downloads": {
     "description": "Downloads"
-  },
-  "booksScreenAppBarTitle": "Books",
-  "@booksScreenAppBarTitle": {
-    "description": "Header title on books/downloads screen opened from home"
   },
   "downloadLinkReceived": "Download link received. Download will start soon...",
   "@downloadLinkReceived": {
@@ -856,9 +849,9 @@
     "description": "Total"
   },
   
-  "editProfile": "Student Profile",
+  "editProfile": "Edit Profile",
   "@editProfile": {
-    "description": "Student profile screen title"
+    "description": "Edit profile"
   },
   "errorLoadingProfile": "Error loading profile",
   "@errorLoadingProfile": {
@@ -896,10 +889,6 @@
   "saveChanges": "Save Changes",
   "@saveChanges": {
     "description": "Save Changes"
-  },
-  "profileReadOnlyMessage": "This information is for viewing only and cannot be edited here.",
-  "@profileReadOnlyMessage": {
-    "description": "Notice on read-only profile screen"
   },
   "selectImageSource": "Select Image Source",
   "@selectImageSource": {
@@ -1185,6 +1174,10 @@
   "@enrollInCourse": {
     "description": "Enroll in Course"
   },
+  "freePreview": "Free preview",
+  "@freePreview": {
+    "description": "Free preview badge label for lessons"
+  },
   "loginRequired": "Login required",
   "@loginRequired": {
     "description": "Login required"
@@ -1335,10 +1328,6 @@
   "myExams": "My Exams",
   "@myExams": {
     "description": "My Exams"
-  },
-  "quizzesAssignmentsScreenTitle": "Quizzes and Assignments",
-  "@quizzesAssignmentsScreenTitle": {
-    "description": "Header title on my exams / quizzes screen"
   },
   "viewAllExams": "View all completed exams",
   "@viewAllExams": {
@@ -1586,6 +1575,15 @@
       }
     }
   },
+  "usdAmount": "USD {amount}",
+  "@usdAmount": {
+    "description": "Price in US dollars for checkout summary",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
   "confirmPayment": "Confirm Payment",
   "@confirmPayment": {
     "description": "Confirm Payment"
@@ -1699,6 +1697,10 @@
   "smartLearningPlatform": "Smart Learning Platform",
   "@smartLearningPlatform": {
     "description": "Smart Learning Platform"
+  },
+  "learnWithUsFutureLanguage": "Learn with us in the language of the future",
+  "@learnWithUsFutureLanguage": {
+    "description": "Splash tagline"
   },
   "certifiedAndSecure": "Certified and Secure Platform",
   "@certifiedAndSecure": {
@@ -1964,15 +1966,6 @@
       }
     }
   },
-  "availableBooks": "{count, plural, =1 {Available book} other {Available books}}",
-  "@availableBooks": {
-    "description": "Subtitle under books screen header (offline items count)",
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "storage": "Storage",
   "@storage": {
     "description": "Storage"
@@ -2060,6 +2053,10 @@
   "remindMe": "Remind Me",
   "@remindMe": {
     "description": "Remind Me"
+  },
+  "enterTheSession": "Enter the session",
+  "@enterTheSession": {
+    "description": "Button shown when a live session is available to join"
   },
   "joinNow": "Join Now",
   "@joinNow": {
@@ -2171,6 +2168,164 @@
   "@teacherCoursesTitle": {
     "description": "Title for teacher courses section"
   },
+  "lessonDescriptionTitle": "Lesson description",
+  "@lessonDescriptionTitle": {
+    "description": "Lesson description section title"
+  },
+  "noLessonDescription": "No description available",
+  "@noLessonDescription": {
+    "description": "No lesson description available"
+  },
+  "downloadForOffline": "Download for offline viewing",
+  "@downloadForOffline": {
+    "description": "Download for offline viewing label"
+  },
+  "downloadingProgress": "Downloading: {progress}%",
+  "@downloadingProgress": {
+    "description": "Downloading progress label",
+    "placeholders": {
+      "progress": {
+        "type": "int"
+      }
+    }
+  },
+  "videoDownloaded": "Video downloaded",
+  "@videoDownloaded": {
+    "description": "Video downloaded label"
+  },
+  "lessonFiles": "Lesson files",
+  "@lessonFiles": {
+    "description": "Lesson files section title"
+  },
+  "lessonImages": "Lesson images",
+  "@lessonImages": {
+    "description": "Lesson images section title"
+  },
+  "audioFiles": "Audio files",
+  "@audioFiles": {
+    "description": "Audio files section title"
+  },
+  "videoFiles": "Video files",
+  "@videoFiles": {
+    "description": "Video files section title"
+  },
+  "pdfFiles": "PDF files",
+  "@pdfFiles": {
+    "description": "PDF files section title"
+  },
+  "imageLoadFailed": "Unable to load image",
+  "@imageLoadFailed": {
+    "description": "Error when image cannot load"
+  },
+  "lessonDescriptionShownTop": "Description is shown above.",
+  "@lessonDescriptionShownTop": {
+    "description": "Hint when description appears in hero area"
+  },
+  "imageGalleryShownTop": "Image gallery is shown above.",
+  "@imageGalleryShownTop": {
+    "description": "Hint when image gallery appears in hero area"
+  },
+  "downloadShownTop": "Offline download panel is shown above.",
+  "@downloadShownTop": {
+    "description": "Hint when download panel appears in hero area"
+  },
+  "lessonFilesShownTop": "Lesson files are shown above.",
+  "@lessonFilesShownTop": {
+    "description": "Hint when lesson files panel appears in hero area"
+  },
+  "tapToShowVideoTop": "Tap to show the video above.",
+  "@tapToShowVideoTop": {
+    "description": "Hint when no hero video is selected"
+  },
+  "loadingAudioDuration": "Loading audio duration...",
+  "@loadingAudioDuration": {
+    "description": "Helper text while loading audio duration"
+  },
+  "audioClipLabel": "Audio clip {index}",
+  "@audioClipLabel": {
+    "description": "Audio clip label with index",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      }
+    }
+  },
+  "videoLabel": "Video {index}",
+  "@videoLabel": {
+    "description": "Video label with index",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      }
+    }
+  },
+  "pdfFileLabel": "PDF file {index}",
+  "@pdfFileLabel": {
+    "description": "PDF file label with index",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      }
+    }
+  },
+  "nowPlaying": "Now playing",
+  "@nowPlaying": {
+    "description": "Badge text for currently playing item"
+  },
+  "noFilesAvailable": "No files available",
+  "@noFilesAvailable": {
+    "description": "No files available"
+  },
+  "pdfLessonSummary": "PDF file - lesson summary",
+  "@pdfLessonSummary": {
+    "description": "PDF lesson summary file title"
+  },
+  "attachmentFile": "Attachment",
+  "@attachmentFile": {
+    "description": "Generic attachment file label"
+  },
+  "video": "Video",
+  "@video": {
+    "description": "Generic video label"
+  },
+  "cannotLoadThisVideo": "Cannot load this video",
+  "@cannotLoadThisVideo": {
+    "description": "Cannot load this video error"
+  },
+  "storagePermissionRequiredToDownloadVideos": "Storage permission is required to download videos",
+  "@storagePermissionRequiredToDownloadVideos": {
+    "description": "Storage permission required message"
+  },
+  "noVideoUrlToDownload": "No video URL available for download",
+  "@noVideoUrlToDownload": {
+    "description": "No video url to download message"
+  },
+  "courseWithId": "Course {id}",
+  "@courseWithId": {
+    "description": "Fallback course title with id",
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "videoDownloadedSuccessfully": "Video downloaded successfully",
+  "@videoDownloadedSuccessfully": {
+    "description": "Video downloaded successfully message"
+  },
+  "videoDownloadFailed": "Video download failed",
+  "@videoDownloadFailed": {
+    "description": "Video download failed message"
+  },
+  "videoDownloadError": "Video download error: {error}",
+  "@videoDownloadError": {
+    "description": "Video download error with details",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "coursesCount": "{count} courses",
   "@coursesCount": {
     "description": "Courses count label",
@@ -2189,13 +2344,38 @@
       }
     }
   },
-  "appExitNotificationTitle": "See you soon!",
-  "@appExitNotificationTitle": {
-    "description": "Local notification title when user backgrounds the app"
+  "noExamsAvailable": "No exams available",
+  "@noExamsAvailable": {
+    "description": "No exams available empty state"
   },
-  "appExitNotificationBody": "Open A Plus anytime to keep learning.",
-  "@appExitNotificationBody": {
-    "description": "Local notification body when user backgrounds the app"
+  "passingScoreToPass": "{score}% to pass",
+  "@passingScoreToPass": {
+    "description": "Passing score label",
+    "placeholders": {
+      "score": {
+        "type": "num"
+      }
+    }
+  },
+  "courseDescriptionTitle": "Course description",
+  "@courseDescriptionTitle": {
+    "description": "Course description section title"
+  },
+  "whatYouWillGet": "What you will get",
+  "@whatYouWillGet": {
+    "description": "What you will get section title"
+  },
+  "lifetimeAccess": "Lifetime access to content",
+  "@lifetimeAccess": {
+    "description": "Lifetime access feature"
+  },
+  "availableOnAllDevices": "Available on all devices",
+  "@availableOnAllDevices": {
+    "description": "Available on all devices feature"
+  },
+  "downloadableFiles": "Downloadable files",
+  "@downloadableFiles": {
+    "description": "Downloadable files feature"
   }
 }
 

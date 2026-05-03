@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import '../../core/design/app_colors.dart';
+import '../../core/design/app_text_styles.dart';
 import '../../core/design/app_radius.dart';
 import '../../core/localization/localization_helper.dart';
 import '../../services/exams_service.dart';
@@ -19,7 +19,10 @@ class MyExamsScreen extends StatefulWidget {
 
 class _MyExamsScreenState extends State<MyExamsScreen> {
   bool _isLoading = true;
-  List<Map<String, dynamic>> _completedExams = [];
+  List<Map<String, dynamic>> _attempts = [];
+  Map<String, dynamic> _stats = {};
+  Map<String, dynamic> _meta = {};
+  bool? _isPassedFilter;
 
   @override
   void initState() {
@@ -30,20 +33,30 @@ class _MyExamsScreenState extends State<MyExamsScreen> {
   Future<void> _loadExams() async {
     setState(() => _isLoading = true);
     try {
-      final response = await ExamsService.instance.getMyExams();
+      final response = await ExamsService.instance.getMyExams(
+        page: 1,
+        perPage: 20,
+        isPassed: _isPassedFilter,
+      );
 
       if (kDebugMode) {
-        print('✅ Exams loaded: ${response['completed']?.length ?? 0}');
+        print('✅ Exams loaded: ${response['attempts']?.length ?? 0}');
       }
 
       setState(() {
-        if (response['completed'] is List) {
-          _completedExams = List<Map<String, dynamic>>.from(
-            response['completed'] as List,
+        if (response['attempts'] is List) {
+          _attempts = List<Map<String, dynamic>>.from(
+            response['attempts'] as List,
           );
         } else {
-          _completedExams = [];
+          _attempts = [];
         }
+        _stats = response['stats'] is Map<String, dynamic>
+            ? Map<String, dynamic>.from(response['stats'] as Map<String, dynamic>)
+            : {};
+        _meta = response['meta'] is Map<String, dynamic>
+            ? Map<String, dynamic>.from(response['meta'] as Map<String, dynamic>)
+            : {};
         _isLoading = false;
       });
     } catch (e) {
@@ -51,7 +64,9 @@ class _MyExamsScreenState extends State<MyExamsScreen> {
         print('❌ Error loading exams: $e');
       }
       setState(() {
-        _completedExams = [];
+        _attempts = [];
+        _stats = {};
+        _meta = {};
         _isLoading = false;
       });
     }
@@ -87,12 +102,17 @@ class _MyExamsScreenState extends State<MyExamsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final passedCount = _completedExams
-        .where((e) => e['is_passed'] == true || e['passed'] == true)
-        .length;
-    final failedCount = _completedExams
-        .where((e) => e['is_passed'] != true && e['passed'] != true)
-        .length;
+    final passedCount = (_stats['passed'] as num?)?.toInt() ??
+        _attempts
+            .where((e) => e['is_passed'] == true || e['passed'] == true)
+            .length;
+    final failedCount = (_stats['failed'] as num?)?.toInt() ??
+        _attempts
+            .where((e) => e['is_passed'] != true && e['passed'] != true)
+            .length;
+    final totalAttempts = (_stats['total_attempts'] as num?)?.toInt() ??
+        (_meta['total'] as num?)?.toInt() ??
+        _attempts.length;
 
     return Scaffold(
       backgroundColor: AppColors.beige,
@@ -100,25 +120,18 @@ class _MyExamsScreenState extends State<MyExamsScreen> {
         top: false,
         child: Column(
           children: [
-            // Header - matches React: bg-[var(--orange)] rounded-b-[3rem] pt-4 pb-8 px-4
+            // Header aligned with app primary palette
             Container(
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: AppColors.brandGradient,
+                  colors: [AppColors.primary, AppColors.primaryDark],
                 ),
-                borderRadius: const BorderRadius.only(
+                borderRadius: BorderRadius.only(
                   bottomLeft: Radius.circular(AppRadius.largeCard),
                   bottomRight: Radius.circular(AppRadius.largeCard),
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.brandBlue.withOpacity(0.3),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
               ),
               padding: EdgeInsets.only(
                 top: MediaQuery.of(context).padding.top + 16, // pt-4
@@ -150,21 +163,16 @@ class _MyExamsScreenState extends State<MyExamsScreen> {
                       ),
                       const SizedBox(width: 16), // gap-4
                       Text(
-                        context.l10n.quizzesAssignmentsScreenTitle,
-                        style: GoogleFonts.cairo(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
+                        context.l10n.myExams,
+                        style: AppTextStyles.h2(color: Colors.white),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16), // mb-4
                   Text(
                     context.l10n.viewAllCompletedExams,
-                    style: GoogleFonts.cairo(
-                      fontSize: 14,
-                      color: Colors.white.withOpacity(0.7),
+                    style: AppTextStyles.bodyMedium(
+                      color: Colors.white.withOpacity(0.7), // white/70
                     ),
                   ),
                 ],
@@ -177,7 +185,7 @@ class _MyExamsScreenState extends State<MyExamsScreen> {
                 offset: const Offset(0, -24), // -mt-6
                 child: _isLoading
                     ? _buildLoadingState()
-                    : _completedExams.isEmpty
+                    : _attempts.isEmpty
                         ? _buildEmptyState()
                         : RefreshIndicator(
                             onRefresh: _loadExams,
@@ -187,6 +195,42 @@ class _MyExamsScreenState extends State<MyExamsScreen> {
                               physics: const AlwaysScrollableScrollPhysics(),
                               child: Column(
                                 children: [
+                                  Container(
+                                    margin: const EdgeInsets.only(bottom: 12),
+                                    child: Row(
+                                      children: [
+                                        _buildFilterChip(
+                                          label: context.l10n.totalExams,
+                                          selected: _isPassedFilter == null,
+                                          onTap: () {
+                                            if (_isPassedFilter == null) return;
+                                            setState(() => _isPassedFilter = null);
+                                            _loadExams();
+                                          },
+                                        ),
+                                        const SizedBox(width: 8),
+                                        _buildFilterChip(
+                                          label: context.l10n.passed,
+                                          selected: _isPassedFilter == true,
+                                          onTap: () {
+                                            if (_isPassedFilter == true) return;
+                                            setState(() => _isPassedFilter = true);
+                                            _loadExams();
+                                          },
+                                        ),
+                                        const SizedBox(width: 8),
+                                        _buildFilterChip(
+                                          label: context.l10n.failed,
+                                          selected: _isPassedFilter == false,
+                                          onTap: () {
+                                            if (_isPassedFilter == false) return;
+                                            setState(() => _isPassedFilter = false);
+                                            _loadExams();
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                   // Stats Card - matches React: bg-white rounded-3xl p-5 shadow-lg grid grid-cols-3
                                   Container(
                                     margin: const EdgeInsets.only(
@@ -211,20 +255,16 @@ class _MyExamsScreenState extends State<MyExamsScreen> {
                                           child: Column(
                                             children: [
                                               Text(
-                                                '${_completedExams.length}',
-                                                style: GoogleFonts.cairo(
-                                                  fontSize: 24,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: AppColors.brandPurple,
+                                                '$totalAttempts',
+                                                style: AppTextStyles.h2(
+                                                  color: AppColors.purple,
                                                 ),
                                               ),
                                               Text(
                                                 context.l10n.totalExams,
-                                                style: GoogleFonts.cairo(
-                                                  fontSize: 11,
-                                                  fontWeight: FontWeight.w500,
-                                                  color: AppColors
-                                                      .mutedForeground,
+                                                style: AppTextStyles.labelSmall(
+                                                  color:
+                                                      AppColors.mutedForeground,
                                                 ),
                                                 textAlign: TextAlign.center,
                                               ),
@@ -237,19 +277,15 @@ class _MyExamsScreenState extends State<MyExamsScreen> {
                                             children: [
                                               Text(
                                                 '$passedCount',
-                                                style: GoogleFonts.cairo(
-                                                  fontSize: 24,
-                                                  fontWeight: FontWeight.w600,
+                                                style: AppTextStyles.h2(
                                                   color: Colors.green,
                                                 ),
                                               ),
                                               Text(
                                                 context.l10n.passed,
-                                                style: GoogleFonts.cairo(
-                                                  fontSize: 11,
-                                                  fontWeight: FontWeight.w500,
-                                                  color: AppColors
-                                                      .mutedForeground,
+                                                style: AppTextStyles.labelSmall(
+                                                  color:
+                                                      AppColors.mutedForeground,
                                                 ),
                                                 textAlign: TextAlign.center,
                                               ),
@@ -262,19 +298,15 @@ class _MyExamsScreenState extends State<MyExamsScreen> {
                                             children: [
                                               Text(
                                                 '$failedCount',
-                                                style: GoogleFonts.cairo(
-                                                  fontSize: 24,
-                                                  fontWeight: FontWeight.w600,
+                                                style: AppTextStyles.h2(
                                                   color: Colors.red,
                                                 ),
                                               ),
                                               Text(
                                                 context.l10n.failed,
-                                                style: GoogleFonts.cairo(
-                                                  fontSize: 11,
-                                                  fontWeight: FontWeight.w500,
-                                                  color: AppColors
-                                                      .mutedForeground,
+                                                style: AppTextStyles.labelSmall(
+                                                  color:
+                                                      AppColors.mutedForeground,
                                                 ),
                                                 textAlign: TextAlign.center,
                                               ),
@@ -286,8 +318,8 @@ class _MyExamsScreenState extends State<MyExamsScreen> {
                                   ),
 
                                   // Exams List - matches React: space-y-4
-                                  ..._completedExams.map(
-                                      (exam) => _buildExamCard(context, exam)),
+                                  ..._attempts
+                                      .map((exam) => _buildExamCard(context, exam)),
 
                                   const SizedBox(height: 32),
                                 ],
@@ -303,8 +335,12 @@ class _MyExamsScreenState extends State<MyExamsScreen> {
   }
 
   Widget _buildExamCard(BuildContext context, Map<String, dynamic> exam) {
+    final examObj = exam['exam'] is Map<String, dynamic>
+        ? exam['exam'] as Map<String, dynamic>
+        : <String, dynamic>{};
     final passed = exam['is_passed'] == true || exam['passed'] == true;
-    final score = (exam['score'] as num?)?.toInt() ??
+    final score = (exam['percentage'] as num?)?.toInt() ??
+        (exam['score'] as num?)?.toInt() ??
         (exam['best_score'] as num?)?.toInt() ??
         0;
     final totalQuestions = exam['total_questions'] as int? ??
@@ -313,7 +349,9 @@ class _MyExamsScreenState extends State<MyExamsScreen> {
         0;
     final correctAnswers =
         exam['correct_answers'] as int? ?? exam['correctAnswers'] as int? ?? 0;
-    final examTitle = exam['title']?.toString() ?? context.l10n.exam;
+    final examTitle = examObj['title']?.toString() ??
+        exam['title']?.toString() ??
+        context.l10n.exam;
     final completedAt = exam['completed_at']?.toString() ??
         exam['submitted_at']?.toString() ??
         exam['date']?.toString();
@@ -360,11 +398,9 @@ class _MyExamsScreenState extends State<MyExamsScreen> {
                   children: [
                     Text(
                       examTitle,
-                      style: GoogleFonts.cairo(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
+                      style: AppTextStyles.bodyMedium(
                         color: AppColors.foreground,
-                      ),
+                      ).copyWith(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 4), // mb-1
                     Row(
@@ -377,8 +413,7 @@ class _MyExamsScreenState extends State<MyExamsScreen> {
                         const SizedBox(width: 8), // gap-2
                         Text(
                           _formatDate(context, completedAt),
-                          style: GoogleFonts.cairo(
-                            fontSize: 13,
+                          style: AppTextStyles.bodySmall(
                             color: AppColors.mutedForeground,
                           ),
                         ),
@@ -393,17 +428,13 @@ class _MyExamsScreenState extends State<MyExamsScreen> {
                 children: [
                   Text(
                     '$score%',
-                    style: GoogleFonts.cairo(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w600,
+                    style: AppTextStyles.h2(
                       color: passed ? Colors.green[600] : Colors.red[600],
                     ),
                   ),
                   Text(
                     '$correctAnswers/$totalQuestions',
-                    style: GoogleFonts.cairo(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
+                    style: AppTextStyles.labelSmall(
                       color: AppColors.mutedForeground,
                     ),
                   ),
@@ -447,15 +478,42 @@ class _MyExamsScreenState extends State<MyExamsScreen> {
               ),
               child: Text(
                 passed ? context.l10n.passed : context.l10n.failed,
-                style: GoogleFonts.cairo(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
+                style: AppTextStyles.labelSmall(
                   color: passed ? Colors.green[700] : Colors.red[700],
-                ),
+                ).copyWith(fontWeight: FontWeight.w500),
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildFilterChip({
+    required String label,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: selected ? AppColors.primary : Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: selected ? AppColors.primary : Colors.black12,
+            ),
+          ),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: AppTextStyles.labelSmall(
+              color: selected ? Colors.white : AppColors.foreground,
+            ).copyWith(fontWeight: FontWeight.w600),
+          ),
+        ),
       ),
     );
   }
@@ -631,46 +689,26 @@ class _MyExamsScreenState extends State<MyExamsScreen> {
             width: 120,
             height: 120,
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppColors.brandBlue.withOpacity(0.14),
-                  AppColors.brandPurple.withOpacity(0.14),
-                ],
-              ),
+              color: AppColors.primary.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
-            child: Center(
-              child: ShaderMask(
-                blendMode: BlendMode.srcIn,
-                shaderCallback: (bounds) => const LinearGradient(
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                  colors: AppColors.brandGradient,
-                ).createShader(bounds),
-                child: const Icon(
-                  Icons.quiz_rounded,
-                  size: 60,
-                  color: Colors.white,
-                ),
-              ),
+            child: const Icon(
+              Icons.quiz_rounded,
+              size: 60,
+              color: AppColors.primary,
             ),
           ),
           const SizedBox(height: 24),
           Text(
             context.l10n.noCompletedExams,
-            style: GoogleFonts.cairo(
-              fontSize: 22,
-              fontWeight: FontWeight.w600,
+            style: AppTextStyles.h2(
               color: AppColors.foreground,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             context.l10n.startCompletingExams,
-            style: GoogleFonts.cairo(
-              fontSize: 14,
+            style: AppTextStyles.bodyMedium(
               color: AppColors.mutedForeground,
             ),
             textAlign: TextAlign.center,

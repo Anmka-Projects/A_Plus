@@ -1,7 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../screens/startup/splash_screen.dart';
-import '../../screens/startup/brand_intro_screen.dart';
+import '../../screens/startup/onboarding_screen.dart';
 import '../../screens/auth/login_screen.dart';
 import '../../screens/auth/register_screen.dart';
 import '../../screens/auth/forgot_password_screen.dart';
@@ -17,6 +18,7 @@ import '../../screens/instructor/instructor_create_course_screen.dart';
 import '../../screens/instructor/instructor_course_details_screen.dart';
 import '../../screens/instructor/instructor_session_details_screen.dart';
 import '../../screens/instructor/instructor_scan_qr_screen.dart';
+import '../../screens/debug/vimeo_test_screen.dart';
 import '../../screens/secondary/categories_screen.dart';
 import '../../screens/secondary/course_details_screen.dart';
 import '../../screens/secondary/lesson_viewer_screen.dart';
@@ -26,7 +28,6 @@ import '../../screens/secondary/notifications_screen.dart';
 import '../../screens/secondary/checkout_screen.dart';
 import '../../screens/secondary/live_courses_screen.dart';
 import '../../screens/secondary/downloads_screen.dart';
-import '../../screens/secondary/cohort_library_screen.dart';
 import '../../screens/secondary/certificates_screen.dart';
 import '../../screens/secondary/enrolled_screen.dart';
 import '../../screens/secondary/settings_screen.dart';
@@ -34,14 +35,12 @@ import '../../screens/secondary/all_courses_screen.dart';
 import '../../screens/secondary/edit_profile_screen.dart';
 import '../../screens/secondary/change_password_screen.dart';
 import '../../screens/secondary/pdf_viewer_screen.dart';
+import '../../screens/secondary/embed_web_viewer_screen.dart';
 import '../../screens/secondary/center_attendance_screen.dart';
 import '../../screens/secondary/teachers_screen.dart';
 import '../../screens/secondary/teacher_details_screen.dart';
 import '../../screens/secondary/chat_conversations_screen.dart';
 import '../../screens/secondary/chat_messages_screen.dart';
-import '../../screens/secondary/homework_details_screen.dart';
-import '../../screens/secondary/privacy_policy_screen.dart';
-import '../../screens/secondary/support_and_help_screen.dart';
 import 'route_names.dart';
 
 class AppRouter {
@@ -61,10 +60,17 @@ class AppRouter {
         ),
       ),
       GoRoute(
-        path: RouteNames.brandIntro,
+        path: RouteNames.onboarding1,
         pageBuilder: (context, state) => _buildPageWithTransition(
           key: state.pageKey,
-          child: const BrandIntroScreen(),
+          child: const OnboardingScreen(step: 1),
+        ),
+      ),
+      GoRoute(
+        path: RouteNames.onboarding2,
+        pageBuilder: (context, state) => _buildPageWithTransition(
+          key: state.pageKey,
+          child: const OnboardingScreen(step: 2),
         ),
       ),
       GoRoute(
@@ -76,19 +82,10 @@ class AppRouter {
       ),
       GoRoute(
         path: RouteNames.register,
-        pageBuilder: (context, state) {
-          String? initialCode;
-          final extra = state.extra;
-          if (extra is Map) {
-            initialCode = extra['code']?.toString();
-          } else if (extra is String) {
-            initialCode = extra;
-          }
-          return _buildPageWithTransition(
-            key: state.pageKey,
-            child: RegisterScreen(initialCode: initialCode),
-          );
-        },
+        pageBuilder: (context, state) => _buildPageWithTransition(
+          key: state.pageKey,
+          child: const RegisterScreen(),
+        ),
       ),
       GoRoute(
         path: RouteNames.forgotPassword,
@@ -173,30 +170,10 @@ class AppRouter {
       ),
       GoRoute(
         path: RouteNames.allCourses,
-        pageBuilder: (context, state) {
-          String? categoryId;
-          String? categorySlug;
-          String? screenTitle;
-          final extra = state.extra;
-          if (extra is Map) {
-            final m = Map<String, dynamic>.from(extra);
-            final id = m['categoryId']?.toString().trim();
-            categoryId = (id == null || id.isEmpty) ? null : id;
-            final slug = m['categorySlug']?.toString().trim();
-            categorySlug = (slug == null || slug.isEmpty) ? null : slug;
-            final title = m['screenTitle']?.toString().trim() ??
-                m['categoryName']?.toString().trim();
-            screenTitle = (title == null || title.isEmpty) ? null : title;
-          }
-          return _buildPageWithTransition(
-            key: state.pageKey,
-            child: AllCoursesScreen(
-              categoryId: categoryId,
-              categorySlug: categorySlug,
-              screenTitle: screenTitle,
-            ),
-          );
-        },
+        pageBuilder: (context, state) => _buildPageWithTransition(
+          key: state.pageKey,
+          child: const AllCoursesScreen(),
+        ),
       ),
       GoRoute(
         path: RouteNames.teachers,
@@ -219,6 +196,15 @@ class AppRouter {
         pageBuilder: (context, state) => _buildPageWithTransition(
           key: state.pageKey,
           child: const CategoriesScreen(),
+        ),
+      ),
+      GoRoute(
+        path: RouteNames.vimeoTest,
+        redirect: (context, state) =>
+            kDebugMode ? null : RouteNames.home,
+        pageBuilder: (context, state) => _buildPageWithTransition(
+          key: state.pageKey,
+          child: const VimeoTestScreen(),
         ),
       ),
       GoRoute(
@@ -269,11 +255,21 @@ class AppRouter {
           Map<String, dynamic>? lesson;
           String? courseId;
 
+          List<Map<String, dynamic>> allLessons = const [];
+          int lessonIndex = -1;
+
           if (extra is Map<String, dynamic>) {
             // Check if it's a wrapper map with lesson and courseId
             if (extra.containsKey('lesson')) {
               lesson = extra['lesson'] as Map<String, dynamic>?;
               courseId = extra['courseId']?.toString();
+              final rawAll = extra['allLessons'];
+              if (rawAll is List) {
+                allLessons = rawAll
+                    .whereType<Map<String, dynamic>>()
+                    .toList();
+              }
+              lessonIndex = (extra['lessonIndex'] as int?) ?? -1;
             } else {
               // It's the lesson object itself
               lesson = extra;
@@ -285,25 +281,9 @@ class AppRouter {
             child: LessonViewerScreen(
               lesson: lesson,
               courseId: courseId,
+              allLessons: allLessons,
+              lessonIndex: lessonIndex,
             ),
-          );
-        },
-      ),
-      GoRoute(
-        path: RouteNames.homeworkDetails,
-        pageBuilder: (context, state) {
-          final extra = state.extra;
-          String homeworkId = '';
-
-          if (extra is String) {
-            homeworkId = extra;
-          } else if (extra is Map<String, dynamic>) {
-            homeworkId = extra['homeworkId']?.toString() ?? '';
-          }
-
-          return _buildPageWithTransition(
-            key: state.pageKey,
-            child: HomeworkDetailsScreen(homeworkId: homeworkId),
           );
         },
       ),
@@ -311,11 +291,7 @@ class AppRouter {
         path: RouteNames.exams,
         pageBuilder: (context, state) => _buildPageWithTransition(
           key: state.pageKey,
-          child: ExamsScreen(
-            examData: state.extra is Map<String, dynamic>
-                ? state.extra as Map<String, dynamic>
-                : null,
-          ),
+          child: const ExamsScreen(),
         ),
       ),
       GoRoute(
@@ -354,20 +330,6 @@ class AppRouter {
           key: state.pageKey,
           child: const DownloadsScreen(),
         ),
-      ),
-      GoRoute(
-        path: RouteNames.cohortLibrary,
-        pageBuilder: (context, state) {
-          var root = 'materials';
-          final extra = state.extra;
-          if (extra is Map) {
-            root = extra['root']?.toString() ?? 'materials';
-          }
-          return _buildPageWithTransition(
-            key: state.pageKey,
-            child: CohortLibraryScreen(root: root),
-          );
-        },
       ),
       GoRoute(
         path: RouteNames.certificates,
@@ -430,6 +392,27 @@ class AppRouter {
         },
       ),
       GoRoute(
+        path: RouteNames.embedWebViewer,
+        pageBuilder: (context, state) {
+          final extra = state.extra;
+          var url = '';
+          String? title;
+          if (extra is Map<String, dynamic>) {
+            url = extra['url']?.toString() ?? '';
+            title = extra['title']?.toString();
+          } else if (extra is String) {
+            url = extra;
+          }
+          return _buildPageWithTransition(
+            key: state.pageKey,
+            child: EmbedWebViewerScreen(
+              initialUrl: url,
+              title: title,
+            ),
+          );
+        },
+      ),
+      GoRoute(
         path: RouteNames.centerAttendance,
         pageBuilder: (context, state) => _buildPageWithTransition(
           key: state.pageKey,
@@ -457,20 +440,6 @@ class AppRouter {
             ),
           );
         },
-      ),
-      GoRoute(
-        path: RouteNames.privacyPolicy,
-        pageBuilder: (context, state) => _buildPageWithTransition(
-          key: state.pageKey,
-          child: const PrivacyPolicyScreen(),
-        ),
-      ),
-      GoRoute(
-        path: RouteNames.supportAndHelp,
-        pageBuilder: (context, state) => _buildPageWithTransition(
-          key: state.pageKey,
-          child: const SupportAndHelpScreen(),
-        ),
       ),
     ],
   );

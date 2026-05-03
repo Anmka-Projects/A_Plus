@@ -1,15 +1,16 @@
+import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../core/design/app_colors.dart';
+import '../../core/design/app_text_styles.dart';
 import '../../core/localization/localization_helper.dart';
-import '../../core/navigation/route_names.dart';
-import '../../services/auth_service.dart';
 import '../../services/profile_service.dart';
 
-/// Profile screen — data is read-only (display only).
+/// Edit Profile Screen - For updating user profile information
 class EditProfileScreen extends StatefulWidget {
   final Map<String, dynamic>? initialProfile;
 
@@ -23,9 +24,20 @@ class EditProfileScreen extends StatefulWidget {
 }
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
-  bool _isLoading = true;
-  bool _isLoggingOut = false;
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _bioController = TextEditingController();
+  final _countryController = TextEditingController();
+  final _timezoneController = TextEditingController();
+  final _languageController = TextEditingController();
+
+  bool _isLoading = false;
+  bool _isSaving = false;
+  bool _isUploadingAvatar = false;
   Map<String, dynamic>? _profile;
+  File? _selectedImage;
+  final ImagePicker _imagePicker = ImagePicker();
 
   @override
   void initState() {
@@ -33,233 +45,313 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _loadProfile();
   }
 
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _phoneController.dispose();
+    _bioController.dispose();
+    _countryController.dispose();
+    _timezoneController.dispose();
+    _languageController.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadProfile() async {
-    if (!mounted) return;
     setState(() => _isLoading = true);
     try {
       final profile =
           widget.initialProfile ?? await ProfileService.instance.getProfile();
-      if (!mounted) return;
+
       setState(() {
         _profile = profile;
+        _nameController.text = profile['name']?.toString() ?? '';
+        _phoneController.text = profile['phone']?.toString() ?? '';
+        _bioController.text = profile['bio']?.toString() ?? '';
+        _countryController.text = profile['country']?.toString() ?? '';
+        _timezoneController.text = profile['timezone']?.toString() ?? '';
+        _languageController.text = profile['language']?.toString() ?? 'ar';
         _isLoading = false;
       });
     } catch (e) {
       if (kDebugMode) {
         print('❌ Error loading profile: $e');
       }
-      if (!mounted) return;
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            context.l10n.errorLoadingProfile,
-            style: GoogleFonts.cairo(),
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              context.l10n.errorLoadingProfile,
+              style: GoogleFonts.cairo(),
+            ),
+            backgroundColor: Colors.red,
           ),
-          backgroundColor: AppColors.destructive,
-        ),
-      );
-    }
-  }
-
-  String _str(String? key) {
-    final v = _profile?[key];
-    if (v == null) return '';
-    final s = v.toString().trim();
-    return s;
-  }
-
-  String _extractReadable(dynamic raw) {
-    if (raw == null) return '';
-    if (raw is String) return raw.trim();
-    if (raw is num || raw is bool) return raw.toString().trim();
-    if (raw is Map<String, dynamic>) {
-      final preferred = [
-        'name',
-        'name_ar',
-        'title',
-        'title_ar',
-        'label',
-      ];
-      for (final key in preferred) {
-        final v = raw[key]?.toString().trim() ?? '';
-        if (v.isNotEmpty) return v;
-      }
-      return '';
-    }
-    return '';
-  }
-
-  String _valueFromProfile(List<String> keys) {
-    for (final key in keys) {
-      final root = _extractReadable(_profile?[key]);
-      if (root.isNotEmpty) return root;
-    }
-    final user = _profile?['user'];
-    if (user is Map<String, dynamic>) {
-      for (final key in keys) {
-        final nested = _extractReadable(user[key]);
-        if (nested.isNotEmpty) return nested;
+        );
       }
     }
-    return '';
   }
 
-  String _facultyName() {
-    final direct = _valueFromProfile([
-      'registrationFacultyName',
-      'categoryName',
-      // Backend currently returns readable faculty name in these keys.
-      'faculty_id',
-      'category_id',
-      'faculty_name',
-      'faculty',
-      'facultyName',
-      'faculty_label',
-      'college',
-      'college_name',
-      // Keep UUID-like ids as last fallback only.
-      'registrationFacultyId',
-      'categoryId',
-    ]);
-    if (direct.isNotEmpty) return direct;
-    final faculty = _profile?['faculty'];
-    if (faculty is Map<String, dynamic>) {
-      final name = faculty['name']?.toString().trim() ?? '';
-      if (name.isNotEmpty) return name;
-      final nameAr = faculty['name_ar']?.toString().trim() ?? '';
-      if (nameAr.isNotEmpty) return nameAr;
-    }
-    return _categoryNameFallback();
-  }
-
-  String _sectionName() {
-    final direct = _valueFromProfile([
-      'registrationSectionName',
-      'subcategoryName',
-      // Backend currently returns readable section name in these keys.
-      'section_id',
-      'subcategory_id',
-      'section_name',
-      'section',
-      'sectionName',
-      'section_label',
-      'grade',
-      'grade_name',
-      'grade_id',
-      // Keep UUID-like ids as last fallback only.
-      'registrationSectionId',
-      'subcategoryId',
-    ]);
-    if (direct.isNotEmpty) return direct;
-    final section = _profile?['section'];
-    if (section is Map<String, dynamic>) {
-      final name = section['name']?.toString().trim() ?? '';
-      if (name.isNotEmpty) return name;
-      final nameAr = section['name_ar']?.toString().trim() ?? '';
-      if (nameAr.isNotEmpty) return nameAr;
-    }
-    return _subcategoryNameFallback();
-  }
-
-  String _categoryNameFallback() {
-    final direct = _valueFromProfile(['category_name', 'categoryName']);
-    if (direct.isNotEmpty) return direct;
-    final category = _profile?['category'];
-    if (category is Map<String, dynamic>) {
-      final name = category['name']?.toString().trim() ?? '';
-      if (name.isNotEmpty) return name;
-      final nameAr = category['name_ar']?.toString().trim() ?? '';
-      if (nameAr.isNotEmpty) return nameAr;
-    }
-    return '';
-  }
-
-  String _subcategoryNameFallback() {
-    final direct = _valueFromProfile(['subcategory_name', 'subcategoryName']);
-    if (direct.isNotEmpty) return direct;
-    final subcategory = _profile?['subcategory'];
-    if (subcategory is Map<String, dynamic>) {
-      final name = subcategory['name']?.toString().trim() ?? '';
-      if (name.isNotEmpty) return name;
-      final nameAr = subcategory['name_ar']?.toString().trim() ?? '';
-      if (nameAr.isNotEmpty) return nameAr;
-    }
-    return '';
-  }
-
-  String _studentCode() {
-    return _valueFromProfile([
-      'code',
-      'student_code',
-      'studentCode',
-      'registration_code',
-      'registrationCode',
-    ]);
-  }
-
-  Future<void> _handleLogout() async {
-    final l10n = context.l10n;
-    final shouldLogout = await showDialog<bool>(
+  /// Show image source selection dialog
+  Future<void> _showImageSourceDialog() async {
+    showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          l10n.logout,
-          style: GoogleFonts.cairo(fontWeight: FontWeight.w700),
-        ),
-        content: Text(
-          l10n.confirmLogout,
-          style: GoogleFonts.cairo(),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(l10n.cancel, style: GoogleFonts.cairo()),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(
-              l10n.logout,
-              style: GoogleFonts.cairo(
-                color: Colors.red,
-                fontWeight: FontWeight.w700,
-              ),
+        title: Text(context.l10n.selectImageSource),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt, color: AppColors.purple),
+              title: Text(context.l10n.camera),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.camera);
+              },
             ),
-          ),
-        ],
+            ListTile(
+              leading: const Icon(Icons.photo_library, color: AppColors.purple),
+              title: Text(context.l10n.gallery),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.gallery);
+              },
+            ),
+          ],
+        ),
       ),
     );
+  }
 
-    if (shouldLogout != true || !mounted) return;
-
-    setState(() => _isLoggingOut = true);
+  /// Pick image from camera or gallery.
+  /// Gallery uses file_picker (Photo Picker) - no READ_MEDIA_IMAGES needed.
+  Future<void> _pickImage(ImageSource source) async {
     try {
-      await AuthService.instance.logout();
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('hasLaunched');
-      if (mounted) context.go(RouteNames.splash);
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            l10n.errorLoggingOut(e.toString().replaceFirst('Exception: ', '')),
-            style: GoogleFonts.cairo(),
+      String? path;
+      if (source == ImageSource.camera) {
+        final XFile? image = await _imagePicker.pickImage(
+          source: ImageSource.camera,
+          imageQuality: 85,
+          maxWidth: 1024,
+          maxHeight: 1024,
+        );
+        path = image?.path;
+      } else {
+        // Gallery: use file_picker (Photo Picker) - avoids READ_MEDIA_IMAGES
+        final result = await FilePicker.platform.pickFiles(
+          type: FileType.image,
+          allowMultiple: false,
+        );
+        path = result?.files.singleOrNull?.path;
+      }
+
+      final validPath = path?.trim();
+      if (validPath != null && validPath.isNotEmpty) {
+        setState(() {
+          _selectedImage = File(validPath);
+        });
+        // Upload image immediately
+        await _uploadAvatar();
+      }
+    } on Exception catch (e) {
+      if (kDebugMode) {
+        print('❌ Error picking image: $e');
+      }
+      if (mounted) {
+        String errorMessage = context.l10n.errorPickingImage;
+
+        // Check if it's a permission error
+        if (e.toString().contains('permission') ||
+            e.toString().contains('Permission')) {
+          if (source == ImageSource.camera) {
+            errorMessage = context.l10n.cameraPermissionDenied;
+          } else {
+            errorMessage = context.l10n.galleryPermissionDenied;
+          }
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              errorMessage,
+              style: GoogleFonts.cairo(),
+            ),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
           ),
-          backgroundColor: AppColors.destructive,
-        ),
-      );
+        );
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Error picking image: $e');
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              context.l10n.errorPickingImage,
+              style: GoogleFonts.cairo(),
+            ),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  /// Upload avatar image
+  Future<void> _uploadAvatar() async {
+    if (_selectedImage == null) return;
+
+    setState(() => _isUploadingAvatar = true);
+    try {
+      if (kDebugMode) {
+        print('📤 Starting avatar upload: ${_selectedImage!.path}');
+      }
+
+      final result =
+          await ProfileService.instance.uploadAvatar(_selectedImage!.path);
+
+      if (kDebugMode) {
+        print('✅ Avatar upload result: $result');
+      }
+
+      if (mounted) {
+        // Update profile with avatar URLs from response
+        setState(() {
+          _profile = {
+            ...(_profile ?? {}),
+            'avatar': result['avatar'] ?? result['data']?['avatar'],
+            'avatar_thumbnail': result['avatar_thumbnail'] ??
+                result['data']?['avatar_thumbnail'],
+          };
+        });
+
+        if (kDebugMode) {
+          print('📝 Updated profile with avatar: ${_profile?['avatar']}');
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              context.l10n.avatarUploaded,
+              style: GoogleFonts.cairo(),
+            ),
+            backgroundColor: const Color(0xFF10B981),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Error uploading avatar: $e');
+        print('❌ Error type: ${e.runtimeType}');
+        if (e is Exception) {
+          print('❌ Exception details: ${e.toString()}');
+        }
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              context.l10n.errorUploadingAvatar(e.toString()),
+              style: GoogleFonts.cairo(),
+            ),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
     } finally {
-      if (mounted) setState(() => _isLoggingOut = false);
+      if (mounted) {
+        setState(() => _isUploadingAvatar = false);
+      }
+    }
+  }
+
+  Future<void> _saveProfile() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() => _isSaving = true);
+    try {
+      await ProfileService.instance.updateProfile(
+        name: _nameController.text.trim(),
+        phone: _phoneController.text.trim(),
+        bio: _bioController.text.trim(),
+        country: _countryController.text.trim().isNotEmpty
+            ? _countryController.text.trim()
+            : null,
+        timezone: _timezoneController.text.trim().isNotEmpty
+            ? _timezoneController.text.trim()
+            : null,
+        language: _languageController.text.trim().isNotEmpty
+            ? _languageController.text.trim()
+            : null,
+      );
+
+      if (kDebugMode) {
+        print('✅ Profile updated successfully');
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              context.l10n.profileUpdated,
+              style: GoogleFonts.cairo(),
+            ),
+            backgroundColor: const Color(0xFF10B981),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+        context.pop(true); // Return true to indicate success
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Error updating profile: $e');
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              context.l10n.errorUpdatingProfile(e.toString()),
+              style: GoogleFonts.cairo(),
+            ),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
-
     return Scaffold(
       backgroundColor: AppColors.beige,
       appBar: AppBar(
@@ -273,224 +365,268 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           onPressed: () => context.pop(),
         ),
         title: Text(
-          l10n.editProfile,
-          style: GoogleFonts.cairo(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: AppColors.foreground,
-          ),
+          context.l10n.editProfile,
+          style: AppTextStyles.h3(color: AppColors.foreground),
         ),
         centerTitle: true,
       ),
       body: _isLoading
           ? const Center(
               child: CircularProgressIndicator(
-                color: AppColors.brandTeal,
+                color: AppColors.purple,
               ),
             )
           : SingleChildScrollView(
               padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 120,
-                      height: 120,
-                      decoration: BoxDecoration(
-                        color: AppColors.muted,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: AppColors.brandTeal,
-                          width: 3,
-                        ),
-                      ),
-                      child: ClipOval(
-                        child: _buildAvatar(),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 28),
-                  _readOnlyField(
-                    label: l10n.name,
-                    value: _str('name'),
-                    icon: Icons.person_rounded,
-                  ),
-                  const SizedBox(height: 16),
-                  _readOnlyField(
-                    label: l10n.phone,
-                    value: _str('phone'),
-                    icon: Icons.phone_rounded,
-                  ),
-                  const SizedBox(height: 16),
-                  _readOnlyField(
-                    label: isArabic ? 'الكلية' : l10n.faculty,
-                    value: _facultyName(),
-                    icon: Icons.school_rounded,
-                  ),
-                  const SizedBox(height: 16),
-                  _readOnlyField(
-                    label: isArabic ? 'الفرقة' : l10n.section,
-                    value: _sectionName(),
-                    icon: Icons.groups_rounded,
-                  ),
-                  const SizedBox(height: 16),
-                  _readOnlyField(
-                    label: isArabic ? 'الكود' : 'Code',
-                    value: _studentCode(),
-                    icon: Icons.badge_outlined,
-                  ),
-                  const SizedBox(height: 32),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.muted,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.border),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(
-                          Icons.info_outline_rounded,
-                          color: AppColors.brandTeal,
-                          size: 22,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            l10n.profileReadOnlyMessage,
-                            style: GoogleFonts.cairo(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.foreground,
-                              height: 1.45,
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Profile Picture Section
+                    Center(
+                      child: Stack(
+                        children: [
+                          Container(
+                            width: 120,
+                            height: 120,
+                            decoration: BoxDecoration(
+                              color: AppColors.orangeLight,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: AppColors.purple,
+                                width: 3,
+                              ),
+                            ),
+                            child: ClipOval(
+                              child: _isUploadingAvatar
+                                  ? const Center(
+                                      child: CircularProgressIndicator(
+                                        color: AppColors.purple,
+                                      ),
+                                    )
+                                  : _selectedImage != null
+                                      ? Image.file(
+                                          _selectedImage!,
+                                          fit: BoxFit.cover,
+                                        )
+                                      : _profile?['avatar'] != null
+                                          ? Image.network(
+                                              _profile!['avatar']?.toString() ??
+                                                  '',
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (context, error,
+                                                      stackTrace) =>
+                                                  const Icon(
+                                                Icons.person,
+                                                size: 60,
+                                                color: AppColors.purple,
+                                              ),
+                                            )
+                                          : const Icon(
+                                              Icons.person,
+                                              size: 60,
+                                              color: AppColors.purple,
+                                            ),
                             ),
                           ),
-                        ),
-                      ],
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: GestureDetector(
+                              onTap: _isUploadingAvatar
+                                  ? null
+                                  : _showImageSourceDialog,
+                              child: Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: AppColors.purple,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 2,
+                                  ),
+                                ),
+                                child: const Icon(
+                                  Icons.camera_alt,
+                                  size: 18,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: FilledButton.icon(
-                      onPressed: _isLoggingOut ? null : _handleLogout,
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppColors.destructive,
-                        disabledBackgroundColor:
-                            AppColors.destructive.withValues(alpha: 0.6),
+                    const SizedBox(height: 32),
+
+                    // Name Field
+                    _buildTextField(
+                      controller: _nameController,
+                      label: context.l10n.name,
+                      icon: Icons.person,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return context.l10n.pleaseEnterName;
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Phone Field
+                    _buildTextField(
+                      controller: _phoneController,
+                      label: context.l10n.phone,
+                      icon: Icons.phone,
+                      keyboardType: TextInputType.phone,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Bio Field
+                    _buildTextField(
+                      controller: _bioController,
+                      label: context.l10n.bio,
+                      icon: Icons.description,
+                      maxLines: 4,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Country Field
+                    _buildTextField(
+                      controller: _countryController,
+                      label: context.l10n.country,
+                      icon: Icons.public,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Timezone Field
+                    // _buildTextField(
+                    //   controller: _timezoneController,
+                    //   label: context.l10n.timezone,
+                    //   icon: Icons.access_time,
+                    // ),
+                    const SizedBox(height: 16),
+
+                    // Language Field
+                    _buildTextField(
+                      controller: _languageController,
+                      label: context.l10n.language,
+                      icon: Icons.language,
+                      readOnly: true,
+                      onTap: () {
+                        // Show language picker
+                        showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: Text(context.l10n.selectLanguage),
+                            content: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                ListTile(
+                                  title: Text(context.l10n.arabic),
+                                  onTap: () {
+                                    _languageController.text = 'ar';
+                                    Navigator.pop(context);
+                                  },
+                                ),
+                                ListTile(
+                                  title: Text(context.l10n.english),
+                                  onTap: () {
+                                    _languageController.text = 'en';
+                                    Navigator.pop(context);
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Save Button
+                    ElevatedButton(
+                      onPressed: _isSaving ? null : _saveProfile,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.purple,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      icon: _isLoggingOut
+                      child: _isSaving
                           ? const SizedBox(
-                              width: 18,
-                              height: 18,
+                              width: 20,
+                              height: 20,
                               child: CircularProgressIndicator(
-                                color: Colors.white,
                                 strokeWidth: 2,
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(Colors.white),
                               ),
                             )
-                          : const Icon(Icons.logout_rounded, color: Colors.white),
-                      label: Text(
-                        l10n.logout,
-                        style: GoogleFonts.cairo(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
+                          : Text(
+                              context.l10n.saveChanges,
+                              style: GoogleFonts.cairo(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                     ),
-                  ),
-                  const SizedBox(height: 24),
-                ],
-              ),
-            ),
-    );
-  }
-
-  Widget _buildAvatar() {
-    return Container(
-      color: Colors.white,
-      child: Image.asset(
-        'assets/images/WhatsApp Image 2026-04-14 at 5.04.03 PM.jpeg',
-        fit: BoxFit.contain,
-        errorBuilder: (_, __, ___) => Image.asset(
-          'assets/images/user-avatar.png',
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => const ColoredBox(
-            color: AppColors.muted,
-            child: Icon(
-              Icons.person_rounded,
-              size: 56,
-              color: AppColors.brandTeal,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _readOnlyField({
-    required String label,
-    required String value,
-    required IconData icon,
-    int? maxLines = 2,
-  }) {
-    final display = value.isEmpty ? '—' : value;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 8),
-          child: Text(
-            label,
-            style: GoogleFonts.cairo(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppColors.mutedForeground,
-            ),
-          ),
-        ),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(icon, color: AppColors.brandTeal, size: 22),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  display,
-                  maxLines: maxLines,
-                  overflow: maxLines == null
-                      ? TextOverflow.visible
-                      : TextOverflow.ellipsis,
-                  style: GoogleFonts.cairo(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.foreground,
-                    height: 1.35,
-                  ),
+                    const SizedBox(height: 16),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    TextInputType? keyboardType,
+    int maxLines = 1,
+    bool readOnly = false,
+    VoidCallback? onTap,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      maxLines: maxLines,
+      readOnly: readOnly,
+      onTap: onTap,
+      validator: validator,
+      style: GoogleFonts.cairo(),
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, color: AppColors.purple),
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey[300]!),
         ),
-      ],
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey[300]!),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.purple, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.red),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.red, width: 2),
+        ),
+      ),
     );
   }
 }

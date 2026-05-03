@@ -7,13 +7,15 @@ class ThemeProvider extends ChangeNotifier {
   static const String _languageKey = 'language';
 
   static ThemeProvider? _instance;
-
+  
   static ThemeProvider get instance {
     _instance ??= ThemeProvider._();
     return _instance!;
   }
 
   bool _isDarkMode = false;
+  // Default language on first install is English.
+  // If user changes language, we persist it via SharedPreferences.
   Locale _locale = const Locale('en');
 
   bool get isDarkMode => _isDarkMode;
@@ -39,7 +41,7 @@ class ThemeProvider extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       _isDarkMode = prefs.getBool(_darkModeKey) ?? false;
       final languageCode = prefs.getString(_languageKey) ?? 'en';
-      _locale = languageCode == 'ar' ? const Locale('ar') : const Locale('en');
+      _locale = Locale(languageCode);
       notifyListeners();
     } catch (e) {
       // Use defaults if loading fails
@@ -105,3 +107,4 @@ class ThemeProvider extends ChangeNotifier {
     }
   }
 }
+

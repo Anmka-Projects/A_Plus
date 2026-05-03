@@ -9,6 +9,7 @@ import '../../core/design/app_colors.dart';
 import '../../core/design/app_radius.dart';
 import '../../services/teacher_dashboard_service.dart';
 import '../../services/upload_service.dart';
+import '../../widgets/instructor_question_bank_lesson_fields.dart';
 
 /// Instructor – Session (section) details. Display and edit a course section
 /// with its lessons. Uses curriculum API.
@@ -132,6 +133,23 @@ class _InstructorSessionDetailsScreenState
     }
   }
 
+  /// Extra keys for curriculum API (question banks, etc.).
+  Map<String, dynamic>? _extraLessonFields(Map<String, dynamic> result) {
+    final out = <String, dynamic>{};
+    void put(String k, dynamic v) {
+      if (v == null) return;
+      final s = v.toString();
+      if (s.isEmpty) return;
+      out[k] = v;
+    }
+
+    put('question_bank_id', result['question_bank_id']);
+    put('questionBankId', result['questionBankId']);
+    put('question_bank_file_url', result['question_bank_file_url']);
+    put('questionBankUrl', result['questionBankUrl']);
+    return out.isEmpty ? null : out;
+  }
+
   Future<void> _showAddLessonDialog() async {
     final result = await _showLessonFormDialog(null);
     if (result == null || !mounted) return;
@@ -150,6 +168,7 @@ class _InstructorSessionDetailsScreenState
           fileUrl: result['fileUrl']?.toString(),
           isFree: result['isFree'] == true || result['is_free'] == true,
           order: (result['order'] as num?)?.toInt() ?? (_lessons.length + 1),
+          extraFields: _extraLessonFields(result),
         );
         if (mounted) {
           final lessonMap = Map<String, dynamic>.from(created);
@@ -221,84 +240,6 @@ class _InstructorSessionDetailsScreenState
     if (mounted) setState(() => _lessons.removeAt(index));
   }
 
-  Future<void> _uploadPdfForLesson(int index) async {
-    final isAr = Localizations.localeOf(context).languageCode == 'ar';
-    if (index < 0 || index >= _lessons.length) return;
-
-    try {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['pdf'],
-      );
-      if (result == null || result.files.isEmpty || !mounted) return;
-      final file = result.files.single;
-      final path = file.path;
-      if (path == null || path.isEmpty) return;
-      final localFile = File(path);
-      if (!await localFile.exists()) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            isAr ? 'جاري رفع ملف PDF...' : 'Uploading PDF file...',
-            style: GoogleFonts.cairo(),
-          ),
-        ),
-      );
-
-      final uploadedUrl = await UploadService.instance.uploadPdf(localFile);
-      if (!mounted) return;
-
-      final lesson = Map<String, dynamic>.from(_lessons[index]);
-      final sectionId = widget.section['id']?.toString();
-      final lessonId = lesson['id']?.toString();
-
-      if (sectionId != null &&
-          sectionId.isNotEmpty &&
-          lessonId != null &&
-          lessonId.isNotEmpty) {
-        await TeacherDashboardService.instance.updateCurriculumLesson(
-          widget.courseId,
-          sectionId,
-          lessonId,
-          fileUrl: uploadedUrl,
-          type: 'file',
-        );
-      }
-
-      setState(() {
-        _lessons[index] = {
-          ...lesson,
-          'type': 'file',
-          'fileUrl': uploadedUrl,
-        };
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            isAr ? 'تم رفع ملف PDF بنجاح' : 'PDF uploaded successfully',
-            style: GoogleFonts.cairo(),
-          ),
-          backgroundColor: AppColors.success,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            e.toString().replaceFirst('Exception: ', ''),
-            style: GoogleFonts.cairo(),
-          ),
-          backgroundColor: AppColors.destructive,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
-  }
-
   Future<Map<String, dynamic>?> _showLessonFormDialog(
     Map<String, dynamic>? existing,
   ) async {
@@ -318,12 +259,19 @@ class _InstructorSessionDetailsScreenState
     );
     String type = existing?['type']?.toString() ?? 'video';
     bool isFree = existing?['isFree'] == true || existing?['is_free'] == true;
+    final existingFileUrl = existing?['fileUrl']?.toString();
+    String? qbBankId = existing?['question_bank_id']?.toString() ??
+        existing?['questionBankId']?.toString();
+    String? qbFileUrl = existing?['question_bank_file_url']?.toString() ??
+        existing?['questionBankUrl']?.toString() ??
+        (type == 'question_bank' ? existingFileUrl : null);
 
     final types = [
       ('video', isAr ? 'فيديو' : 'Video'),
       ('text', isAr ? 'نص' : 'Text'),
       ('file', isAr ? 'ملف' : 'File'),
       ('exam', isAr ? 'امتحان' : 'Exam'),
+      ('question_bank', isAr ? 'بنك أسئلة' : 'Question bank'),
     ];
 
     return showDialog<Map<String, dynamic>>(
@@ -473,6 +421,17 @@ class _InstructorSessionDetailsScreenState
                       style: GoogleFonts.cairo(),
                       keyboardType: TextInputType.url,
                     ),
+                  ] else if (type == 'question_bank') ...[
+                    InstructorQuestionBankLessonFields(
+                      courseId: widget.courseId,
+                      isAr: isAr,
+                      initialBankId: qbBankId,
+                      initialFileUrl: qbFileUrl,
+                      onChanged: (id, url) => setModalState(() {
+                        qbBankId = id;
+                        qbFileUrl = url;
+                      }),
+                    ),
                   ],
                   const SizedBox(height: 14),
                   Text(
@@ -546,12 +505,35 @@ class _InstructorSessionDetailsScreenState
                   'videoUrl': videoUrlCtrl.text.trim().isEmpty
                       ? null
                       : videoUrlCtrl.text.trim(),
-                  'fileUrl': fileUrlCtrl.text.trim().isEmpty
-                      ? null
-                      : fileUrlCtrl.text.trim(),
+                  'fileUrl': type == 'question_bank'
+                      ? (qbFileUrl?.trim().isNotEmpty == true
+                          ? qbFileUrl!.trim()
+                          : (fileUrlCtrl.text.trim().isEmpty
+                              ? null
+                              : fileUrlCtrl.text.trim()))
+                      : (fileUrlCtrl.text.trim().isEmpty
+                          ? null
+                          : fileUrlCtrl.text.trim()),
                   'isFree': isFree,
                   'order': existing?['order'] ?? (_lessons.length + 1),
                 };
+                if (type == 'question_bank') {
+                  if (qbBankId != null && qbBankId!.trim().isNotEmpty) {
+                    lesson['question_bank_id'] = qbBankId!.trim();
+                    lesson['questionBankId'] = qbBankId!.trim();
+                  } else {
+                    lesson.remove('question_bank_id');
+                    lesson.remove('questionBankId');
+                  }
+                  if (qbFileUrl != null && qbFileUrl!.trim().isNotEmpty) {
+                    final u = qbFileUrl!.trim();
+                    lesson['question_bank_file_url'] = u;
+                    lesson['questionBankUrl'] = u;
+                  } else {
+                    lesson.remove('question_bank_file_url');
+                    lesson.remove('questionBankUrl');
+                  }
+                }
                 Navigator.pop(ctx, lesson);
               },
               child: Text(
@@ -747,8 +729,8 @@ class _InstructorSessionDetailsScreenState
                         Icon(
                           type == 'video'
                               ? Icons.play_circle_rounded
-                              : type == 'file'
-                                  ? Icons.picture_as_pdf_rounded
+                              : type == 'question_bank'
+                                  ? Icons.quiz_rounded
                                   : Icons.article_rounded,
                           size: 24,
                           color: AppColors.purple,
@@ -797,16 +779,6 @@ class _InstructorSessionDetailsScreenState
                               ),
                             ),
                           ),
-                        IconButton(
-                          icon: Icon(
-                            Icons.upload_file_rounded,
-                            size: 20,
-                            color: AppColors.purple,
-                          ),
-                          onPressed: type == 'file'
-                              ? () => _uploadPdfForLesson(i)
-                              : null,
-                        ),
                         IconButton(
                           icon: Icon(
                             Icons.edit_rounded,
